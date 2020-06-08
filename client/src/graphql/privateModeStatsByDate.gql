@@ -1,0 +1,15 @@
+query PrivateModeStatsByDateQuery(
+  $propertyId: ID!
+  $startDate: String!
+  $endDate: String!
+) {
+  privateModeStatsByDate(
+    propertyId: $propertyId
+    startDate: $startDate
+    endDate: $endDate
+  ) {
+    date
+    privateCount
+    nonPrivateCount
+  }
+}

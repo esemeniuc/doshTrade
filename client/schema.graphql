@@ -1,0 +1,37 @@
+type Mutation {
+  login(email: String!, password: String!): String!
+  signup(
+    firstName: String!
+    lastName: String!
+    email: String!
+    password: String!
+  ): String!
+  createProperty(websiteName: String!, websiteUrl: String!): Property
+}
+
+scalar NaiveDateTime
+
+type PrivateCounts {
+  date: String!
+  privateCount: Int!
+  nonPrivateCount: Int!
+}
+
+type Property {
+  id: String!
+  websiteName: String!
+  websiteUrl: String!
+  userId: Int!
+  createdAt: NaiveDateTime!
+}
+
+type Query {
+  isAuth(jwt: String): Boolean!
+  privateModeStats(propertyId: ID!): [PrivateCounts!]
+  privateModeStatsByDate(
+    propertyId: ID!
+    startDate: String!
+    endDate: String!
+  ): [PrivateCounts!]
+  getProperties: [Property!]!
+}
