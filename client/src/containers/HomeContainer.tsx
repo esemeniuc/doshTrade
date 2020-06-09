@@ -31,7 +31,6 @@ function TopBar() {
     </AppBar>;
 }
 
-
 export default function HomeContainer() {
     const history = useHistory();
     return <>
