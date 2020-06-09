@@ -1,10 +1,11 @@
 import React from 'react';
 import {BrowserRouter as Router} from "react-router-dom";
-import MainPageContainer from './containers/MainPageContainer';
 import {ApolloClient, ApolloProvider, HttpLink, InMemoryCache} from '@apollo/client';
 import {setContext} from '@apollo/link-context';
 import {createMuiTheme, CssBaseline, ThemeProvider} from "@material-ui/core";
 import {green, red} from "@material-ui/core/colors";
+import MainPageContainer from './containers/MainPageContainer';
+import StockListView from "./components/StockListView";
 
 const authLink = setContext((_, {headers}) => {
     // get the authentication token from local storage if it exists
@@ -33,28 +34,13 @@ const client = new ApolloClient({
     })),
 });
 
-// class DebugRouter extends Router {
-//     history:any;
-//     constructor(props: BrowserRouterProps) {
-//         super(props);
-//         console.log('initial history is: ', JSON.stringify(this.history, null, 2));
-//         //@ts-ignore
-//         this.history.listen((location, action) => {
-//             console.log(
-//                 `The current URL is ${location.pathname}${location.search}${location.hash}`
-//             );
-//             console.log(`The last navigation action was ${action}`, JSON.stringify(this.history, null, 2));
-//         });
-//     }
-// }
-
 function App() {
     return (
         <ApolloProvider client={client}>
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
                 <Router>
-                    <MainPageContainer/>
+                    <StockListView/>
                 </Router>
             </ThemeProvider>
         </ApolloProvider>
