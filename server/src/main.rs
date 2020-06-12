@@ -30,21 +30,19 @@ async fn main() -> std::io::Result<()> {
         .arg(Arg::with_name("ip")
             .long("ip")
             .value_name("IP_ADDRESS")
-            .help("Listens on the provided interface")
-            .required(true))
+            .help("Listens on the provided interface"))
         .arg(Arg::with_name("port")
             .short("p")
             .long("port")
             .value_name("PORT")
-            .help("Listens on the provided port")
-            .required(true))
+            .help("Listens on the provided port"))
         .get_matches();
 
     // Gets a value for config if supplied by user, or defaults to "default.conf"
-    let config = matches.value_of("config").unwrap_or("default.conf");
-    println!("Value for config: {}", config);
+    let ip = matches.value_of("ip").unwrap_or("0.0.0.0");
+    let port = matches.value_of("port").unwrap_or("8080");
+    let ip_port = format!("{}:{}", ip, port);
 
-    let listener = std::env::var("IP_PORT").expect("IP_PORT must be set. Eg. 0.0.0.0:80");
     let pool = db::establish_connection();
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
 
@@ -52,7 +50,7 @@ async fn main() -> std::io::Result<()> {
         .data(Storage::default())
         .finish();
 
-    println!("Playground: http://localhost:8000");
+    println!("Playground: http://{}/graphql", ip_port);
 
     HttpServer::new(move || {
         App::new()
@@ -66,7 +64,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/").guard(guard::Get()).to(handler::index_playground))
     })
-        .bind("127.0.0.1:8000")?
+        .bind(ip_port)?
         .run()
         .await
 
