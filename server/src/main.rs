@@ -55,32 +55,17 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(schema.clone())
-            .service(web::resource("/graphql").guard(guard::Post()).to(handler::index))
+            .service(web::resource("/graphql").guard(guard::Post()).to(handler::graphql))
             .service(web::resource("/graphql")
                          .guard(guard::Get())
                          .guard(guard::Header("upgrade", "websocket"))
                          .to(handler::index_ws),
             )
             .service(web::resource("/graphiql").guard(guard::Get()).to(handler::index_playground))
+            .route("/", web::get().to(handler::index))
+            .route("/{_:.*}", web::get().to(handler::dist))
     })
         .bind(ip_port)?
         .run()
         .await
-
-
-    // HttpServer::new(move || {
-    //
-    //     App::new()
-    //         .wrap(cors_rules)
-    //         .data(schema.clone())
-    //         .data(pool.clone())
-    //         .route("/event", web::post().to(handler::event))
-    //         .route("/graphql", web::post().to(handler::graphql))
-    //         .route("/graphiql", web::get().to(handler::graphiql))
-    //         .route("/", web::get().to(handler::index))
-    //         .route("/{_:.*}", web::get().to(handler::dist))
-    // })
-    //     .bind(listener)?
-    //     .run()
-    //     .await
 }

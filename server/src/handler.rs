@@ -9,37 +9,38 @@ use crate::db::DbPool;
 use crate::graphql;
 use crate::models::{Event};
 
+
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_actix_web::{GQLRequest, GQLResponse, WSSubscription};
 use actix_web_actors::ws;
 use crate::asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
 
 //from https://github.com/pyros2097/rust-embed/blob/master/examples/actix.rs
-// #[derive(RustEmbed)]
-// #[folder = "../client/build"]
-// struct Asset;
+#[derive(RustEmbed)]
+#[folder = "../client/build"]
+struct Asset;
 
-// fn handle_embedded_file(path: &str) -> HttpResponse {
-//     match Asset::get(path) {
-//         Some(content) => {
-//             let body: Body = match content {
-//                 Cow::Borrowed(bytes) => bytes.into(),
-//                 Cow::Owned(bytes) => bytes.into(),
-//             };
-//             HttpResponse::Ok().content_type(mime_guess::from_path(path).first_or_octet_stream().as_ref()).body(body)
-//         }
-//         None => index(),
-//     }
-// }
+fn handle_embedded_file(path: &str) -> HttpResponse {
+    match Asset::get(path) {
+        Some(content) => {
+            let body: Body = match content {
+                Cow::Borrowed(bytes) => bytes.into(),
+                Cow::Owned(bytes) => bytes.into(),
+            };
+            HttpResponse::Ok().content_type(mime_guess::from_path(path).first_or_octet_stream().as_ref()).body(body)
+        }
+        None => index(),
+    }
+}
 
-// pub fn index() -> HttpResponse {
-//     handle_embedded_file("index.html")
-// }
-//
-// pub fn dist(req: HttpRequest) -> HttpResponse {
-//     let path = &req.path()["/".len()..]; // trim the preceding `/` in path
-//     handle_embedded_file(path)
-// }
+pub fn index() -> HttpResponse {
+    handle_embedded_file("index.html")
+}
+
+pub fn dist(req: HttpRequest) -> HttpResponse {
+    let path = &req.path()["/".len()..]; // trim the preceding `/` in path
+    handle_embedded_file(path)
+}
 
 
 // pub async fn graphql(
@@ -67,7 +68,7 @@ use crate::asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, Subscriptio
 //         .body(user))
 // }
 
-pub(crate) async fn index(schema: web::Data<BooksSchema>, req: GQLRequest) -> GQLResponse {
+pub(crate) async fn graphql(schema: web::Data<BooksSchema>, req: GQLRequest) -> GQLResponse {
     req.into_inner().execute(&schema).await.into()
 }
 
