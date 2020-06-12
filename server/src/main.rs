@@ -50,19 +50,18 @@ async fn main() -> std::io::Result<()> {
         .data(Storage::default())
         .finish();
 
-    println!("Playground: http://{}/graphql", ip_port);
+    println!("Playground: http://{}/graphiql", ip_port);
 
     HttpServer::new(move || {
         App::new()
             .data(schema.clone())
-            .service(web::resource("/").guard(guard::Post()).to(handler::index))
-            .service(
-                web::resource("/")
-                    .guard(guard::Get())
-                    .guard(guard::Header("upgrade", "websocket"))
-                    .to(handler::index_ws),
+            .service(web::resource("/graphql").guard(guard::Post()).to(handler::index))
+            .service(web::resource("/graphql")
+                         .guard(guard::Get())
+                         .guard(guard::Header("upgrade", "websocket"))
+                         .to(handler::index_ws),
             )
-            .service(web::resource("/").guard(guard::Get()).to(handler::index_playground))
+            .service(web::resource("/graphiql").guard(guard::Get()).to(handler::index_playground))
     })
         .bind(ip_port)?
         .run()
