@@ -27,6 +27,10 @@ async fn main() -> std::io::Result<()> {
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
         .about("Backend server for yolotrader")
+        .arg(Arg::with_name("database_url")
+            .long("database_url")
+            .value_name("DATABASE_URL")
+            .help("The SQLite database file to use"))
         .arg(Arg::with_name("ip")
             .long("ip")
             .value_name("IP_ADDRESS")
@@ -38,12 +42,12 @@ async fn main() -> std::io::Result<()> {
             .help("Listens on the provided port"))
         .get_matches();
 
-    // Gets a value for config if supplied by user, or defaults to "default.conf"
+    let database_url = matches.value_of("database_url").unwrap_or("db.sqlite");
     let ip = matches.value_of("ip").unwrap_or("0.0.0.0");
     let port = matches.value_of("port").unwrap_or("8080");
     let ip_port = format!("{}:{}", ip, port);
 
-    let pool = db::establish_connection();
+    let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
 
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
