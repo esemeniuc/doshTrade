@@ -89,78 +89,6 @@ const rows = [
     createData('AAPL', 'CA', 424.44, "-99%", "0.75"),
 ];
 
-
-function StickyHeadTable() {
-    const classes = useStyles();
-    const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(5);
-
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(+event.target.value);
-        setPage(0);
-    };
-
-    return (
-        <Paper className={classes.root}>
-            <TableContainer>
-                <Table stickyHeader aria-label="sticky table">
-                    <TableHead>
-                        <TableRow>
-                            {columns.map((column) => (
-                                <TableCell
-                                    key={column.id}
-                                    align={column.align}
-                                    style={{ minWidth: column.minWidth }}
-                                >
-                                    {column.label}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                            return (
-                                <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
-                                    {columns.map((column) => {
-                                        const value = row[column.id];
-                                        if (column.id === 'rsi') {
-                                            return (
-                                                <TableCell key={column.id} align={column.align}>
-                                                    <Chip label={`${value}`} color='primary'/>
-                                                </TableCell>
-                                            );
-                                        } else {
-                                            return (
-                                                <TableCell key={column.id} align={column.align}>
-                                                    {column.format && typeof value === 'number' ? column.format(value) : value}
-                                                </TableCell>
-                                            );
-                                        }
-                                    })}
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-            <TablePagination
-                rowsPerPageOptions={[10, 25, 100]}
-                component="div"
-                count={rows.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onChangePage={handleChangePage}
-                onChangeRowsPerPage={handleChangeRowsPerPage}
-            />
-        </Paper>
-    );
-}
-
-
 function StockListView() {
     const classes = useStyles();
 
@@ -179,39 +107,48 @@ function StockListView() {
                             Since close yesterday
                         </Box>
                     </Typography>
-                    <List className={classes.list}>
-                        <ListItem button>
-                            <ListItemText id='{1}' primary='TSLA' secondary='Up .86%'/>
-                            <ListItemSecondaryAction>
-                                <Chip label="1011.87" color='primary'/>
-                            </ListItemSecondaryAction>
-                        </ListItem>
 
-                        <ListItem button>
-                            <ListItemText id='{2}' primary='SQ' secondary='Up 2.51'/>
-                            <ListItemSecondaryAction>
-                                <Chip label="92.12" color='primary'/>
-                            </ListItemSecondaryAction>
-                        </ListItem>
-
-                        <ListItem button>
-                            <ListItemText id='{3}' primary='SPY' secondary='Up 0.12'/>
-                            <ListItemText id='{3}' primary='RSI 0.75' color={'text.secondary'}/>
-                            <ListItemSecondaryAction>
-                                <Chip label="320.87" color='primary'/>
-                            </ListItemSecondaryAction>
-                        </ListItem>
-
-                        <ListItem button>
-                            <ListItemText id='{3}' primary='TVIX' secondary='Down 5.12%'/>
-                            <ListItemSecondaryAction>
-                                <Chip label="120.81" color='secondary'/>
-                            </ListItemSecondaryAction>
-                        </ListItem>
-
-
-                    </List>
-                <StickyHeadTable></StickyHeadTable>
+                <TableContainer>
+                    <Table stickyHeader aria-label="sticky table">
+                        <TableHead>
+                            <TableRow>
+                                {columns.map((column) => (
+                                    <TableCell
+                                        key={column.id}
+                                        align={column.align}
+                                        style={{ minWidth: column.minWidth }}
+                                    >
+                                        {column.label}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {rows.map((row) => {
+                                return (
+                                    <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
+                                        {columns.map((column) => {
+                                            const value = row[column.id];
+                                            if (column.id === 'rsi') {
+                                                return (
+                                                    <TableCell key={column.id} align={column.align}>
+                                                        <Chip label={`${value}`} color='primary'/>
+                                                    </TableCell>
+                                                );
+                                            } else {
+                                                return (
+                                                    <TableCell key={column.id} align={column.align}>
+                                                        {column.format && typeof value === 'number' ? column.format(value) : value}
+                                                    </TableCell>
+                                                );
+                                            }
+                                        })}
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             </Container>
         </div>
     );
