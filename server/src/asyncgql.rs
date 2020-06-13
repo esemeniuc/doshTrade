@@ -34,62 +34,12 @@ pub type Storage = Arc<Mutex<Slab<Book>>>;
 pub struct QueryRoot;
 
 #[async_graphql::Object]
-impl QueryRoot {
-    async fn books(&self, ctx: &Context<'_>) -> Vec<Book> {
-        let books = ctx.data::<Storage>().lock().await;
-        books.iter().map(|(_, book)| book).cloned().collect()
-    }
-}
+impl QueryRoot {}
 
 pub struct MutationRoot;
 
 #[async_graphql::Object]
-impl MutationRoot {
-    async fn create_book(&self, ctx: &Context<'_>, name: String, author: String) -> ID {
-        let mut books = ctx.data::<Storage>().lock().await;
-        let entry = books.vacant_entry();
-        let id: ID = entry.key().into();
-        let book = Book {
-            id: id.clone(),
-            name,
-            author,
-        };
-        entry.insert(book);
-        SimpleBroker::publish(BookChanged {
-            mutation_type: MutationType::Created,
-            id: id.clone(),
-        });
-        id
-    }
-
-    async fn delete_book(&self, ctx: &Context<'_>, id: ID) -> FieldResult<bool> {
-        let mut books = ctx.data::<Storage>().lock().await;
-        let id = id.parse::<usize>()?;
-        if books.contains(id) {
-            books.remove(id);
-            SimpleBroker::publish(BookChanged {
-                mutation_type: MutationType::Deleted,
-                id: id.into(),
-            });
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-}
-
-#[async_graphql::Enum]
-enum MutationType {
-    Created,
-    Deleted,
-}
-
-#[async_graphql::SimpleObject]
-#[derive(Clone)]
-struct BookChanged {
-    mutation_type: MutationType,
-    id: ID,
-}
+impl MutationRoot {}
 
 #[async_graphql::SimpleObject]
 #[derive(Clone)]
@@ -98,7 +48,6 @@ struct Stock {
     price: String,
     timestamp: String,
 }
-
 
 pub struct SubscriptionRoot;
 
@@ -133,5 +82,4 @@ impl SubscriptionRoot {
             }).collect();
         futures::stream::once(async { prices })
     }
-
 }

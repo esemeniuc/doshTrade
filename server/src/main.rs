@@ -50,6 +50,7 @@ async fn main() -> std::io::Result<()> {
     let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
 
+    // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
         .data(Storage::default())
         .finish();
