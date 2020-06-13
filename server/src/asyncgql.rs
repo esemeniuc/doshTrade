@@ -1,0 +1,85 @@
+use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
+use futures::lock::Mutex;
+use futures::{Stream, StreamExt};
+use slab::Slab;
+use std::sync::Arc;
+use std::time::Duration;
+
+pub type BooksSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
+
+#[derive(Clone)]
+pub struct Book {
+    id: ID,
+    name: String,
+    author: String,
+}
+
+#[async_graphql::Object]
+impl Book {
+    async fn id(&self) -> &str {
+        &self.id
+    }
+
+    async fn name(&self) -> &str {
+        &self.name
+    }
+
+    async fn author(&self) -> &str {
+        &self.author
+    }
+}
+
+pub type Storage = Arc<Mutex<Slab<Book>>>;
+
+pub struct QueryRoot;
+
+#[async_graphql::Object]
+impl QueryRoot {}
+
+pub struct MutationRoot;
+
+#[async_graphql::Object]
+impl MutationRoot {}
+
+#[async_graphql::SimpleObject]
+#[derive(Clone)]
+struct Stock {
+    ticker: String,
+    price: String,
+    timestamp: String,
+}
+
+pub struct SubscriptionRoot;
+
+#[async_graphql::Subscription]
+impl SubscriptionRoot {
+    async fn stock_prices(&self, ticker_symbols: Vec<String>) -> impl Stream<Item=Vec<Stock>> {
+        let prices = ticker_symbols.into_iter().map(|ticker|
+            Stock {
+                ticker,
+                price: "666.66".to_string(),
+                timestamp: "12345".to_string(),
+            }).collect();
+        futures::stream::once(async { prices })
+    }
+
+    async fn reversal_alerts(&self, ticker_symbols: Vec<String>) -> impl Stream<Item=Vec<Stock>> {
+        let prices = ticker_symbols.into_iter().map(|ticker|
+            Stock {
+                ticker,
+                price: "666.66".to_string(),
+                timestamp: "12345".to_string(),
+            }).collect();
+        futures::stream::once(async { prices })
+    }
+
+    async fn oversold_stocks(&self) -> impl Stream<Item=Vec<Stock>> {
+        let prices = vec!["GOOG", "AAPL"].into_iter().map(|ticker|
+            Stock {
+                ticker: ticker.to_string(),
+                price: "666.66".to_string(),
+                timestamp: "12345".to_string(),
+            }).collect();
+        futures::stream::once(async { prices })
+    }
+}
