@@ -114,33 +114,24 @@ impl SubscriptionRoot {
         futures::stream::once(async { prices })
     }
 
-    // async fn reversal_alerts(&self, ticker_symbols: Vec<String>) -> impl Stream<Item=Vec<String>> {
-    //     let prices = ticker_symbols.into_iter().map(|ticker| "666.66".to_string()).collect();
-    //     futures::stream::iter(prices)
-    // }
-    //
-    // async fn oversold_stocks(&self) -> impl Stream<Item=Vec<String>> {
-    //     let prices = ticker_symbols.into_iter().map(|ticker| "666.66".to_string()).collect();
-    //     futures::stream::iter(prices)
-    // }
-
-
-    async fn interval(&self, #[arg(default = 1)] n: i32) -> impl Stream<Item=i32> {
-        let mut value = 0;
-        tokio::time::interval(Duration::from_secs(1)).map(move |_| {
-            value += n;
-            value
-        })
+    async fn reversal_alerts(&self, ticker_symbols: Vec<String>) -> impl Stream<Item=Vec<Stock>> {
+        let prices = ticker_symbols.into_iter().map(|ticker|
+            Stock {
+                ticker,
+                price: "666.66".to_string(),
+                timestamp: "12345".to_string(),
+            }).collect();
+        futures::stream::once(async { prices })
     }
 
-    async fn books(&self, mutation_type: Option<MutationType>) -> impl Stream<Item=BookChanged> {
-        SimpleBroker::<BookChanged>::subscribe().filter(move |event| {
-            let res = if let Some(mutation_type) = mutation_type {
-                event.mutation_type == mutation_type
-            } else {
-                true
-            };
-            async move { res }
-        })
+    async fn oversold_stocks(&self) -> impl Stream<Item=Vec<Stock>> {
+        let prices = vec!["GOOG", "AAPL"].into_iter().map(|ticker|
+            Stock {
+                ticker: ticker.to_string(),
+                price: "666.66".to_string(),
+                timestamp: "12345".to_string(),
+            }).collect();
+        futures::stream::once(async { prices })
     }
+
 }
