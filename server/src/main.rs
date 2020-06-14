@@ -20,9 +20,37 @@ use async_graphql_actix_web::{GQLRequest, GQLResponse, WSSubscription};
 use actix_cors::Cors;
 use asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
 use clap::{Arg, App as ClapApp, SubCommand};
+use actix_web::client::Client;
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Person {
+    latest_price: f64,
+    latest_volume: u64,
+    latest_update: u64,
+}
+
+async fn getter(tickers: &Vec<String>) -> Result<(), actix_web::Error> {
+    // std::env::set_var("RUST_LOG", "actix_http=trace");
+    let client = Client::default();
+
+    // Create request builder and send request
+    let mut response = client
+        .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
+        .send()
+        .await?; // <- Send http request
+    let body = response.body().await?;
+    let p: Person = serde_json::from_slice(body.as_ref())?;
+    println!("Downloaded: {:?} ", p);
+    Ok(())
+}
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
+
+
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
@@ -58,14 +86,24 @@ async fn main() -> std::io::Result<()> {
     println!("Playground: http://{}/graphiql", ip_port);
 
     HttpServer::new(move || {
+        let cors_rules = if cfg!(debug_assertions) {
+            Cors::default()
+        } else {
+            Cors::new()
+                .allowed_origin("https://yolotrader.com")
+                .allowed_methods(vec!["GET", "POST"])
+                .finish()
+        };
         App::new()
+            .wrap(cors_rules)
             .data(schema.clone())
-            .service(web::resource("/graphql").guard(guard::Post()).to(handler::graphql))
             .service(web::resource("/graphql")
-                         .guard(guard::Get())
-                         .guard(guard::Header("upgrade", "websocket"))
-                         .to(handler::index_ws),
-            )
+                .guard(guard::Post())
+                .to(handler::graphql))
+            .service(web::resource("/graphql")
+                .guard(guard::Get())
+                .guard(guard::Header("upgrade", "websocket"))
+                .to(handler::index_ws))
             .service(web::resource("/graphiql").guard(guard::Get()).to(handler::index_playground))
             .route("/", web::get().to(handler::index))
             .route("/{_:.*}", web::get().to(handler::dist))

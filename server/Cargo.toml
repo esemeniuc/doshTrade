@@ -14,7 +14,7 @@ rust-embed= "5.5.1"
 
 async-graphql = "1.15.6"
 async-graphql-actix-web = "1.14.14"
-actix-web = "2.0.0"
+actix-web = { version = "2.0.0", features=["rustls"] }
 actix-rt = "1.1.1"
 actix-web-actors = "2.0.0"
 slab = "0.4.2"
