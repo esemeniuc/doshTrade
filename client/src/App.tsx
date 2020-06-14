@@ -7,6 +7,7 @@ import {green, red} from "@material-ui/core/colors";
 import MainPageContainer from './containers/MainPageContainer';
 import StockListView from "./components/StockListView";
 import StockListContainer from "./containers/StockListContainer";
+import StockTableView from "./components/StockTableView";
 
 const authLink = setContext((_, {headers}) => {
     // get the authentication token from local storage if it exists
@@ -43,6 +44,7 @@ function App() {
                 <Router>
                     {/*<StockListView/>*/}
                     <StockListContainer />
+                    {/*<StockTableView/>*/}
                 </Router>
             </ThemeProvider>
         </ApolloProvider>
