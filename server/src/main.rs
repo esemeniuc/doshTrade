@@ -58,14 +58,24 @@ async fn main() -> std::io::Result<()> {
     println!("Playground: http://{}/graphiql", ip_port);
 
     HttpServer::new(move || {
+        let cors_rules = if cfg!(debug_assertions) {
+            Cors::default()
+        } else {
+            Cors::new()
+                .allowed_origin("https://yolotrader.com")
+                .allowed_methods(vec!["GET", "POST"])
+                .finish()
+        };
         App::new()
+            .wrap(cors_rules)
             .data(schema.clone())
-            .service(web::resource("/graphql").guard(guard::Post()).to(handler::graphql))
             .service(web::resource("/graphql")
-                         .guard(guard::Get())
-                         .guard(guard::Header("upgrade", "websocket"))
-                         .to(handler::index_ws),
-            )
+                .guard(guard::Post())
+                .to(handler::graphql))
+            .service(web::resource("/graphql")
+                .guard(guard::Get())
+                .guard(guard::Header("upgrade", "websocket"))
+                .to(handler::index_ws))
             .service(web::resource("/graphiql").guard(guard::Get()).to(handler::index_playground))
             .route("/", web::get().to(handler::index))
             .route("/{_:.*}", web::get().to(handler::dist))
