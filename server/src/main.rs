@@ -20,9 +20,24 @@ use async_graphql_actix_web::{GQLRequest, GQLResponse, WSSubscription};
 use actix_cors::Cors;
 use asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
 use clap::{Arg, App as ClapApp, SubCommand};
+use actix_web::client::Client;
+
+async fn getter() {
+    let mut client = Client::default();
+
+    // Create request builder and send request
+    let response = client.get("http://www.rust-lang.org")
+        .header("User-Agent", "Actix-web")
+        .send().await;                      // <- Send http request
+
+    println!("Response: {:?}", response);
+}
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    getter().await;
+
+
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
