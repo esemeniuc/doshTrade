@@ -1,7 +1,7 @@
 module.exports = {
     client: {
         service: {
-            name: 'decloak.io',
+            name: 'yoloTrader',
             localSchemaFile: 'schema.graphql'
         }
     }

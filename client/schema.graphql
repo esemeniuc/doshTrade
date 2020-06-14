@@ -1,37 +1,21 @@
-type Mutation {
-  login(email: String!, password: String!): String!
-  signup(
-    firstName: String!
-    lastName: String!
-    email: String!
-    password: String!
-  ): String!
-  createProperty(websiteName: String!, websiteUrl: String!): Property
+schema {
+  query: QueryRoot
+  mutation: MutationRoot
+  subscription: SubscriptionRoot
 }
 
-scalar NaiveDateTime
-
-type PrivateCounts {
-  date: String!
-  privateCount: Int!
-  nonPrivateCount: Int!
+directive @defer on FIELD
+directive @stream on FIELD
+type MutationRoot
+type QueryRoot
+type Stock {
+  ticker: String!
+  price: String!
+  timestamp: String!
 }
 
-type Property {
-  id: String!
-  websiteName: String!
-  websiteUrl: String!
-  userId: Int!
-  createdAt: NaiveDateTime!
-}
-
-type Query {
-  isAuth(jwt: String): Boolean!
-  privateModeStats(propertyId: ID!): [PrivateCounts!]
-  privateModeStatsByDate(
-    propertyId: ID!
-    startDate: String!
-    endDate: String!
-  ): [PrivateCounts!]
-  getProperties: [Property!]!
+type SubscriptionRoot {
+  stockPrices(tickerSymbols: [String!]!): [Stock!]!
+  reversalAlerts(tickerSymbols: [String!]!): [Stock!]!
+  oversoldStocks: [Stock!]!
 }

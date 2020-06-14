@@ -1,0 +1,6 @@
+subscription {
+  oversoldStocks {
+    ticker
+    price
+  }
+}

@@ -3,14 +3,9 @@ import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import Container from "@material-ui/core/Container";
 import {
     AppBar,
-    Avatar,
-    Box, Chip,
-    List,
-    ListItem,
-    ListItemAvatar,
-    ListItemSecondaryAction,
-    ListItemText,
-    Paper, Toolbar, Typography
+    Box,
+    Chip,
+    Toolbar, Typography
 } from "@material-ui/core";
 
 import Table from '@material-ui/core/Table';
@@ -18,7 +13,6 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
-import TablePagination from '@material-ui/core/TablePagination';
 import TableRow from '@material-ui/core/TableRow';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -46,7 +40,10 @@ interface Column {
 }
 
 const columns: Column[] = [
-    { id: 'name', label: '$STONK', minWidth: 170 },
+    {   id: 'name',
+        label: '$STONK',
+        minWidth: 170
+    },
     {
         id: 'population',
         label: 'Price',
@@ -132,7 +129,7 @@ function StockListView() {
                                             if (column.id === 'rsi') {
                                                 return (
                                                     <TableCell key={column.id} align={column.align}>
-                                                        <Chip label={`${value}`} color='primary'/>
+                                                        <Chip label={value} color='primary'/>
                                                     </TableCell>
                                                 );
                                             } else {
