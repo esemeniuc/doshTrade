@@ -1,9 +1,0 @@
-
-query PrivateModeStatsQuery($propertyId: ID!) {
-  privateModeStats(propertyId: $propertyId) {
-    date
-    privateCount
-    nonPrivateCount
-  }
-}
-

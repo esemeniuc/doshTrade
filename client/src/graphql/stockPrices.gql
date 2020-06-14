@@ -1,4 +1,4 @@
-subscription {
+subscription StockPrices{
   stockPrices(tickerSymbols: ["AAPL", "BANANA"]) {
     ticker
     price

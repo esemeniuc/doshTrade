@@ -1,7 +1,0 @@
-query GetPropertiesQuery {
-    getProperties {
-        id
-        websiteName
-        websiteUrl
-    }
-}

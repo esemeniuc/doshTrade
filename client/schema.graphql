@@ -4,8 +4,6 @@ schema {
   subscription: SubscriptionRoot
 }
 
-directive @defer on FIELD
-directive @stream on FIELD
 type MutationRoot
 type QueryRoot
 type Stock {

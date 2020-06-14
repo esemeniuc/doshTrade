@@ -31,7 +31,7 @@ const theme = createMuiTheme({
 const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: authLink.concat(new HttpLink({
-        uri: 'http://localhost:8000/graphql',
+        uri: 'http://0.0.0.0:8080/graphql',
         // uri: 'http://192.168.1.95:8001/graphql',
     })),
 });

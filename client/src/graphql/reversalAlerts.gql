@@ -1,4 +1,4 @@
-subscription {
+subscription ReversalAlerts{
   reversalAlerts(tickerSymbols: ["AAPL", "BANANA"]) {
     ticker
 

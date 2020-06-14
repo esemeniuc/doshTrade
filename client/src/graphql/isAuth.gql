@@ -1,3 +1,0 @@
-query IsAuth($jwt: String) {
-    isAuth(jwt: $jwt)
-}
