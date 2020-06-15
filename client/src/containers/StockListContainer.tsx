@@ -1,5 +1,4 @@
 import React from 'react';
-
 import Container from "@material-ui/core/Container";
 import {
     AppBar,
@@ -7,6 +6,7 @@ import {
     Toolbar, Typography
 } from "@material-ui/core";
 import {ApolloError, useSubscription} from '@apollo/client';
+import {StockPrices_stockPrices} from '../graphql/__generated__/StockPrices'
 import {loader} from 'graphql.macro';
 
 const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
@@ -14,7 +14,7 @@ const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
 
 function StockListContainer() {
     const tickerSymbols = ["AAPL", "BANANA"]
-    const { data, loading, error } = useSubscription(
+    const { data, loading, error } = useSubscription<StockPrices_stockPrices>(
         STOCK_PRICES_SUBSCRIPTION,
         { variables: { tickerSymbols } }
     );

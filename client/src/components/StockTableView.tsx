@@ -2,8 +2,8 @@ import React from 'react';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import Container from "@material-ui/core/Container";
 import {
-    AppBar,
-     Chip,
+    AppBar, Box,
+    Chip,
     Paper, Toolbar, Typography
 } from "@material-ui/core";
 
@@ -40,7 +40,7 @@ interface Column {
 }
 
 const columns: Column[] = [
-    { id: 'ticker', label: '', minWidth: 100 },
+    {id: 'ticker', label: '', minWidth: 100},
     {
         id: 'price',
         label: 'Price',
@@ -72,7 +72,7 @@ interface Data {
 }
 
 function createData(ticker: string, code: string, price: number, sinceOpen: number, rsi: string): Data {
-    return { ticker, code, price, sinceOpen, rsi };
+    return {ticker, code, price, sinceOpen, rsi};
 }
 
 const rows = [
@@ -84,45 +84,45 @@ const rows = [
 ];
 
 function RsiCellContent(column: Column, value: string | number) {
-    return(
+    return (
         <TableCell key={column.id} align={column.align}>
-        <Typography variant="subtitle2">
-        {value}
-</Typography>
+            <Typography variant="subtitle2">
+                {value}
+            </Typography>
         </TableCell>
-        )
+    )
 }
 
 function TickerCellContent(column: Column, value: string | number) {
-    return(
+    return (
         <TableCell key={column.id} align={column.align}>
-        <Typography variant="h6">
-        {value}
-</Typography>
-    </TableCell>
+            <Typography variant="h6">
+                {value}
+            </Typography>
+        </TableCell>
     )
 }
 
 function PriceCellContent(column: Column, value: string | number) {
-    return (        
-    <TableCell key={column.id} align={column.align}>
-        <Chip label={`${value}`} color='primary'/>
-    </TableCell>)
+    return (
+        <TableCell key={column.id} align={column.align}>
+            <Chip label={`${value}`} color='primary'/>
+        </TableCell>)
 }
 
 function SinceOpenCellContent(column: Column, value: number) {
     const plusSign = value > 0 ? '+' : ''
-    return (        
-    <TableCell key={column.id} align={column.align}>
-        <Typography variant="subtitle1">
-        {plusSign + value.toFixed(2) + '%'}
-</Typography>
-    </TableCell>)
+    return (
+        <TableCell key={column.id} align={column.align}>
+            <Typography variant="subtitle1">
+                {plusSign + value.toFixed(2) + '%'}
+            </Typography>
+        </TableCell>)
 }
 
 function CellContentForDataColumn(rowData: Data, column: Column) {
     const value = rowData[column.id];
-    switch (column.id ) {
+    switch (column.id) {
         case 'rsi':
             return RsiCellContent(column, value)
         case 'ticker':
@@ -133,13 +133,13 @@ function CellContentForDataColumn(rowData: Data, column: Column) {
             return SinceOpenCellContent(column, value as number)
         default:
             return (
-            <TableCell key={column.id} align={column.align}>
-                {column.format && typeof value === 'number' ? column.format(value) : value}
-            </TableCell>
-        );
+                <TableCell key={column.id} align={column.align}>
+                    {column.format && typeof value === 'number' ? column.format(value) : value}
+                </TableCell>
+            );
     }
-    }
-    
+}
+
 function StockTableRow(rowData: Data) {
     return (
         <TableRow hover role="checkbox" tabIndex={-1} key={rowData.code}>
@@ -154,7 +154,7 @@ function StockTableColumnCell(column: Column) {
     return (<TableCell
         key={column.id}
         align={column.align}
-        style={{ minWidth: column.minWidth }}
+        style={{minWidth: column.minWidth}}
     >
         {column.label}
     </TableCell>)
@@ -162,11 +162,6 @@ function StockTableColumnCell(column: Column) {
 
 function StickyHeadTable() {
     const classes = useStyles();
-    const [page, setPage] = React.useState(0);
-
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPage(newPage);
-    };
 
     return (
         <Paper className={classes.root}>
@@ -181,7 +176,7 @@ function StickyHeadTable() {
                     </TableHead>
                     <TableBody>
                         {rows.map((row) => {
-                            return StockTableRow(row)                            
+                            return StockTableRow(row)
                         })}
                     </TableBody>
                 </Table>
@@ -193,21 +188,25 @@ function StickyHeadTable() {
 function StockTableView() {
     const classes = useStyles();
     return (
-        <div className={classes.root} >
+        <div className={classes.root}>
             <Container component="main" maxWidth='sm'>
                 <AppBar position="static">
                     <Toolbar>
-                        <Typography variant="h6" >
+                        <Typography variant="h6">
                             Yolo Trader
                         </Typography>
                     </Toolbar>
-                </AppBar>                    
+                </AppBar>
+                <Typography variant="caption" >
+                    <Box textAlign="center" >
+                        Since close yesterday
+                    </Box>
+                </Typography>
                 <StickyHeadTable></StickyHeadTable>
             </Container>
         </div>
     );
 }
-
 
 
 export default StockTableView;
