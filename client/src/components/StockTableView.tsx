@@ -12,7 +12,6 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
-import TablePagination from '@material-ui/core/TablePagination';
 import TableRow from '@material-ui/core/TableRow';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -63,7 +62,7 @@ const columns: Column[] = [
     },
 ];
 
-interface Data {
+export interface StockData {
     ticker: string;
     code: string;
     price: number;
@@ -71,17 +70,6 @@ interface Data {
     rsi: string;
 }
 
-function createData(ticker: string, code: string, price: number, sinceOpen: number, rsi: string): Data {
-    return {ticker, code, price, sinceOpen, rsi};
-}
-
-const rows = [
-    createData('TSLA', 'IN', 123.11, 0.5, "0.75"),
-    createData('SPY', 'CN', 4312.43, 0.4, "0.75"),
-    createData('TVIX', 'IT', 232.75, 0.6, "0.75"),
-    createData('SQ', 'US', 11.94, -0.8, "0.15"),
-    createData('AAPL', 'CA', 424.44, -0.9, "0.75"),
-];
 
 function RsiCellContent(column: Column, value: string | number) {
     return (
@@ -120,7 +108,7 @@ function SinceOpenCellContent(column: Column, value: number) {
         </TableCell>)
 }
 
-function CellContentForDataColumn(rowData: Data, column: Column) {
+function CellContentForDataColumn(rowData: StockData, column: Column) {
     const value = rowData[column.id];
     switch (column.id) {
         case 'rsi':
@@ -140,43 +128,39 @@ function CellContentForDataColumn(rowData: Data, column: Column) {
     }
 }
 
-function StockTableRow(rowData: Data) {
+function StockTableHead() {
     return (
-        <TableRow hover role="checkbox" tabIndex={-1} key={rowData.code}>
-            {columns.map((column) => {
-                return CellContentForDataColumn(rowData, column)
-            })}
-        </TableRow>
-    );
+        <TableHead>
+            <TableRow>
+                {columns.map((column) => (
+                    <TableCell
+                    key={column.id}
+                    align={column.align}
+                    style={{minWidth: column.minWidth}}
+                >
+                    {column.label}
+                </TableCell>
+                ))}
+            </TableRow>
+        </TableHead>
+    )
 }
 
-function StockTableColumnCell(column: Column) {
-    return (<TableCell
-        key={column.id}
-        align={column.align}
-        style={{minWidth: column.minWidth}}
-    >
-        {column.label}
-    </TableCell>)
-}
-
-function StickyHeadTable() {
+function StickyHeadTable({stockData}: StockTableViewProps) {
     const classes = useStyles();
-
     return (
         <Paper className={classes.root}>
             <TableContainer>
                 <Table stickyHeader aria-label="sticky table">
-                    <TableHead>
-                        <TableRow>
-                            {columns.map((column) => (
-                                StockTableColumnCell(column)
-                            ))}
-                        </TableRow>
-                    </TableHead>
+                    <StockTableHead/>
                     <TableBody>
-                        {rows.map((row) => {
-                            return StockTableRow(row)
+                        {stockData.map((row) => {
+                            return(
+                            <TableRow hover role={"checkbox"} tabIndex={-1} key={row.code}>
+                                {columns.map((column) => {
+                                    return CellContentForDataColumn(row, column)
+                                })}
+                            </TableRow>)
                         })}
                     </TableBody>
                 </Table>
@@ -185,7 +169,11 @@ function StickyHeadTable() {
     );
 }
 
-function StockTableView() {
+export interface StockTableViewProps {
+    stockData: StockData[]
+}
+
+function StockTableView({stockData}: StockTableViewProps) {
     const classes = useStyles();
     return (
         <div className={classes.root}>
@@ -202,7 +190,7 @@ function StockTableView() {
                         Since close yesterday
                     </Box>
                 </Typography>
-                <StickyHeadTable></StickyHeadTable>
+                <StickyHeadTable stockData={stockData}></StickyHeadTable>
             </Container>
         </div>
     );
