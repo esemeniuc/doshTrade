@@ -12,7 +12,7 @@ import {loader} from 'graphql.macro';
 const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
 
 function StockListContainer() {
-    const tickerSymbols = ["AAPL", "BANANA"]
+    const tickerSymbols = ["TSLA", "BANANA"]
     const { data, loading, error } = useSubscription<StockPrices_stockPrices>(
         STOCK_PRICES_SUBSCRIPTION,
         { variables: { tickerSymbols } }
