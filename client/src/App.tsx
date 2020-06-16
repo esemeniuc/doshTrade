@@ -1,25 +1,13 @@
 import React from 'react';
 import {BrowserRouter as Router} from "react-router-dom";
 import {ApolloClient, ApolloProvider, HttpLink, InMemoryCache, split} from '@apollo/client';
-import {setContext} from '@apollo/link-context';
 import {createMuiTheme, CssBaseline, ThemeProvider} from "@material-ui/core";
 import {green, red} from "@material-ui/core/colors";
 import { getMainDefinition } from '@apollo/client/utilities';
 import { WebSocketLink } from '@apollo/link-ws';
 import StockListContainer from "./containers/StockListContainer";
 import StockTableView from "./components/StockTableView";
-
-const authLink = setContext((_, {headers}) => {
-    // get the authentication token from local storage if it exists
-    const token = localStorage.getItem('authToken');
-    // return the headers to the context so httpLink can read them
-    return {
-        headers: {
-            ...headers,
-            authorization: token ? `Bearer ${token}` : "",
-        }
-    };
-});
+import {mockStockData} from "./mocks/mockData";
 
 const theme = createMuiTheme({
     palette: {
@@ -63,8 +51,8 @@ function App() {
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
                 <Router>
-                    <StockListContainer />
-                    {/*<StockTableView stockData={mockStockData}/>*/}
+                    {/*<StockListContainer />*/}
+                    <StockTableView stockData={mockStockData}/>
                 </Router>
             </ThemeProvider>
         </ApolloProvider>
