@@ -21,6 +21,7 @@ slab = "0.4.2"
 tokio = { version = "0.2.21", features = ["time", "stream"] }
 futures = "0.3.5"
 
+actix = "0.9.0"
 actix-cors = "0.2.0"
 actix-web-httpauth = "0.4.1"
 mime_guess = "2.0.3"

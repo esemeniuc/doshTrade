@@ -32,24 +32,75 @@ struct Person {
 }
 
 async fn getter(tickers: &Vec<String>) -> Result<(), actix_web::Error> {
-    // std::env::set_var("RUST_LOG", "actix_http=trace");
+    std::env::set_var("RUST_LOG", "actix_http=trace");
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(n) => println!("start {}", n.as_secs()),
+        Err(_) => println!("err"),
+    }
+    std::thread::sleep(Duration::from_secs(5));
+
     let client = Client::default();
 
     // Create request builder and send request
-    let mut response = client
-        .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
-        .send()
-        .await?; // <- Send http request
-    let body = response.body().await?;
-    let p: Person = serde_json::from_slice(body.as_ref())?;
-    println!("Downloaded: {:?} ", p);
+    // let mut response = client
+    //     .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
+    //     .send()
+    //     .await?; // <- Send http request
+    // let body = response.body().await?;
+    // let p: Person = serde_json::from_slice(body.as_ref())?;
+    // println!("Downloaded: {:?} ", p);
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(n) => println!("after {}", n.as_secs()),
+        Err(_) => println!("err"),
+    }
     Ok(())
+}
+
+// fn doit() -> () {
+//     let now_future = Delay::new(Duration::from_secs(5));
+//
+//     actix_rt::spawn(now_future.map(|x| {
+//         println!("waited for 5 secs");
+//     }));
+//     /***************************/
+//
+// }
+
+
+use actix::prelude::*;
+use std::time::Duration;
+use std::time::SystemTime;
+
+struct MyActor;
+
+impl Actor for MyActor {
+    type Context = Context<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        ctx.run_interval(Duration::from_secs(1),
+                         |_this, ctx| {
+
+
+                             getter(&vec!["A".to_string()]);
+
+                         });
+    }
+}
+
+fn doit() {
+    loop {
+        for i in 1..3 {
+            actix_rt::spawn(async move { MyActor.start(); }); //start background fetcher
+        }
+        std::thread::sleep(Duration::from_secs(5));
+    }
 }
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    let now_future = actix::clock::delay_for(Duration::from_secs(5));
+    std::env::set_var("RUST_LOG", "actix_web=info");
     let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
-
 
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
@@ -77,6 +128,8 @@ async fn main() -> std::io::Result<()> {
 
     let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
+
+    actix_rt::spawn(async move { MyActor.start(); }); //start background fetcher
 
     // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
