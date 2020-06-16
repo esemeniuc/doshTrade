@@ -5,25 +5,17 @@ import {
     Box,
     Toolbar, Typography
 } from "@material-ui/core";
-import {ApolloError, gql, useSubscription} from '@apollo/client';
+import {useSubscription} from '@apollo/client';
 import {StockPrices_stockPrices} from '../graphql/__generated__/StockPrices'
 import {loader} from 'graphql.macro';
 
-const STOCK_PRICES_SUBSCRIPTION =// loader('../graphql/stockPrices.gql');
-
-gql`subscription StockPrices{
-    stockPrices(tickerSymbols: ["DDD", "EEE"]) {
-        ticker
-        price
-    }
-}`;
-
+const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
 
 function StockListContainer() {
     const tickerSymbols = ["AAPL", "BANANA"]
-    const { data, loading, error } = useSubscription(
+    const { data, loading, error } = useSubscription<StockPrices_stockPrices>(
         STOCK_PRICES_SUBSCRIPTION,
-        //{ variables: { tickerSymbols } }
+        { variables: { tickerSymbols } }
     );
 
     if (loading) return <Typography variant="caption">

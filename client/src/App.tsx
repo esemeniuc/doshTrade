@@ -6,11 +6,8 @@ import {createMuiTheme, CssBaseline, ThemeProvider} from "@material-ui/core";
 import {green, red} from "@material-ui/core/colors";
 import { getMainDefinition } from '@apollo/client/utilities';
 import { WebSocketLink } from '@apollo/link-ws';
-import MainPageContainer from './containers/MainPageContainer';
-import StockListView from "./components/StockListView";
 import StockListContainer from "./containers/StockListContainer";
 import StockTableView from "./components/StockTableView";
-import {mockStockData} from "./mocks/mockData"
 
 const authLink = setContext((_, {headers}) => {
     // get the authentication token from local storage if it exists
@@ -66,8 +63,8 @@ function App() {
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
                 <Router>
-                    {/*<StockListContainer />*/}
-                    <StockTableView stockData={mockStockData}/>
+                    <StockListContainer />
+                    {/*<StockTableView stockData={mockStockData}/>*/}
                 </Router>
             </ThemeProvider>
         </ApolloProvider>
