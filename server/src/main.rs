@@ -73,34 +73,58 @@ use std::time::SystemTime;
 
 struct MyActor;
 
+async fn foo() {
+    println!("running foo()");
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(n) => println!("start {}", n.as_secs()),
+        Err(_) => println!("err"),
+    }
+    // std::thread::sleep(Duration::from_secs(5));
+    actix::clock::delay_for(Duration::from_secs(5)).await;
+
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(n) => println!("after {}", n.as_secs()),
+        Err(_) => println!("err"),
+    }
+}
+
 impl Actor for MyActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
         ctx.run_interval(Duration::from_secs(1),
                          |_this, ctx| {
+                             println!("before");
+                             actix_rt::spawn(foo());
+                             // let a = actix::fut::wrap_future(foo());
+                             // ctx.spawn(a);
 
-
-                             getter(&vec!["A".to_string()]);
-
+                             println!("ran");
+                             // actix_rt::spawn(async { getter(&vec!["A".to_string()]) });
+                             // ctx.spawn(async { getter(&vec!["A".to_string()]) });
                          });
     }
 }
 
-fn doit() {
-    loop {
-        for i in 1..3 {
-            actix_rt::spawn(async move { MyActor.start(); }); //start background fetcher
-        }
-        std::thread::sleep(Duration::from_secs(5));
+async fn doit() {
+    println!("doit()");
+    for i in 0..8 {
+        println!("ran {}", i);
+        // MyActor.start();
+        actix_rt::spawn(foo()); //start background fetcher
+        std::thread::sleep(Duration::from_secs(1));
     }
 }
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    let now_future = actix::clock::delay_for(Duration::from_secs(5));
+    // let now_future = actix::clock::delay_for(Duration::from_secs(5));
     std::env::set_var("RUST_LOG", "actix_web=info");
-    let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
+    // let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
+    // actix_rt::spawn(foo()); //start background fetcher
+
+    // doit().await;
+    actix_rt::spawn(doit()); //start background fetcher
 
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
@@ -129,7 +153,7 @@ async fn main() -> std::io::Result<()> {
     let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
 
-    actix_rt::spawn(async move { MyActor.start(); }); //start background fetcher
+    // actix_rt::spawn(async move { MyActor.start(); }); //start background fetcher
 
     // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
