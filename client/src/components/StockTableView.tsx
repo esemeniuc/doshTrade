@@ -1,10 +1,8 @@
 import React from 'react';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
-import Container from "@material-ui/core/Container";
 import {
-    AppBar, Box,
     Chip,
-    Paper, Toolbar, Typography
+    Typography
 } from "@material-ui/core";
 
 import Table from '@material-ui/core/Table';
@@ -134,39 +132,16 @@ function StockTableHead() {
             <TableRow>
                 {columns.map((column) => (
                     <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{minWidth: column.minWidth}}
-                >
-                    {column.label}
-                </TableCell>
+                        key={column.id}
+                        align={column.align}
+                        style={{minWidth: column.minWidth}}
+                    >
+                        {column.label}
+                    </TableCell>
                 ))}
             </TableRow>
         </TableHead>
     )
-}
-
-function StickyHeadTable({stockData}: StockTableViewProps) {
-    const classes = useStyles();
-    return (
-        <Paper className={classes.root}>
-            <TableContainer>
-                <Table stickyHeader aria-label="sticky table">
-                    <StockTableHead/>
-                    <TableBody>
-                        {stockData.map((row) => {
-                            return(
-                            <TableRow hover role={"checkbox"} tabIndex={-1} key={row.code}>
-                                {columns.map((column) => {
-                                    return CellContentForDataColumn(row, column)
-                                })}
-                            </TableRow>)
-                        })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Paper>
-    );
 }
 
 export interface StockTableViewProps {
@@ -176,25 +151,22 @@ export interface StockTableViewProps {
 function StockTableView({stockData}: StockTableViewProps) {
     const classes = useStyles();
     return (
-        <div className={classes.root}>
-            <Container component="main" maxWidth='sm'>
-                <AppBar position="static">
-                    <Toolbar>
-                        <Typography variant="h6">
-                            Yolo Trader
-                        </Typography>
-                    </Toolbar>
-                </AppBar>
-                <Typography variant="caption" >
-                    <Box textAlign="center" >
-                        Since close yesterday
-                    </Box>
-                </Typography>
-                <StickyHeadTable stockData={stockData}></StickyHeadTable>
-            </Container>
-        </div>
+        <TableContainer>
+            <Table stickyHeader aria-label="sticky table">
+                <StockTableHead/>
+                <TableBody>
+                    {stockData.map((row) => {
+                        return (
+                            <TableRow hover role={"checkbox"} tabIndex={-1} key={row.code}>
+                                {columns.map((column) => {
+                                    return CellContentForDataColumn(row, column)
+                                })}
+                            </TableRow>)
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
     );
 }
-
 
 export default StockTableView;

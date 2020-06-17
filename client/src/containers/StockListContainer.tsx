@@ -8,6 +8,8 @@ import {
 import {useSubscription} from '@apollo/client';
 import {StockPrices_stockPrices} from '../graphql/__generated__/StockPrices'
 import {loader} from 'graphql.macro';
+import {mockStockData} from "../mocks/mockData";
+import StockTableView from "../components/StockTableView";
 
 const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
 
@@ -49,6 +51,7 @@ function StockListContainer() {
                     {JSON.stringify(data)}
                 </Box>
             </Typography>
+            <StockTableView stockData={mockStockData}/>
         </Container>
     );
 }

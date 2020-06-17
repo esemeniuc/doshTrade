@@ -6,8 +6,6 @@ import {green, red} from "@material-ui/core/colors";
 import { getMainDefinition } from '@apollo/client/utilities';
 import { WebSocketLink } from '@apollo/link-ws';
 import StockListContainer from "./containers/StockListContainer";
-import StockTableView from "./components/StockTableView";
-import {mockStockData} from "./mocks/mockData";
 
 const theme = createMuiTheme({
     palette: {
@@ -51,8 +49,7 @@ function App() {
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
                 <Router>
-                    {/*<StockListContainer />*/}
-                    <StockTableView stockData={mockStockData}/>
+                    <StockListContainer />
                 </Router>
             </ThemeProvider>
         </ApolloProvider>
