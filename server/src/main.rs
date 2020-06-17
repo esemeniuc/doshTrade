@@ -33,39 +33,19 @@ struct Person {
 
 async fn getter(tickers: &Vec<String>) -> Result<(), actix_web::Error> {
     std::env::set_var("RUST_LOG", "actix_http=trace");
-    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-        Ok(n) => println!("start {}", n.as_secs()),
-        Err(_) => println!("err"),
-    }
-    std::thread::sleep(Duration::from_secs(5));
-
+    println!("start {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
     let client = Client::default();
-
     // Create request builder and send request
-    // let mut response = client
-    //     .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
-    //     .send()
-    //     .await?; // <- Send http request
-    // let body = response.body().await?;
-    // let p: Person = serde_json::from_slice(body.as_ref())?;
-    // println!("Downloaded: {:?} ", p);
-    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-        Ok(n) => println!("after {}", n.as_secs()),
-        Err(_) => println!("err"),
-    }
+    let mut response = client
+        .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
+        .send()
+        .await?; // <- Send http request
+    let body = response.body().await?;
+    let p: Person = serde_json::from_slice(body.as_ref())?;
+    println!("Downloaded: {:?} ", p);
+    println!("after {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
     Ok(())
 }
-
-// fn doit() -> () {
-//     let now_future = Delay::new(Duration::from_secs(5));
-//
-//     actix_rt::spawn(now_future.map(|x| {
-//         println!("waited for 5 secs");
-//     }));
-//     /***************************/
-//
-// }
-
 
 use actix::prelude::*;
 use std::time::Duration;
@@ -73,29 +53,25 @@ use std::time::SystemTime;
 
 struct MyActor;
 
-async fn foo() {
-    println!("running foo()");
-    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-        Ok(n) => println!("start {}", n.as_secs()),
-        Err(_) => println!("err"),
-    }
+async fn foo(i: i32) {
+    println!("running foo({})", i);
+    println!("start {} - {}", i, SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
     // std::thread::sleep(Duration::from_secs(5));
     actix::clock::delay_for(Duration::from_secs(5)).await;
-
-    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-        Ok(n) => println!("after {}", n.as_secs()),
-        Err(_) => println!("err"),
-    }
+    println!("after {} - {}", i, SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
 }
 
 impl Actor for MyActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        let mut i = Box::new(0);
         ctx.run_interval(Duration::from_secs(1),
-                         |_this, ctx| {
+                         move |_this, ctx| {
                              println!("before");
-                             actix_rt::spawn(foo());
+                             let ii = *i;
+                             actix_rt::spawn(foo(ii));
+                             *i = *i + 1;
                              // let a = actix::fut::wrap_future(foo());
                              // ctx.spawn(a);
 
@@ -106,25 +82,13 @@ impl Actor for MyActor {
     }
 }
 
-async fn doit() {
-    println!("doit()");
-    for i in 0..8 {
-        println!("ran {}", i);
-        // MyActor.start();
-        actix_rt::spawn(foo()); //start background fetcher
-        std::thread::sleep(Duration::from_secs(1));
-    }
-}
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     // let now_future = actix::clock::delay_for(Duration::from_secs(5));
     std::env::set_var("RUST_LOG", "actix_web=info");
     // let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
-    // actix_rt::spawn(foo()); //start background fetcher
-
-    // doit().await;
-    actix_rt::spawn(doit()); //start background fetcher
+    MyActor.start();
 
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
