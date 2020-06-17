@@ -1,32 +1,11 @@
 import React from 'react';
-import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
-import {
-    Chip,
-    Typography
-} from "@material-ui/core";
-
+import {Chip, Typography} from "@material-ui/core";
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            flexGrow: 1,
-        },
-        menuButton: {
-            marginRight: theme.spacing(2),
-        },
-        list: {
-            marginTop: theme.spacing(4),
-            width: '100%',
-            backgroundColor: theme.palette.background.paper
-        }
-    }),
-);
 
 interface Column {
     id: 'ticker' | 'code' | 'price' | 'sinceOpen' | 'rsi';
@@ -37,7 +16,11 @@ interface Column {
 }
 
 const columns: Column[] = [
-    {id: 'ticker', label: '', minWidth: 100},
+    {
+        id: 'ticker',
+        label: '',
+        minWidth: 100,
+    },
     {
         id: 'price',
         label: 'Price',
@@ -68,6 +51,9 @@ export interface StockData {
     rsi: string;
 }
 
+export interface StockTableViewProps {
+    stockData: StockData[]
+}
 
 function RsiCellContent(column: Column, value: string | number) {
     return (
@@ -144,12 +130,7 @@ function StockTableHead() {
     )
 }
 
-export interface StockTableViewProps {
-    stockData: StockData[]
-}
-
 function StockTableView({stockData}: StockTableViewProps) {
-    const classes = useStyles();
     return (
         <TableContainer>
             <Table stickyHeader aria-label="sticky table">
