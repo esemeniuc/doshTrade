@@ -50,8 +50,9 @@ function App() {
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
                 <Router>
-                    <NotificationsProvider />
-                    {/*<StockListContainer />*/}
+                    <NotificationsProvider>
+                        <StockListContainer />
+                    </NotificationsProvider>
                 </Router>
             </ThemeProvider>
         </ApolloProvider>

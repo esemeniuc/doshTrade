@@ -1,8 +1,4 @@
-import React, {useEffect} from 'react';
-import {
-    Box,
-    Typography
-} from "@material-ui/core";
+import React, {ReactElement, useEffect} from 'react';
 import {useSubscription} from '@apollo/client';
 import {ReversalAlerts_reversalAlerts} from './graphql/__generated__/ReversalAlerts'
 import {loader} from 'graphql.macro';
@@ -43,42 +39,25 @@ function askNotificationPermission(){
     }
 }
 
-function NotificationsProvider() {
-    useEffect(()=>{
+function NotificationsProvider(props: {children: ReactElement}) {
+    useEffect(()=> {
         askNotificationPermission()
-        if(Notification.permission === 'granted') {
-            const img = '/to-do-notifications/img/icon-128.png';
-            const text = 'HEY! Your task is now overdue.';
-            setTimeout(()=>{
-                const notification = new Notification('To do list', { body: text, icon: img });
-            }, 3000)
-        }
     }, [])
 
-
     const tickerSymbols = ["TSLA", "BANANA"]
-    const { data, loading, error } = useSubscription<ReversalAlerts_reversalAlerts>(
+    const { data } = useSubscription<ReversalAlerts_reversalAlerts>(
         REVERSAL_ALERTS_SUBSCRIPTION,
         { variables: { tickerSymbols } }
     );
 
-    if (loading) return <Typography variant="caption">
-        <Box textAlign="center">
-            loading ...
-        </Box>
-    </Typography>
+    if(data && Notification.permission === 'granted') {
+        const img = '/to-do-notifications/img/icon-128.png';
+        const text = `${data.ticker} is now at price ${data?.price}`;
+        new Notification('Stock reversal!', { body: text, icon: img });
+        sessionStorage.setItem('notifications', JSON.stringify(data))
+    }
 
-    if (error) return <Typography variant="caption">
-        <Box textAlign="center">
-            error!!
-        </Box>
-    </Typography>
-
-    return (
-        <div>
-            {JSON.stringify(data)}
-        </div>
-    );
+    return props.children;
 }
 
 
