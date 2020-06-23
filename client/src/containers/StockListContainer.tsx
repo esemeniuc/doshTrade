@@ -6,18 +6,16 @@ import {
     Toolbar, Typography
 } from "@material-ui/core";
 import {useSubscription} from '@apollo/client';
-import {StockPrices_stockPrices} from '../graphql/__generated__/StockPrices'
+import {OversoldStocks} from '../graphql/__generated__/OversoldStocks'
 import {loader} from 'graphql.macro';
 import {mockStockData} from "../mocks/mockData";
 import StockTableView from "../components/StockTableView";
 
-const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
+const OVERSOLD_STOCK_SUBSCRIPTION = loader('../graphql/oversoldStocks.gql');
 
 function StockListContainer() {
-    const tickerSymbols = ["TSLA", "BANANA"]
-    const { data, loading, error } = useSubscription<StockPrices_stockPrices>(
-        STOCK_PRICES_SUBSCRIPTION,
-        { variables: { tickerSymbols } }
+    const { data, loading, error } = useSubscription<OversoldStocks>(
+        OVERSOLD_STOCK_SUBSCRIPTION
     );
 
     if (loading) return <Typography variant="caption">
