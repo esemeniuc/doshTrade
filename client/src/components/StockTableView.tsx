@@ -1,34 +1,11 @@
 import React from 'react';
-import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
-import Container from "@material-ui/core/Container";
-import {
-    AppBar, Box,
-    Chip,
-    Paper, Toolbar, Typography
-} from "@material-ui/core";
-
+import {Chip, Typography} from "@material-ui/core";
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            flexGrow: 1,
-        },
-        menuButton: {
-            marginRight: theme.spacing(2),
-        },
-        list: {
-            marginTop: theme.spacing(4),
-            width: '100%',
-            backgroundColor: theme.palette.background.paper
-        }
-    }),
-);
 
 interface Column {
     id: 'ticker' | 'code' | 'price' | 'sinceOpen' | 'rsi';
@@ -39,7 +16,11 @@ interface Column {
 }
 
 const columns: Column[] = [
-    {id: 'ticker', label: '', minWidth: 100},
+    {
+        id: 'ticker',
+        label: '',
+        minWidth: 100,
+    },
     {
         id: 'price',
         label: 'Price',
@@ -70,6 +51,9 @@ export interface StockData {
     rsi: string;
 }
 
+export interface StockTableViewProps {
+    stockData: StockData[]
+}
 
 function RsiCellContent(column: Column, value: string | number) {
     return (
@@ -134,67 +118,36 @@ function StockTableHead() {
             <TableRow>
                 {columns.map((column) => (
                     <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{minWidth: column.minWidth}}
-                >
-                    {column.label}
-                </TableCell>
+                        key={column.id}
+                        align={column.align}
+                        style={{minWidth: column.minWidth}}
+                    >
+                        {column.label}
+                    </TableCell>
                 ))}
             </TableRow>
         </TableHead>
     )
 }
 
-function StickyHeadTable({stockData}: StockTableViewProps) {
-    const classes = useStyles();
+function StockTableView({stockData}: StockTableViewProps) {
     return (
-        <Paper className={classes.root}>
-            <TableContainer>
-                <Table stickyHeader aria-label="sticky table">
-                    <StockTableHead/>
-                    <TableBody>
-                        {stockData.map((row) => {
-                            return(
+        <TableContainer>
+            <Table stickyHeader aria-label="sticky table">
+                <StockTableHead/>
+                <TableBody>
+                    {stockData.map((row) => {
+                        return (
                             <TableRow hover role={"checkbox"} tabIndex={-1} key={row.code}>
                                 {columns.map((column) => {
                                     return CellContentForDataColumn(row, column)
                                 })}
                             </TableRow>)
-                        })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Paper>
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
     );
 }
-
-export interface StockTableViewProps {
-    stockData: StockData[]
-}
-
-function StockTableView({stockData}: StockTableViewProps) {
-    const classes = useStyles();
-    return (
-        <div className={classes.root}>
-            <Container component="main" maxWidth='sm'>
-                <AppBar position="static">
-                    <Toolbar>
-                        <Typography variant="h6">
-                            Yolo Trader
-                        </Typography>
-                    </Toolbar>
-                </AppBar>
-                <Typography variant="caption" >
-                    <Box textAlign="center" >
-                        Since close yesterday
-                    </Box>
-                </Typography>
-                <StickyHeadTable stockData={stockData}></StickyHeadTable>
-            </Container>
-        </div>
-    );
-}
-
 
 export default StockTableView;
