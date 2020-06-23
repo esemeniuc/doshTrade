@@ -16,3 +16,7 @@ export interface StockPrices_stockPrices {
 export interface StockPrices {
   stockPrices: StockPrices_stockPrices[];
 }
+
+export interface StockPricesVariables {
+  tickerSymbols: string[];
+}

@@ -1,6 +1,6 @@
 import React, {ReactElement, useEffect} from 'react';
 import {useSubscription} from '@apollo/client';
-import {ReversalAlerts_reversalAlerts} from './graphql/__generated__/ReversalAlerts'
+import {ReversalAlerts} from './graphql/__generated__/ReversalAlerts'
 import {loader} from 'graphql.macro';
 
 const REVERSAL_ALERTS_SUBSCRIPTION = loader('./graphql/reversalAlerts.gql');
@@ -45,16 +45,18 @@ function NotificationsProvider(props: {children: ReactElement}) {
     }, [])
 
     const tickerSymbols = ["TSLA", "BANANA"]
-    const { data } = useSubscription<ReversalAlerts_reversalAlerts>(
+    const { data } = useSubscription<ReversalAlerts>(
         REVERSAL_ALERTS_SUBSCRIPTION,
         { variables: { tickerSymbols } }
     );
 
     if(data && Notification.permission === 'granted') {
         const img = '/to-do-notifications/img/icon-128.png';
-        const text = `${data.ticker} is now at price ${data?.price}`;
-        new Notification('Stock reversal!', { body: text, icon: img });
-        sessionStorage.setItem('notifications', JSON.stringify(data))
+        console.log(data.reversalAlerts)
+        data.reversalAlerts.map(stock => {
+            const text = `${stock.ticker} is now at price ${stock.price}`;
+            return new Notification('Stock reversal!', { body: text, icon: img });
+        })
     }
 
     return props.children;
