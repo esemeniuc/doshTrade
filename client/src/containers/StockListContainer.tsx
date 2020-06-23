@@ -31,7 +31,7 @@ function StockListContainer() {
     </Typography>
 
     return (
-        <Container component="main" maxWidth='sm'>
+        <>
             <AppBar position="static">
                 <Toolbar>
                     <Typography variant="h6">
@@ -39,18 +39,20 @@ function StockListContainer() {
                     </Typography>
                 </Toolbar>
             </AppBar>
-            <Typography variant="caption">
-                <Box textAlign="center">
-                    Since close yesterday
-                </Box>
-            </Typography>
-            <Typography variant="caption">
-                <Box textAlign="center">
-                    {JSON.stringify(data)}
-                </Box>
-            </Typography>
-            <StockTableView stockData={mockStockData}/>
-        </Container>
+            <Container component="main" maxWidth='sm'>
+                <Typography variant="caption">
+                    <Box textAlign="center">
+                        Since close yesterday
+                    </Box>
+                </Typography>
+                <Typography variant="caption">
+                    <Box textAlign="center">
+                        {JSON.stringify(data)}
+                    </Box>
+                </Typography>
+                <StockTableView stockData={mockStockData}/>
+            </Container>
+        </>
     );
 }
 
