@@ -6,6 +6,7 @@ import {
     Chip,
     Paper, Toolbar, Typography
 } from "@material-ui/core";
+import StockTableViewRow from './StockTableViewRow'
 
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -30,7 +31,7 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-interface Column {
+export interface Column {
     id: 'ticker' | 'code' | 'price' | 'sinceOpen' | 'rsi';
     label: string;
     minWidth?: number;
@@ -38,7 +39,7 @@ interface Column {
     format?: (value: number) => string;
 }
 
-const columns: Column[] = [
+export const columns: Column[] = [
     {id: 'ticker', label: '', minWidth: 100},
     {
         id: 'price',
@@ -70,64 +71,6 @@ export interface StockData {
     rsi: string;
 }
 
-
-function RsiCellContent(column: Column, value: string | number) {
-    return (
-        <TableCell key={column.id} align={column.align}>
-            <Typography variant="subtitle2">
-                {value}
-            </Typography>
-        </TableCell>
-    )
-}
-
-function TickerCellContent(column: Column, value: string | number) {
-    return (
-        <TableCell key={column.id} align={column.align}>
-            <Typography variant="h6">
-                {value}
-            </Typography>
-        </TableCell>
-    )
-}
-
-function PriceCellContent(column: Column, value: string | number) {
-    return (
-        <TableCell key={column.id} align={column.align}>
-            <Chip label={`${value}`} color='primary'/>
-        </TableCell>)
-}
-
-function SinceOpenCellContent(column: Column, value: number) {
-    const plusSign = value > 0 ? '+' : ''
-    return (
-        <TableCell key={column.id} align={column.align}>
-            <Typography variant="subtitle1">
-                {plusSign + value.toFixed(2) + '%'}
-            </Typography>
-        </TableCell>)
-}
-
-function CellContentForDataColumn(rowData: StockData, column: Column) {
-    const value = rowData[column.id];
-    switch (column.id) {
-        case 'rsi':
-            return RsiCellContent(column, value)
-        case 'ticker':
-            return TickerCellContent(column, value)
-        case 'price':
-            return PriceCellContent(column, value)
-        case 'sinceOpen':
-            return SinceOpenCellContent(column, value as number)
-        default:
-            return (
-                <TableCell key={column.id} align={column.align}>
-                    {column.format && typeof value === 'number' ? column.format(value) : value}
-                </TableCell>
-            );
-    }
-}
-
 function StockTableHead() {
     return (
         <TableHead>
@@ -155,12 +98,7 @@ function StickyHeadTable({stockData}: StockTableViewProps) {
                     <StockTableHead/>
                     <TableBody>
                         {stockData.map((row) => {
-                            return(
-                            <TableRow hover role={"checkbox"} tabIndex={-1} key={row.code}>
-                                {columns.map((column) => {
-                                    return CellContentForDataColumn(row, column)
-                                })}
-                            </TableRow>)
+                            return StockTableViewRow(row, columns)
                         })}
                     </TableBody>
                 </Table>

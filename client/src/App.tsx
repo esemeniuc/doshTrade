@@ -9,6 +9,7 @@ import StockListView from "./components/StockListView";
 import StockListContainer from "./containers/StockListContainer";
 import StockTableView from "./components/StockTableView";
 import {mockStockData} from "./mocks/mockData"
+import * as registerServiceWorker from './push/registerServiceWorker';
 
 const authLink = setContext((_, {headers}) => {
     // get the authentication token from local storage if it exists
@@ -37,7 +38,12 @@ const client = new ApolloClient({
     })),
 });
 
+
 function App() {
+    React.useEffect(() => {
+        registerServiceWorker.register();
+    }, [])
+
     return (
         <ApolloProvider client={client}>
             <ThemeProvider theme={theme}>

@@ -23,11 +23,11 @@ const isLocalhost = Boolean(
 type Config = {
   onSuccess?: (registration: ServiceWorkerRegistration) => void;
   onUpdate?: (registration: ServiceWorkerRegistration) => void;
+  onReady?: (registration: ServiceWorkerRegistration) => void;
 };
 
 export function register(config?: Config) {
-  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
-    // The URL constructor is available in all browsers that support SW.
+  if ('serviceWorker' in navigator && 'PushManager' in window) { // TODO: check for process.env.NODE_ENV === 'production'
     const publicUrl = new URL(
       process.env.PUBLIC_URL,
       window.location.href
@@ -40,7 +40,7 @@ export function register(config?: Config) {
     }
 
     window.addEventListener('load', () => {
-      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+      const swUrl = `${process.env.PUBLIC_URL}/sw.js`;
 
       if (isLocalhost) {
         // This is running on localhost. Let's check if a service worker still exists or not.
@@ -48,11 +48,10 @@ export function register(config?: Config) {
 
         // Add some additional logging to localhost, pointing developers to the
         // service worker/PWA documentation.
-        navigator.serviceWorker.ready.then(() => {
-          console.log(
-            'This web app is being served cache-first by a service ' +
-              'worker. To learn more, visit https://bit.ly/CRA-PWA'
-          );
+        navigator.serviceWorker.ready.then((registration) => {
+          if (config && config.onReady) {
+            config.onReady(registration)
+          }
         });
       } else {
         // Is not localhost. Just register service worker
@@ -118,6 +117,7 @@ function checkValidServiceWorker(swUrl: string, config?: Config) {
         response.status === 404 ||
         (contentType != null && contentType.indexOf('javascript') === -1)
       ) {
+        console.log("No service worker found")
         // No service worker found. Probably a different app. Reload the page.
         navigator.serviceWorker.ready.then(registration => {
           registration.unregister().then(() => {
