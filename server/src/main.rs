@@ -12,14 +12,11 @@ mod handler;
 mod models;
 mod asyncgql;
 
-use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
-use actix_web_actors::ws;
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use actix_web::{guard, web, App, HttpServer, Result};
 use async_graphql::Schema;
-use async_graphql_actix_web::{GQLRequest, GQLResponse, WSSubscription};
 use actix_cors::Cors;
-use asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
-use clap::{Arg, App as ClapApp, SubCommand};
+use asyncgql::{MutationRoot, QueryRoot, Storage, SubscriptionRoot};
+use clap::{Arg, App as ClapApp};
 use actix_web::client::Client;
 use log::{info, trace, warn, error};
 use serde::{Serialize, Deserialize};
@@ -60,8 +57,6 @@ async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
 use actix::prelude::*;
 use std::time::Duration;
 use std::time::SystemTime;
-use actix_web::dev::Service;
-use futures::{TryStreamExt, TryFutureExt};
 
 struct MyActor;
 
@@ -77,14 +72,9 @@ impl Actor for MyActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        let mut i = Box::new(0);
         ctx.run_interval(Duration::from_secs(1),
                          move |_this, ctx| {
-                             let ii = *i;
                              // actix_rt::spawn(foo(ii));
-                             *i = *i + 1;
-                             // let a = actix::fut::wrap_future(foo());
-                             // ctx.spawn(a);
                              actix_rt::spawn(getter_wrap(vec!["A".to_string()]));
                              // ctx.spawn(actix::fut::wrap_future(getter(&vec!["A".to_string()])));
                          });
