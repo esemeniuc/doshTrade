@@ -1,13 +1,12 @@
 import { StockData, Column } from "./StockTableView";
 import React from "react";
 import { TableCell, Typography, Chip, TableRow, Button } from "@material-ui/core";
-import usePushNotifications from "../push/usePushNotifications";
+import usePushNotifications, {PushContext} from "../push/usePushNotifications";
 import { Notifications, NotificationsNone, NotificationsOff} from '@material-ui/icons';
 import useLocalStorage from '../push/useLocalStorage'
 
 function BellButton({ ticker }: { ticker: String }) {
     const {
-        userConsent,
         pushNotificationSupported,
         userSubscription,
         onClickAskUserPermission,
@@ -17,8 +16,8 @@ function BellButton({ ticker }: { ticker: String }) {
         loading
         } = usePushNotifications();
     const [subscribedTickers, setSubscribedTickers] = useLocalStorage('subscribedTickers', []);
-    const isConsentGranted = userConsent === "granted";
-
+    const pushContext = React.useContext(PushContext)
+    
     let BellIcon;
     let color;
     let handler;
@@ -30,31 +29,28 @@ function BellButton({ ticker }: { ticker: String }) {
         BellIcon = NotificationsOff
         color = 'gray'
         handler = () => { alert("push not supported")}
-    } else if (userConsent === 'default') {
+    } else if (pushContext.userConsent === 'default') {
         BellIcon = NotificationsNone
         color = 'gray'
         handler = () => {
-            alert("push permission default, should ask")
             onClickAskUserPermission().then(() => {
                 onClickSubscribeToPushNotification()
             })
         }
-    } else if (userConsent === 'denied') {
+    } else if (pushContext.userConsent === 'denied') {
         BellIcon = NotificationsOff
         color = 'gray'
-        handler = () => {alert("push permission denied, should remind them to turn on")}
+        handler = () => {alert("push permission denied, should turn it on to enable push")}
     } else if (!userSubscription) {
         BellIcon = NotificationsNone
         color = 'gray'
         handler = () => {
-            alert("user not yet subscribed")
             onClickSubscribeToPushNotification()
         }
     } else if (!subscribedTickers.includes(ticker)) {
         BellIcon = NotificationsNone
         color = 'red'
         handler = () => {
-            alert("subscribed tickers doesn't include this ticker")
             // TODO: send tickers to server
             setSubscribedTickers([...subscribedTickers, ticker])
         }
@@ -120,8 +116,6 @@ function StockTableViewRow(row: StockData, columns: Column[]) {
 }
 
 function cellContent(rowData: StockData, column: Column) {
-    
-
     const value = rowData[column.id];
     switch (column.id) {
         case 'rsi':
