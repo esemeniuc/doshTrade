@@ -21,6 +21,7 @@ use actix_cors::Cors;
 use asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
 use clap::{Arg, App as ClapApp, SubCommand};
 use actix_web::client::Client;
+use log::{info, trace, warn, error};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,25 +32,36 @@ struct Person {
     latest_update: u64,
 }
 
-async fn getter(tickers: &Vec<String>) -> Result<(), actix_web::Error> {
-    std::env::set_var("RUST_LOG", "actix_http=trace");
-    println!("start {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+async fn getter_wrap(tickers: Vec<String>) {
+    match getter(tickers).await {
+        Ok(_) => trace!("getter() completed successfully"),
+        Err(e) => error!("getter() failed with error {}", e),
+    };
+}
+
+async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
+    // std::env::set_var("RUST_LOG", "actix_http=trace");
+    trace!("getting updates");
+    trace!("start {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
     let client = Client::default();
     // Create request builder and send request
     let mut response = client
         .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
         .send()
         .await?; // <- Send http request
+
     let body = response.body().await?;
     let p: Person = serde_json::from_slice(body.as_ref())?;
-    println!("Downloaded: {:?} ", p);
-    println!("after {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+    trace!("Downloaded: {:?} ", p);
+    trace!("after {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
     Ok(())
 }
 
 use actix::prelude::*;
 use std::time::Duration;
 use std::time::SystemTime;
+use actix_web::dev::Service;
+use futures::{TryStreamExt, TryFutureExt};
 
 struct MyActor;
 
@@ -68,16 +80,13 @@ impl Actor for MyActor {
         let mut i = Box::new(0);
         ctx.run_interval(Duration::from_secs(1),
                          move |_this, ctx| {
-                             println!("before");
                              let ii = *i;
-                             actix_rt::spawn(foo(ii));
+                             // actix_rt::spawn(foo(ii));
                              *i = *i + 1;
                              // let a = actix::fut::wrap_future(foo());
                              // ctx.spawn(a);
-
-                             println!("ran");
-                             // actix_rt::spawn(async { getter(&vec!["A".to_string()]) });
-                             // ctx.spawn(async { getter(&vec!["A".to_string()]) });
+                             actix_rt::spawn(getter_wrap(vec!["A".to_string()]));
+                             // ctx.spawn(actix::fut::wrap_future(getter(&vec!["A".to_string()])));
                          });
     }
 }
