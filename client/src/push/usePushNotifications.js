@@ -14,7 +14,6 @@ const pushNotificationSupported = isPushNotificationSupported();
 //first thing to do: check if the push notifications are supported by the browser
 
 export default function usePushNotifications() {
-  const pushContext = React.useContext(PushContext)
   //to manage the user consent: Notification.permission is a JavaScript native function that return the current state of the permission
   //We initialize the userConsent with that value
   const [userSubscription, setUserSubscription] = useState(null);
@@ -61,7 +60,6 @@ export default function usePushNotifications() {
     setError(false);
     return new Promise(function(resolve) {
       askUserPermission().then(consent => {
-        pushContext.userConsent = consent
         resolve()
         if (consent !== "granted") {
           setError({

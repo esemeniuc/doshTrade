@@ -1,9 +1,11 @@
 import { StockData, Column } from "./StockTableView";
 import React from "react";
 import { TableCell, Typography, Chip, TableRow, Button } from "@material-ui/core";
-import usePushNotifications, {PushContext} from "../push/usePushNotifications";
+import usePushNotifications from "../push/usePushNotifications";
 import { Notifications, NotificationsNone, NotificationsOff} from '@material-ui/icons';
 import useLocalStorage from '../push/useLocalStorage'
+import { AppContext } from "../redux/context";
+import { updatePushPermission } from "../redux/actions";
 
 function BellButton({ ticker }: { ticker: String }) {
     const {
@@ -11,13 +13,11 @@ function BellButton({ ticker }: { ticker: String }) {
         userSubscription,
         onClickAskUserPermission,
         onClickSubscribeToPushNotification,
-        pushServerSubscriptionId,
         error,
-        loading
         } = usePushNotifications();
     const [subscribedTickers, setSubscribedTickers] = useLocalStorage('subscribedTickers', []);
-    const pushContext = React.useContext(PushContext)
-    
+    const { state, dispatch } = React.useContext(AppContext)
+    const userConsent =  state.pushState.userConsent
     let BellIcon;
     let color;
     let handler;
@@ -29,22 +29,25 @@ function BellButton({ ticker }: { ticker: String }) {
         BellIcon = NotificationsOff
         color = 'gray'
         handler = () => { alert("push not supported")}
-    } else if (pushContext.userConsent === 'default') {
+    } else if (userConsent === 'default') {
         BellIcon = NotificationsNone
         color = 'gray'
         handler = () => {
+            dispatch(updatePushPermission())
             onClickAskUserPermission().then(() => {
+                dispatch(updatePushPermission())
                 onClickSubscribeToPushNotification()
             })
         }
-    } else if (pushContext.userConsent === 'denied') {
+    } else if (userConsent === 'denied') {
         BellIcon = NotificationsOff
         color = 'gray'
         handler = () => {alert("push permission denied, should turn it on to enable push")}
     } else if (!userSubscription) {
         BellIcon = NotificationsNone
-        color = 'gray'
+        color = 'red'
         handler = () => {
+            dispatch(updatePushPermission())
             onClickSubscribeToPushNotification()
         }
     } else if (!subscribedTickers.includes(ticker)) {
@@ -65,7 +68,7 @@ function BellButton({ ticker }: { ticker: String }) {
         }
     }
 
-    return (<Button style={{color:color}} onClick={handler}><BellIcon></BellIcon></Button>)
+    return (<Button style={{color:color}} onClick={handler}><BellIcon/></Button>)
 }
 
 function RsiCellContent(column: Column, value: string | number) {

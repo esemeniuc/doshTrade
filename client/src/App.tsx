@@ -10,6 +10,7 @@ import StockListContainer from "./containers/StockListContainer";
 import StockTableView from "./components/StockTableView";
 import {mockStockData} from "./mocks/mockData"
 import * as registerServiceWorker from './push/registerServiceWorker';
+import { ContextProvider } from './redux/context';
 
 const authLink = setContext((_, {headers}) => {
     // get the authentication token from local storage if it exists
@@ -47,11 +48,13 @@ function App() {
     return (
         <ApolloProvider client={client}>
             <ThemeProvider theme={theme}>
-                <CssBaseline/>
-                <Router>
-                    {/*<StockListContainer />*/}
-                    <StockTableView stockData={mockStockData}/>
-                </Router>
+                <ContextProvider>
+                    <CssBaseline/>
+                    <Router>
+                        {/*<StockListContainer />*/}
+                        <StockTableView stockData={mockStockData}/>
+                    </Router>
+                </ContextProvider>
             </ThemeProvider>
         </ApolloProvider>
     );
