@@ -1,16 +1,43 @@
-import { PushActionTypes, StockSubscriptionActionType } from "./types";
+import { PushActionTypes, StockSubscriptionActionType, PushAction, StockSubscriptionAction } from "./types";
 
-export const updatePushPermission = () => ({
-    type: PushActionTypes.USER_PERMISSION,
-    payload: { userConsent: Notification.permission }
+// push
+export const pushPermissionRequest = (): PushAction => ({
+    type: PushActionTypes.PERMISSION_REQUESTED,
+    payload: { isAsking: true }
 })
 
-export const addTicker = (ticker:string) => ({
-    type: StockSubscriptionActionType.ADD_TICKER,
+export const pushPermissionGranted = (): PushAction => ({
+    type: PushActionTypes.PERMISSION_GRANTED,
+    payload: { userConsent: Notification.permission, isAsking: false }
+})
+
+export const pushPermissionDenied = (): PushAction => ({
+    type: PushActionTypes.PERMISSION_DENIED,
+    payload: { userConsent: Notification.permission, isAsking: false }
+})
+
+export const subscriptionRegistrationRequest = (subscription: PushSubscription): PushAction => ({
+    type: PushActionTypes.REGISTRATION_REQUESTED,
+    payload: { isRegistering: true, subscription }
+})
+
+export const subscriptionRegistrationSuccess = (): PushAction => ({
+    type: PushActionTypes.REGISTRATION_SUCCESS,
+    payload: { isRegistering: false }
+})
+
+export const subscriptionRegistrationFailure = (): PushAction => ({
+    type: PushActionTypes.REGISTRATION_SUCCESS,
+    payload: { isRegistering: false }
+})
+
+// stocks
+export const tickerSubscribe = (ticker: string): StockSubscriptionAction => ({
+    type: StockSubscriptionActionType.TICKER_ADD,
     payload: { ticker }
 })
 
-export const removeTicker = (ticker:string) => ({
-    type: StockSubscriptionActionType.ADD_TICKER,
+export const tickerUnsubscribe = (ticker: string): StockSubscriptionAction => ({
+    type: StockSubscriptionActionType.TICKER_REMOVE,
     payload: { ticker }
 })

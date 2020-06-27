@@ -1,34 +1,64 @@
 import { IPushState, PushAction, PushActionTypes, IState, AppAction, IStockSubscriptionState, StockSubscriptionAction, StockSubscriptionActionType } from "./types";
 
 
-export const mainReducer = ( { pushState, stockSubscriptionState } : IState, action: AppAction) => ({
+export const mainReducer = ({ pushState, stockSubscriptionState }: IState, action: AppAction) => ({
     pushState: pushReducer(pushState, action as PushAction),
     stockSubscriptionState: stockSubscriptionReducer(stockSubscriptionState, action as StockSubscriptionAction)
 });
 
 const pushReducer = (state: IPushState, action: PushAction): IPushState => {
     switch (action.type) {
-      case PushActionTypes.USER_PERMISSION:
-        return {
-            ...state,
-            userConsent: action.payload.userConsent,
-          }
+        case PushActionTypes.PERMISSION_REQUESTED:
+            return {
+                ...state,
+                isAsking: true
+            }
+        case PushActionTypes.PERMISSION_GRANTED:
+            return {
+                ...state,
+                userConsent: action.payload.userConsent,
+                isAsking: false
+            }
+        case PushActionTypes.PERMISSION_DENIED:
+            return {
+                ...state,
+                userConsent: action.payload.userConsent,
+                isAsking: false
+            }
+        case PushActionTypes.REGISTRATION_REQUESTED:
+            return {
+                ...state,
+                subscription: action.payload.subscription,
+            }
+        case PushActionTypes.REGISTRATION_SUCCESS:
+            return {
+                ...state,
+                isRegistering: false
+            }
+        case PushActionTypes.REGISTRATION_FAILURE:
+            return {
+                ...state,
+                isRegistering: false
+            }
+
         default:
             return state;
     }
 }
-  
+
 const stockSubscriptionReducer = (state: IStockSubscriptionState, action: StockSubscriptionAction): IStockSubscriptionState => {
     switch (action.type) {
-        case StockSubscriptionActionType.ADD_TICKER:
-          return {
-              ...state,
-            }
-        case StockSubscriptionActionType.REMOVE_TICKER:
+        case StockSubscriptionActionType.TICKER_ADD:
             return {
                 ...state,
-                }
+                tickers: [...state.tickers, action.payload.ticker]
+            }
+        case StockSubscriptionActionType.TICKER_REMOVE:
+            return {
+                ...state,
+                tickers: state.tickers.filter(t => t !== action.payload.ticker)
+            }
         default:
             return state;
-      }
-  }
+    }
+}
