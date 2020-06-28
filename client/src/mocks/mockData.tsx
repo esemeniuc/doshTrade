@@ -1,4 +1,4 @@
-import {StockData} from "../components/StockTableView"
+    import {StockData} from "../components/StockTableView"
 
 function createData(ticker: string, code: string, price: number, sinceOpen: number, rsi: string): StockData {
     return {ticker, code, price, sinceOpen, rsi};

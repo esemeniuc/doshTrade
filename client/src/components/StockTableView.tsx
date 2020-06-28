@@ -1,5 +1,5 @@
 import React from 'react';
-import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Container from "@material-ui/core/Container";
 import {
     AppBar, Box,
@@ -40,7 +40,7 @@ export interface Column {
 }
 
 export const columns: Column[] = [
-    {id: 'ticker', label: '', minWidth: 100},
+    { id: 'ticker', label: '', minWidth: 100 },
     {
         id: 'price',
         label: 'Price',
@@ -77,62 +77,34 @@ function StockTableHead() {
             <TableRow>
                 {columns.map((column) => (
                     <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{minWidth: column.minWidth}}
-                >
-                    {column.label}
-                </TableCell>
+                        key={column.id}
+                        align={column.align}
+                        style={{ minWidth: column.minWidth }}
+                    >
+                        {column.label}
+                    </TableCell>
                 ))}
             </TableRow>
         </TableHead>
     )
 }
 
-function StickyHeadTable({stockData}: StockTableViewProps) {
-    const classes = useStyles();
+function StockTableView({ stockData }: { stockData: StockData[] }) {
     return (
-        <Paper className={classes.root}>
-            <TableContainer>
-                <Table stickyHeader aria-label="sticky table">
-                    <StockTableHead/>
-                    <TableBody>
-                        {stockData.map((row) => {
-                            return StockTableViewRow(row, columns)
-                        })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Paper>
+        // <Paper className={classes.root}>
+        <TableContainer>
+            <Table stickyHeader aria-label="sticky table">
+                <StockTableHead />
+                <TableBody>
+                    {stockData.map((row: StockData) => {
+                        return StockTableViewRow(row, columns)
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
+        // </Paper>
+
     );
 }
-
-export interface StockTableViewProps {
-    stockData: StockData[]
-}
-
-function StockTableView({stockData}: StockTableViewProps) {
-    const classes = useStyles();
-    return (
-        <div className={classes.root}>
-            <Container component="main" maxWidth='sm'>
-                <AppBar position="static">
-                    <Toolbar>
-                        <Typography variant="h6">
-                            Yolo Trader
-                        </Typography>
-                    </Toolbar>
-                </AppBar>
-                <Typography variant="caption" >
-                    <Box textAlign="center" >
-                        Since close yesterday
-                    </Box>
-                </Typography>
-                <StickyHeadTable stockData={stockData}></StickyHeadTable>
-            </Container>
-        </div>
-    );
-}
-
 
 export default StockTableView;
