@@ -12,15 +12,13 @@ mod handler;
 mod models;
 mod asyncgql;
 
-use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
-use actix_web_actors::ws;
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use actix_web::{guard, web, App, HttpServer, Result};
 use async_graphql::Schema;
-use async_graphql_actix_web::{GQLRequest, GQLResponse, WSSubscription};
 use actix_cors::Cors;
-use asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
-use clap::{Arg, App as ClapApp, SubCommand};
+use asyncgql::{MutationRoot, QueryRoot, Storage, SubscriptionRoot};
+use clap::{Arg, App as ClapApp};
 use actix_web::client::Client;
+use log::{info, trace, warn, error};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,25 +29,65 @@ struct Person {
     latest_update: u64,
 }
 
-async fn getter(tickers: &Vec<String>) -> Result<(), actix_web::Error> {
-    // std::env::set_var("RUST_LOG", "actix_http=trace");
-    let client = Client::default();
+async fn getter_wrap(tickers: Vec<String>) {
+    match getter(tickers).await {
+        Ok(_) => trace!("getter() completed successfully"),
+        Err(e) => error!("getter() failed with error {}", e),
+    };
+}
 
+async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
+    // std::env::set_var("RUST_LOG", "actix_http=trace");
+    trace!("getting updates");
+    trace!("start {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+    let client = Client::default();
     // Create request builder and send request
     let mut response = client
         .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
         .send()
         .await?; // <- Send http request
+
     let body = response.body().await?;
     let p: Person = serde_json::from_slice(body.as_ref())?;
-    println!("Downloaded: {:?} ", p);
+    trace!("Downloaded: {:?} ", p);
+    trace!("after {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
     Ok(())
 }
 
+use actix::prelude::*;
+use std::time::Duration;
+use std::time::SystemTime;
+
+struct MyActor;
+
+async fn foo(i: i32) {
+    println!("running foo({})", i);
+    println!("start {} - {}", i, SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+    // std::thread::sleep(Duration::from_secs(5));
+    actix::clock::delay_for(Duration::from_secs(5)).await;
+    println!("after {} - {}", i, SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+}
+
+impl Actor for MyActor {
+    type Context = Context<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        ctx.run_interval(Duration::from_secs(1),
+                         move |_this, ctx| {
+                             // actix_rt::spawn(foo(ii));
+                             actix_rt::spawn(getter_wrap(vec!["A".to_string()]));
+                             // ctx.spawn(actix::fut::wrap_future(getter(&vec!["A".to_string()])));
+                         });
+    }
+}
+
+
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
-
+    // let now_future = actix::clock::delay_for(Duration::from_secs(5));
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    // let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
+    MyActor.start();
 
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
@@ -77,6 +115,8 @@ async fn main() -> std::io::Result<()> {
 
     let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
+
+    // actix_rt::spawn(async move { MyActor.start(); }); //start background fetcher
 
     // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)

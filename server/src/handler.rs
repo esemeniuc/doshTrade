@@ -1,9 +1,7 @@
-use std::sync::Arc;
 use std::borrow::Cow;
 use rust_embed::RustEmbed;
-use actix_web::{web, Error, HttpRequest, HttpResponse,Result};
+use actix_web::{web, HttpRequest, HttpResponse,Result};
 use actix_web::body::Body;
-use actix_web::http::header::Header;
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use crate::db::DbPool;
 use crate::graphql;
