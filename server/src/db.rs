@@ -1,6 +1,5 @@
 use diesel::prelude::*;
 use diesel::r2d2::{Pool, PooledConnection, ConnectionManager};
-use std::env;
 use diesel::connection::SimpleConnection;
 
 pub type DbPool = Pool<ConnectionManager<SqliteConnection>>;
