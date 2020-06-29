@@ -57,16 +57,9 @@ async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
 use actix::prelude::*;
 use std::time::Duration;
 use std::time::SystemTime;
+use crate::handler::send_it;
 
 struct MyActor;
-
-async fn foo(i: i32) {
-    println!("running foo({})", i);
-    println!("start {} - {}", i, SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
-    // std::thread::sleep(Duration::from_secs(5));
-    actix::clock::delay_for(Duration::from_secs(5)).await;
-    println!("after {} - {}", i, SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
-}
 
 impl Actor for MyActor {
     type Context = Context<Self>;
@@ -88,7 +81,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     // let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
     MyActor.start();
-
+send_it().await;
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
