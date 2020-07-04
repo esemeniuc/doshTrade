@@ -60,7 +60,7 @@ function App() {
                 <ContextProvider>
                     <CssBaseline />
                     <Router>
-                        <StockTableView stockData={mockStockData} />
+                        <StockListContainer></StockListContainer>
                     </Router>
                 </ContextProvider>
             </ThemeProvider>

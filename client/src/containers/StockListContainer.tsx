@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import Container from "@material-ui/core/Container";
 import {
     AppBar,
     Box,
     Toolbar, Typography
 } from "@material-ui/core";
-import {useSubscription} from '@apollo/client';
-import {StockPrices_stockPrices} from '../graphql/__generated__/StockPrices'
-import {loader} from 'graphql.macro';
-import {mockStockData} from "../mocks/mockData";
+import { useSubscription } from '@apollo/client';
+import { StockPrices_stockPrices } from '../graphql/__generated__/StockPrices'
+import { loader } from 'graphql.macro';
+import { mockStockData } from "../mocks/mockData";
 import StockTableView from "../components/StockTableView";
+import TransitionsModal from './TransitionsModal';
+import { AppContext } from '../redux/context';
 
 const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
 
@@ -19,6 +21,7 @@ function StockListContainer() {
         STOCK_PRICES_SUBSCRIPTION,
         { variables: { tickerSymbols } }
     );
+    const { state: { pushState } } = useContext(AppContext)
 
     if (loading) return <Typography variant="caption">
         <Box textAlign="center">
@@ -51,7 +54,8 @@ function StockListContainer() {
                     {JSON.stringify(data)}
                 </Box>
             </Typography>
-            <StockTableView stockData={mockStockData}/>
+            <TransitionsModal open={pushState.isAsking} title={"Push Access"} description={"You will be notified when your favorite stocks dip"} />
+            <StockTableView stockData={mockStockData} />
         </Container>
     );
 }

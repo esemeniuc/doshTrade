@@ -44,7 +44,7 @@ export const columns: Column[] = [
     {
         id: 'price',
         label: 'Price',
-        minWidth: 120,
+        minWidth: 100,
         align: 'right',
         format: (value: number) => value.toLocaleString('en-US'),
     },
@@ -57,7 +57,7 @@ export const columns: Column[] = [
     {
         id: 'rsi',
         label: 'RSI',
-        minWidth: 120,
+        minWidth: 80,
         align: 'right',
         format: (value: number) => value.toFixed(2),
     },

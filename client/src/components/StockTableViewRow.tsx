@@ -1,28 +1,42 @@
 import { StockData, Column } from "./StockTableView";
 import React from "react";
-import { TableCell, Typography, Chip, TableRow, Button } from "@material-ui/core";
+import { TableCell, Typography, Chip, TableRow, IconButton, makeStyles, Theme, createStyles } from "@material-ui/core";
 import { Notifications, NotificationsNone, NotificationsOff } from '@material-ui/icons';
 import { AppContext } from "../redux/context";
 import { pushPermissionRequest, tickerSubscribe, tickerUnsubscribe } from "../redux/actions";
 
+const useStyles = makeStyles((theme: Theme) =>
+    createStyles({
+        mutedButton: {
+            color: 'gray'
+        },
+        activeButton: {
+            color: 'red'
+        },
+    }),
+);
+
+
 function BellButton({ ticker }: { ticker: string }) {
     const { state: { stockSubscriptionState: { tickers }, pushState: { userConsent, subscription } }, dispatch } = React.useContext(AppContext)
+    const classes = useStyles();
+
     // TODO: handle these states somewhere
     // if (error) {
-    //     return (<Button style={{ color: 'gray' }} onClick={() => { alert("error! " + error) }}><NotificationsOff /></Button>)
+    //     return (<IconButton style={{ color: 'gray' }} onClick={() => { alert("error! " + error) }}><NotificationsOff /></IconButton>)
     // } else if (!pushNotificationSupported) {
-    //     return (<Button style={{ color: 'gray' }} onClick={() => { alert("push not supported") }}><NotificationsOff /></Button>)
+    //     return (<IconButton style={{ color: 'gray' }} onClick={() => { alert("push not supported") }}><NotificationsOff /></IconButton>)
     // } 
     if (userConsent === 'default') {
-        return (<Button style={{ color: 'gray' }} onClick={() => { dispatch(pushPermissionRequest()) }}><NotificationsNone /></Button>)
+        return (<IconButton className={classes.mutedButton} onClick={() => { dispatch(pushPermissionRequest()) }}><NotificationsNone /></IconButton>)
     } else if (userConsent === 'denied') {
-        return (<Button style={{ color: 'gray' }} onClick={() => { alert("push permission is denied") }}><NotificationsOff /></Button>)
+        return (<IconButton className={classes.mutedButton} onClick={() => { alert("push permission is denied") }}><NotificationsOff /></IconButton>)
     } else if (!subscription) {
-        return (<Button style={{ color: 'red' }} onClick={() => { dispatch(pushPermissionRequest()) }}><NotificationsNone /></Button>)
+        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(pushPermissionRequest()) }}><NotificationsNone /></IconButton>)
     } else if (!tickers.includes(ticker)) {
-        return (<Button style={{ color: 'red' }} onClick={() => { dispatch(tickerSubscribe(ticker)) }}><NotificationsNone /></Button>)
+        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerSubscribe(ticker)) }}><NotificationsNone /></IconButton>)
     } else {
-        return (<Button style={{ color: 'red' }} onClick={() => { dispatch(tickerUnsubscribe(ticker)) }}><Notifications /></Button>)
+        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerUnsubscribe(ticker)) }}><Notifications /></IconButton>)
     }
 }
 
@@ -49,7 +63,9 @@ function TickerCellContent(column: Column, value: string | number) {
 function PriceCellContent(column: Column, value: string | number) {
     return (
         <TableCell key={column.id} align={column.align}>
-            <Chip label={`${value}`} color='primary' />
+            <Typography variant="subtitle2">
+                {value}
+            </Typography>
         </TableCell>)
 }
 
@@ -57,9 +73,7 @@ function SinceOpenCellContent(column: Column, value: number) {
     const plusSign = value > 0 ? '+' : ''
     return (
         <TableCell key={column.id} align={column.align}>
-            <Typography variant="subtitle1">
-                {plusSign + value.toFixed(2) + '%'}
-            </Typography>
+            <Chip label={`${plusSign + value.toFixed(2) + '%'}`} color='primary' />
         </TableCell>)
 }
 

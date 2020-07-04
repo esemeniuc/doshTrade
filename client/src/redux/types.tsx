@@ -25,9 +25,9 @@ export enum PushActionTypes {
 
 export type IPushState = {
     userConsent: NotificationPermission,
-    isAsking: Boolean,
+    isAsking: boolean,
     subscription?: PushSubscription,
-    isRegistering: Boolean
+    isRegistering: boolean
 }
 
 const initialPushState = {
