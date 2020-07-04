@@ -41,38 +41,27 @@ function BellButton({ ticker }: { ticker: string }) {
 }
 
 function RsiCellContent(column: Column, value: string | number) {
-    return (
-        <TableCell key={column.id}>
-            {value}
-        </TableCell>
-    )
+    return value
 }
 
 function TickerCellContent(column: Column, value: string | number) {
     return (
-        <TableCell key={column.id}>
-            <Typography variant="subtitle2">
-                {value}
-            </Typography>
-        </TableCell>
+        <Typography variant="subtitle2">
+            {value}
+        </Typography>
     )
 }
 
 function PriceCellContent(column: Column, value: string | number) {
-    return (
-        <TableCell key={column.id}>
-            {value}
-        </TableCell>)
+    return value
 }
 
 function SinceOpenCellContent(column: Column, value: number) {
     const plusSign = value > 0 ? '+' : ''
     return (
-        <TableCell key={column.id} >
-            <Typography variant="subtitle2" color='primary'>
-                {plusSign + value.toFixed(2) + '%'}
-            </Typography>
-        </TableCell>)
+        <Typography variant="subtitle2" color='primary'>
+            {plusSign + value.toFixed(2) + '%'}
+        </Typography>)
 }
 
 function StockTableViewRow({ row, columns }: { row: StockData, columns: Column[] }) {
@@ -81,7 +70,11 @@ function StockTableViewRow({ row, columns }: { row: StockData, columns: Column[]
             <TableCell padding={'checkbox'}
             ><BellButton ticker={row.ticker} /></TableCell>
             {columns.map((column) => {
-                return cellContent(row, column)
+                return (
+                    <TableCell key={column.id} align={column.numeric ? 'right' : 'left'}>
+                        {cellContent(row, column)}
+                    </TableCell>
+                )
             })}
         </TableRow>)
 }
@@ -98,11 +91,7 @@ function cellContent(rowData: StockData, column: Column) {
         case 'sinceOpen':
             return SinceOpenCellContent(column, value as number)
         default:
-            return (
-                <TableCell key={column.id} align={'left'}>
-                    {column.format && typeof value === 'number' ? column.format(value) : value}
-                </TableCell>
-            );
+            return column.format && typeof value === 'number' ? column.format(value) : value
     }
 }
 
