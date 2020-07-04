@@ -1,7 +1,8 @@
 import React, { useEffect, Dispatch } from 'react';
-import { AppAction, IPushState, IState, IStockSubscriptionState, PushAction, StockSubscriptionAction, StockSubscriptionActionType } from './types';
+import { AppAction, IPushState, IState, IStockSubscriptionState, PushAction, StockSubscriptionAction, StockSubscriptionActionType, kPushSubscriptionStorageKey } from './types';
 import { askUserPermission, createNotificationSubscription } from '../push/push-notifications';
-import { pushPermissionDenied, pushPermissionGranted, subscriptionRegistrationRequest, subscriptionRegistrationSuccess } from './actions';
+import { pushPermissionDenied, pushPermissionGranted, subscriptionRegistrationRequest, subscriptionRegistrationSuccess, subscriptionRegistrationFailure } from './actions';
+import { setLocalItem } from '../util/localStorage'
 
 const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
     useEffect(() => {
@@ -20,33 +21,43 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
         if (state.userConsent === 'granted') {
             createNotificationSubscription()
                 .then(function (subscription) {
+                    setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, subscription)
                     dispatch(subscriptionRegistrationRequest(subscription));
+                    console.log(JSON.stringify(subscription))
                 }).catch(err => {
                     console.error("Couldn't create the notification subscription", err, "name:", err.name, "message:", err.message, "code:", err.code);
                 });
         } else if (state.userConsent === 'denied') {
             // TODO:
         }
-        console.log("usePushEffects  userConsent: ", state.userConsent)
     }, [state.userConsent])
 
     //TODO: kz looks into refactoring better
     useEffect(() => {
         if (state.isRegistering) {
-            // TODO: send subscription to server
-            // then
-            dispatch(subscriptionRegistrationSuccess())
-        } else {
-            // done registering, good to go!
+            const requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(state.subscription)
+            };
+            fetch('http://localhost:8080/push-subscription', requestOptions)
+                .then(response => {
+                    if (response.status === 200) {
+                        console.log("dispatch subscriptionRegistrationSuccess")
+                        dispatch(subscriptionRegistrationSuccess())
+                    } else {
+                        console.log("dispatch subscriptionRegistrationFailure")
+                        dispatch(subscriptionRegistrationFailure())
+                    }
+                })
         }
-        console.log("usePushEffects  isRegistering: ", state.isRegistering)
     }, [state.isRegistering])
 
 }
 
-const useStockSubscriptionEffects = (state: IStockSubscriptionState, dispatch: Dispatch<StockSubscriptionAction>) => {
+const useStockSubscriptionEffects = (state: IStockSubscriptionState, _: Dispatch<StockSubscriptionAction>) => {
     useEffect(() => {
-        window.localStorage.setItem(StockSubscriptionActionType.TICKER_ADD, JSON.stringify(state.tickers));
+        setLocalItem(StockSubscriptionActionType.TICKER_ADD, state.tickers);
     }, [state.tickers])
 }
 

@@ -12,18 +12,6 @@ import * as registerServiceWorker from './push/registerServiceWorker';
 import { ContextProvider } from './redux/context';
 import NotificationsProvider from "./NotificationsProvider";
 
-const authLink = setContext((_, { headers }) => {
-    // get the authentication token from local storage if it exists
-    const token = localStorage.getItem('authToken');
-    // return the headers to the context so httpLink can read them
-    return {
-        headers: {
-            ...headers,
-            authorization: token ? `Bearer ${token}` : "",
-        }
-    };
-});
-
 const theme = createMuiTheme({
     palette: {
         primary: { main: green[700] },
@@ -72,10 +60,7 @@ function App() {
                 <ContextProvider>
                     <CssBaseline />
                     <Router>
-                        <NotificationsProvider>
-                            {/*<StockListContainer />*/}
-                            <StockTableView stockData={mockStockData} />
-                        </NotificationsProvider>
+                        <StockTableView stockData={mockStockData} />
                     </Router>
                 </ContextProvider>
             </ThemeProvider>

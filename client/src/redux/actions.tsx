@@ -27,7 +27,7 @@ export const subscriptionRegistrationSuccess = (): PushAction => ({
 })
 
 export const subscriptionRegistrationFailure = (): PushAction => ({
-    type: PushActionTypes.REGISTRATION_SUCCESS,
+    type: PushActionTypes.REGISTRATION_FAILURE,
     payload: { isRegistering: false }
 })
 

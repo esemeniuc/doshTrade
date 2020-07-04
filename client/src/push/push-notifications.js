@@ -1,5 +1,4 @@
-const pushServerPublicKey = "BIN2Jc5Vmkmy-S3AUrcMlpKxJpLeVRAfu9WBqUbJ70SJOCWGCGXKY-Xzyh7HDr6KbRDGYHjqZ06OcS3BjD7uAm8";
-
+const pushServerPublicKey = "BLyw-zDWcSgiDd_sh6PsOq6ui7EN_LIq9pcZ3CXyJY-brYaqtj-M5sBzOBxNA-CCDHzTFG8tTF2Ue1BGO1hghu8"
 /**
  * checks if Push notification and service workers are supported by your browser
  */
@@ -29,7 +28,7 @@ function sendNotification() {
     badge: "https://spyna.it/icons/android-icon-192x192.png",
     actions: [{ action: "Detail", title: "View", icon: "https://via.placeholder.com/128/ff0000" }]
   };
-  navigator.serviceWorker.ready.then(function(serviceWorker) {
+  navigator.serviceWorker.ready.then(function (serviceWorker) {
     serviceWorker.showNotification(title, options);
   });
 }
@@ -62,10 +61,10 @@ async function createNotificationSubscription() {
 function getUserSubscription() {
   //wait for service worker installation to be ready, and then
   return navigator.serviceWorker.ready
-    .then(function(serviceWorker) {
+    .then(function (serviceWorker) {
       return serviceWorker.pushManager.getSubscription();
     })
-    .then(function(pushSubscription) {
+    .then(function (pushSubscription) {
       return pushSubscription;
     });
 }

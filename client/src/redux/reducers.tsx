@@ -29,6 +29,7 @@ const pushReducer = (state: IPushState, action: PushAction): IPushState => {
             return {
                 ...state,
                 subscription: action.payload.subscription,
+                isRegistering: true
             }
         case PushActionTypes.REGISTRATION_SUCCESS:
             return {
@@ -40,7 +41,6 @@ const pushReducer = (state: IPushState, action: PushAction): IPushState => {
                 ...state,
                 isRegistering: false
             }
-
         default:
             return state;
     }
@@ -56,7 +56,7 @@ const stockSubscriptionReducer = (state: IStockSubscriptionState, action: StockS
         case StockSubscriptionActionType.TICKER_REMOVE:
             return {
                 ...state,
-                tickers: state.tickers.filter(t => t !== action.payload.ticker)
+                tickers: state.tickers.length > 0 ? state.tickers.filter(t => t !== action.payload.ticker) : []
             }
         default:
             return state;

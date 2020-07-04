@@ -1,12 +1,9 @@
+import { getLocalItem } from '../util/localStorage'
+
 export type ActionMap<M extends { [index: string]: any }> = {
     [Key in keyof M]: M[Key] extends undefined
-    ? {
-        type: Key;
-    }
-    : {
-        type: Key;
-        payload: M[Key];
-    }
+    ? { type: Key; }
+    : { type: Key; payload: M[Key]; }
 };
 
 export type AppAction = PushAction | StockSubscriptionAction
@@ -15,7 +12,6 @@ export interface IState {
     pushState: IPushState,
     stockSubscriptionState: IStockSubscriptionState
 }
-
 
 // push
 export enum PushActionTypes {
@@ -40,6 +36,8 @@ const initialPushState = {
     subscription: undefined,
     isRegistering: false
 }
+
+export const kPushSubscriptionStorageKey = "kPushSubscriptionStorageKey"
 
 export type PushPayload = {
     [PushActionTypes.PERMISSION_REQUESTED]: {
@@ -78,8 +76,8 @@ export type IStockSubscriptionState = {
 }
 
 const initialStockSubscriptionState = (): IStockSubscriptionState => {
-    const tickers = window.localStorage.getItem(StockSubscriptionActionType.TICKER_ADD)
-    return { tickers: tickers ? JSON.parse(tickers) : [] }
+    const tickers = getLocalItem<string[]>(StockSubscriptionActionType.TICKER_ADD)
+    return { tickers: tickers ?? [] }
 }
 
 export type StockSubscriptionPayload = {
