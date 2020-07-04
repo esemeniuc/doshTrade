@@ -42,18 +42,16 @@ function BellButton({ ticker }: { ticker: string }) {
 
 function RsiCellContent(column: Column, value: string | number) {
     return (
-        <TableCell key={column.id} align={column.align}>
-            <Typography variant="subtitle2">
-                {value}
-            </Typography>
+        <TableCell key={column.id}>
+            {value}
         </TableCell>
     )
 }
 
 function TickerCellContent(column: Column, value: string | number) {
     return (
-        <TableCell key={column.id} align={column.align}>
-            <Typography variant="h6">
+        <TableCell key={column.id}>
+            <Typography variant="subtitle2">
                 {value}
             </Typography>
         </TableCell>
@@ -62,25 +60,26 @@ function TickerCellContent(column: Column, value: string | number) {
 
 function PriceCellContent(column: Column, value: string | number) {
     return (
-        <TableCell key={column.id} align={column.align}>
-            <Typography variant="subtitle2">
-                {value}
-            </Typography>
+        <TableCell key={column.id}>
+            {value}
         </TableCell>)
 }
 
 function SinceOpenCellContent(column: Column, value: number) {
     const plusSign = value > 0 ? '+' : ''
     return (
-        <TableCell key={column.id} align={column.align}>
-            <Chip label={`${plusSign + value.toFixed(2) + '%'}`} color='primary' />
+        <TableCell key={column.id} >
+            <Typography variant="subtitle2" color='primary'>
+                {plusSign + value.toFixed(2) + '%'}
+            </Typography>
         </TableCell>)
 }
 
-function StockTableViewRow(row: StockData, columns: Column[]) {
+function StockTableViewRow({ row, columns }: { row: StockData, columns: Column[] }) {
     return (
-        <TableRow hover role={"checkbox"} tabIndex={-1} key={row.code}>
-            <TableCell><BellButton ticker={row.ticker} /></TableCell>
+        <TableRow hover tabIndex={-1} key={row.code}>
+            <TableCell padding={'checkbox'}
+            ><BellButton ticker={row.ticker} /></TableCell>
             {columns.map((column) => {
                 return cellContent(row, column)
             })}
@@ -100,7 +99,7 @@ function cellContent(rowData: StockData, column: Column) {
             return SinceOpenCellContent(column, value as number)
         default:
             return (
-                <TableCell key={column.id} align={column.align}>
+                <TableCell key={column.id} align={'left'}>
                     {column.format && typeof value === 'number' ? column.format(value) : value}
                 </TableCell>
             );

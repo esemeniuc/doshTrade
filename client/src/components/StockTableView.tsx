@@ -35,30 +35,26 @@ export interface Column {
     id: 'ticker' | 'code' | 'price' | 'sinceOpen' | 'rsi';
     label: string;
     minWidth?: number;
-    align?: 'right' | 'left' | 'center';
     format?: (value: number) => string;
 }
 
 export const columns: Column[] = [
-    { id: 'ticker', label: '', minWidth: 100 },
+    { id: 'ticker', label: 'Ticker', minWidth: 50 },
     {
         id: 'price',
         label: 'Price',
         minWidth: 100,
-        align: 'right',
         format: (value: number) => value.toLocaleString('en-US'),
     },
     {
         id: 'sinceOpen',
         label: 'Since open',
         minWidth: 100,
-        align: 'center',
     },
     {
         id: 'rsi',
         label: 'RSI',
         minWidth: 80,
-        align: 'right',
         format: (value: number) => value.toFixed(2),
     },
 ];
@@ -75,10 +71,17 @@ function StockTableHead() {
     return (
         <TableHead>
             <TableRow>
+                <TableCell
+                    key={'notification'}
+                    align={'left'}
+                    padding={'none'}
+                    style={{ minWidth: 30 }}
+                >
+                </TableCell>
                 {columns.map((column) => (
                     <TableCell
                         key={column.id}
-                        align={column.align}
+                        align={'left'}
                         style={{ minWidth: column.minWidth }}
                     >
                         {column.label}
@@ -90,19 +93,16 @@ function StockTableHead() {
 }
 
 function StockTableView({ stockData }: { stockData: StockData[] }) {
+    const classes = useStyles()
     return (
-        // <Paper className={classes.root}>
-        <TableContainer>
+        <TableContainer component={Paper}>
             <Table stickyHeader aria-label="sticky table">
                 <StockTableHead />
                 <TableBody>
-                    {stockData.map((row: StockData) => {
-                        return StockTableViewRow(row, columns)
-                    })}
+                    {stockData.map(row => <StockTableViewRow row={row} columns={columns} />)}
                 </TableBody>
             </Table>
         </TableContainer>
-        // </Paper>
 
     );
 }
