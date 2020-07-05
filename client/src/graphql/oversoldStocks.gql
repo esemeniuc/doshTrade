@@ -1,6 +1,0 @@
-subscription OversoldStocks {
-  oversoldStocks {
-    ticker
-    price
-  }
-}

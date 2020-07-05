@@ -1,0 +1,8 @@
+subscription yoloHandCuratedStocks($tickerSymbols: [String!]!){
+  yoloHandCuratedStocks(tickerSymbols: $tickerSymbols) {
+    ticker
+    price
+    percentChange
+    rsi
+  }
+}

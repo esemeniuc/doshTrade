@@ -4,16 +4,34 @@ schema {
   subscription: SubscriptionRoot
 }
 
-type MutationRoot
+type MutationRoot {
+  notificationRequest(
+    tickerSymbols: [String!]!
+    pushSubscription: PushSubscription!
+  ): Boolean!
+}
+
+input PushSubscription {
+  endpoint: String!
+  expirationTime: String
+  keys: PushSubscriptionKeys!
+}
+
+input PushSubscriptionKeys {
+  p256dh: String!
+  auth: String!
+}
+
 type QueryRoot
 type Stock {
   ticker: String!
   price: String!
+  rsi: Float!
+  percentChange: Float!
   timestamp: String!
 }
 
 type SubscriptionRoot {
-  stockPrices(tickerSymbols: [String!]!): [Stock!]!
-  reversalAlerts(tickerSymbols: [String!]!): [Stock!]!
-  oversoldStocks: [Stock!]!
+  yoloHandCuratedStocks(tickerSymbols: [String!]!): [Stock!]!
 }
+

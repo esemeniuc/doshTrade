@@ -6,18 +6,18 @@ import {
     Toolbar, Typography
 } from "@material-ui/core";
 import { useSubscription } from '@apollo/client';
-import { StockPrices_stockPrices } from '../graphql/__generated__/StockPrices'
 import { loader } from 'graphql.macro';
 import { mockStockData } from "../mocks/mockData";
 import StockTableView from "../components/StockTableView";
 import TransitionsModal from './TransitionsModal';
 import { AppContext } from '../redux/context';
+import { yoloHandCuratedStocks_yoloHandCuratedStocks } from '../graphql/__generated__/yoloHandCuratedStocks';
 
-const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/stockPrices.gql');
+const STOCK_PRICES_SUBSCRIPTION = loader('../graphql/yoloHandCuratedStocks.gql');
 
 function StockListContainer() {
     const tickerSymbols = ["TSLA", "BANANA"]
-    const { data, loading, error } = useSubscription<StockPrices_stockPrices>(
+    const { data, loading, error } = useSubscription<yoloHandCuratedStocks_yoloHandCuratedStocks>(
         STOCK_PRICES_SUBSCRIPTION,
         { variables: { tickerSymbols } }
     );

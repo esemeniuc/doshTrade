@@ -1,6 +1,0 @@
-subscription ReversalAlerts{
-  reversalAlerts(tickerSymbols: ["AAPL", "BANANA"]) {
-    ticker
-    price
-  }
-}

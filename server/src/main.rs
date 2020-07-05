@@ -123,7 +123,6 @@ send_it().await;
             Cors::default()
         } else {
             Cors::new()
-                .allowed_origin("https://yolotrader.com")
                 .allowed_methods(vec!["GET", "POST"])
                 .finish()
         };

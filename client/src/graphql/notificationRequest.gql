@@ -1,0 +1,5 @@
+mutation NotificationRequest($tickerSymbols: [String!]!, $subscription: PushSubscription!) {
+  notificationRequest(tickerSymbols: $tickerSymbols, pushSubscription: $subscription) {
+    done
+  }
+}
