@@ -1,11 +1,4 @@
 import React from 'react';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import Container from "@material-ui/core/Container";
-import {
-    AppBar, Box,
-    Chip,
-    Paper, Toolbar, Typography
-} from "@material-ui/core";
 import StockTableViewRow from './StockTableViewRow'
 
 import Table from '@material-ui/core/Table';
@@ -14,22 +7,6 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            flexGrow: 1,
-        },
-        menuButton: {
-            marginRight: theme.spacing(2),
-        },
-        list: {
-            marginTop: theme.spacing(4),
-            width: '100%',
-            backgroundColor: theme.palette.background.paper
-        }
-    }),
-);
 
 export interface Column {
     id: 'ticker' | 'code' | 'price' | 'sinceOpen' | 'rsi';
@@ -91,7 +68,6 @@ function StockTableHead() {
 
 function StockTableView({ stockData }: { stockData: StockData[] }) {
     return (
-        // <Paper className={classes.root}>
         <TableContainer>
             <Table stickyHeader aria-label="sticky table">
                 <StockTableHead />
@@ -102,8 +78,6 @@ function StockTableView({ stockData }: { stockData: StockData[] }) {
                 </TableBody>
             </Table>
         </TableContainer>
-        // </Paper>
-
     );
 }
 
