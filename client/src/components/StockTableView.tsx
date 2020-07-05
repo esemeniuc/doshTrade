@@ -164,8 +164,11 @@ function StockTableView({ stockData }: { stockData: StockData[] }) {
                     onRequestSort={handleRequestSort}
                 />
                 <TableBody>
-                    {orderBy && stableSort(stockData, getComparator(order, orderBy)).map(row => <StockTableViewRow row={row} columns={columns} />)}
-                    {!orderBy && stockData.map(row => <StockTableViewRow row={row} columns={columns} />)}
+                    {orderBy ?
+                        stableSort(stockData, getComparator(order, orderBy))
+                            .map(row => <StockTableViewRow row={row} columns={columns} key={row.ticker} />) :
+                        stockData
+                            .map(row => <StockTableViewRow row={row} columns={columns} key={row.ticker} />)}
                 </TableBody>
             </Table>
         </TableContainer>

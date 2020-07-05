@@ -66,7 +66,7 @@ function SinceOpenCellContent(column: Column, value: number) {
 
 function StockTableViewRow({ row, columns }: { row: StockData, columns: Column[] }) {
     return (
-        <TableRow hover tabIndex={-1} key={row.code}>
+        <TableRow hover tabIndex={-1}>
             <TableCell padding={'checkbox'}
             ><BellButton ticker={row.ticker} /></TableCell>
             {columns.map((column) => {

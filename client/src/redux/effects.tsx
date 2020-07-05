@@ -40,16 +40,16 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state.subscription)
             };
-            fetch('http://localhost:8080/push-subscription', requestOptions)
-                .then(response => {
-                    if (response.status === 200) {
-                        console.log("dispatch subscriptionRegistrationSuccess")
-                        dispatch(subscriptionRegistrationSuccess())
-                    } else {
-                        console.log("dispatch subscriptionRegistrationFailure")
-                        dispatch(subscriptionRegistrationFailure())
-                    }
-                })
+            // fetch('http://localhost:8080/push-subscription', requestOptions)
+            //     .then(response => {
+            //         if (response.status === 200) {
+            //             console.log("dispatch subscriptionRegistrationSuccess")
+            //             dispatch(subscriptionRegistrationSuccess())
+            //         } else {
+            //             console.log("dispatch subscriptionRegistrationFailure")
+            //             dispatch(subscriptionRegistrationFailure())
+            //         }
+            //     })
         }
     }, [state.isRegistering])
 
