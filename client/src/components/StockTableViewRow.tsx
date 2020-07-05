@@ -98,16 +98,6 @@ function SinceOpenCellContent(column: Column, value: number) {
         </TableCell>)
 }
 
-function StockTableViewRow(row: StockData, columns: Column[]) {
-    return (
-        <TableRow hover role={"checkbox"} tabIndex={-1} key={row.code}>
-            <TableCell><BellButton ticker={row.ticker}/></TableCell>
-            {columns.map((column) => {
-                return cellContent(row, column)
-            })}
-        </TableRow>)
-}
-
 function cellContent(rowData: StockData, column: Column) {
     const value = rowData[column.id];
     switch (column.id) {
@@ -126,6 +116,18 @@ function cellContent(rowData: StockData, column: Column) {
                 </TableCell>
             );
     }
+}
+
+function StockTableViewRow(props: {row: StockData, columns: Column[]}) {
+    return (
+        <TableRow hover role={"checkbox"} tabIndex={-1} key={props.row.code}>
+            <TableCell>
+                <BellButton ticker={props.row.ticker}/>
+            </TableCell>
+            {props.columns.map((column) => {
+                return cellContent(props.row, column)
+            })}
+        </TableRow>)
 }
 
 export default StockTableViewRow;

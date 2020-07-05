@@ -96,9 +96,9 @@ function StockTableView({ stockData }: { stockData: StockData[] }) {
             <Table stickyHeader aria-label="sticky table">
                 <StockTableHead />
                 <TableBody>
-                    {stockData.map((row: StockData) => {
-                        return StockTableViewRow(row, columns)
-                    })}
+                    {stockData.map((row: StockData, idx) =>
+                        <StockTableViewRow key={idx} row={row} columns={columns} />
+                    )}
                 </TableBody>
             </Table>
         </TableContainer>
