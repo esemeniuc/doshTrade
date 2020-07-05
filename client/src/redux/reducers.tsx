@@ -1,6 +1,5 @@
 import { IPushState, PushAction, PushActionTypes, IState, AppAction, IStockSubscriptionState, StockSubscriptionAction, StockSubscriptionActionType } from "./types";
 
-
 export const mainReducer = ({ pushState, stockSubscriptionState }: IState, action: AppAction) => ({
     pushState: pushReducer(pushState, action as PushAction),
     stockSubscriptionState: stockSubscriptionReducer(stockSubscriptionState, action as StockSubscriptionAction)
