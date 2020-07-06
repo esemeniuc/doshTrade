@@ -40,25 +40,12 @@ impl QueryRoot {}
 
 pub struct MutationRoot;
 
-#[async_graphql::InputObject]
-struct PushSubscriptionKeys {
-    p256dh: String,
-    auth: String,
-}
-
-#[async_graphql::InputObject]
-struct PushSubscription {
-    endpoint: String,
-    expiration_time: Option<String>,
-    keys: PushSubscriptionKeys,
-}
-
 #[async_graphql::Object]
 impl MutationRoot {
     async fn notification_request(
         &self,
         ticker_symbols: Vec<String>,
-        push_subscription: PushSubscription,
+        push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
         true
     }

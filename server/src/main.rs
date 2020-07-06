@@ -1,3 +1,5 @@
+mod push_notification;
+
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -5,21 +7,21 @@ extern crate diesel_migrations;
 #[macro_use]
 extern crate juniper;
 
+mod asyncgql;
 mod auth;
 mod db;
 mod graphql;
 mod handler;
 mod models;
-mod asyncgql;
 
+use actix_cors::Cors;
+use actix_web::client::Client;
 use actix_web::{guard, web, App, HttpServer, Result};
 use async_graphql::Schema;
-use actix_cors::Cors;
 use asyncgql::{MutationRoot, QueryRoot, Storage, SubscriptionRoot};
-use clap::{Arg, App as ClapApp};
-use actix_web::client::Client;
-use log::{info, trace, warn, error};
-use serde::{Serialize, Deserialize};
+use clap::{App as ClapApp, Arg};
+use log::{error, info, trace, warn};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,7 +41,13 @@ async fn getter_wrap(tickers: Vec<String>) {
 async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
     // std::env::set_var("RUST_LOG", "actix_http=trace");
     trace!("getting updates");
-    trace!("start {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+    trace!(
+        "start {}",
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+    );
     let client = Client::default();
     // Create request builder and send request
     let mut response = client
@@ -50,14 +58,20 @@ async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
     let body = response.body().await?;
     let p: Person = serde_json::from_slice(body.as_ref())?;
     trace!("Downloaded: {:?} ", p);
-    trace!("after {}", SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+    trace!(
+        "after {}",
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+    );
     Ok(())
 }
 
+use crate::push_notification::send_it;
 use actix::prelude::*;
 use std::time::Duration;
 use std::time::SystemTime;
-use crate::handler::send_it;
 
 struct MyActor;
 
@@ -65,15 +79,13 @@ impl Actor for MyActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(Duration::from_secs(1),
-                         move |_this, ctx| {
-                             // actix_rt::spawn(foo(ii));
-                             actix_rt::spawn(getter_wrap(vec!["A".to_string()]));
-                             // ctx.spawn(actix::fut::wrap_future(getter(&vec!["A".to_string()])));
-                         });
+        ctx.run_interval(Duration::from_secs(1), move |_this, ctx| {
+            // actix_rt::spawn(foo(ii));
+            actix_rt::spawn(getter_wrap(vec!["A".to_string()]));
+            // ctx.spawn(actix::fut::wrap_future(getter(&vec!["A".to_string()])));
+        });
     }
 }
-
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -81,24 +93,30 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     // let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
     MyActor.start();
-send_it().await;
+    send_it().await;
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
         .about("Backend server for yolotrader")
-        .arg(Arg::with_name("database_url")
-            .long("database_url")
-            .value_name("DATABASE_URL")
-            .help("The SQLite database file to use"))
-        .arg(Arg::with_name("ip")
-            .long("ip")
-            .value_name("IP_ADDRESS")
-            .help("Listens on the provided interface"))
-        .arg(Arg::with_name("port")
-            .short("p")
-            .long("port")
-            .value_name("PORT")
-            .help("Listens on the provided port"))
+        .arg(
+            Arg::with_name("database_url")
+                .long("database_url")
+                .value_name("DATABASE_URL")
+                .help("The SQLite database file to use"),
+        )
+        .arg(
+            Arg::with_name("ip")
+                .long("ip")
+                .value_name("IP_ADDRESS")
+                .help("Listens on the provided interface"),
+        )
+        .arg(
+            Arg::with_name("port")
+                .short("p")
+                .long("port")
+                .value_name("PORT")
+                .help("Listens on the provided port"),
+        )
         .get_matches();
 
     let database_url = matches.value_of("database_url").unwrap_or("db.sqlite");
@@ -130,18 +148,26 @@ send_it().await;
         App::new()
             .wrap(cors_rules)
             .data(schema.clone())
-            .service(web::resource("/graphql")
-                .guard(guard::Post())
-                .to(handler::graphql))
-            .service(web::resource("/graphql")
-                .guard(guard::Get())
-                .guard(guard::Header("upgrade", "websocket"))
-                .to(handler::index_ws))
-            .service(web::resource("/graphiql").guard(guard::Get()).to(handler::index_playground))
+            .service(
+                web::resource("/graphql")
+                    .guard(guard::Post())
+                    .to(handler::graphql),
+            )
+            .service(
+                web::resource("/graphql")
+                    .guard(guard::Get())
+                    .guard(guard::Header("upgrade", "websocket"))
+                    .to(handler::index_ws),
+            )
+            .service(
+                web::resource("/graphiql")
+                    .guard(guard::Get())
+                    .to(handler::index_playground),
+            )
             .route("/", web::get().to(handler::index))
             .route("/{_:.*}", web::get().to(handler::dist))
     })
-        .bind(ip_port)?
-        .run()
-        .await
+    .bind(ip_port)?
+    .run()
+    .await
 }
