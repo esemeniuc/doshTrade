@@ -2,6 +2,7 @@ use web_push::*;
 
 #[async_graphql::InputObject]
 struct PushSubscriptionKeys {
+    #[field(name = "p256dh")]
     p256dh: String,
     auth: String,
 }
