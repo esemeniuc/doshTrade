@@ -47,6 +47,15 @@ impl MutationRoot {
         ticker_symbols: Vec<String>,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
+        //store ticker and subscriptions
+        let subscription_info = web_push::SubscriptionInfo::from(push_subscription);
+        //TODO store the subscription
+
+        //send demo message
+        let message = crate::push_notification::generate_push_message(subscription_info)
+            .expect("failed to generate push message");
+
+        crate::push_notification::send_it(message).await;
         true
     }
 }

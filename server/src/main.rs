@@ -93,7 +93,6 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     // let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
     MyActor.start();
-    send_it().await;
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
