@@ -1,6 +1,6 @@
-import { StockData, Column } from "./StockTableView";
+import { StockData, Column } from "./StockTableTypes";
 import React from "react";
-import { TableCell, Typography, Chip, TableRow, IconButton, makeStyles, Theme, createStyles } from "@material-ui/core";
+import { TableCell, Typography, TableRow, IconButton, makeStyles, Theme, createStyles } from "@material-ui/core";
 import { Notifications, NotificationsNone, NotificationsOff } from '@material-ui/icons';
 import { AppContext } from "../redux/context";
 import { pushPermissionRequest, tickerSubscribe, tickerUnsubscribe } from "../redux/actions";
@@ -20,7 +20,6 @@ const useStyles = makeStyles((theme: Theme) =>
 function BellButton({ ticker }: { ticker: string }) {
     const { state: { stockSubscriptionState: { tickers }, pushState: { userConsent, subscription } }, dispatch } = React.useContext(AppContext)
     const classes = useStyles();
-
     // TODO: handle these states somewhere
     // if (error) {
     //     return (<IconButton style={{ color: 'gray' }} onClick={() => { alert("error! " + error) }}><NotificationsOff /></IconButton>)
@@ -36,6 +35,7 @@ function BellButton({ ticker }: { ticker: string }) {
     } else if (!tickers.includes(ticker)) {
         return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerSubscribe(ticker)) }}><NotificationsNone /></IconButton>)
     } else {
+
         return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerUnsubscribe(ticker)) }}><Notifications /></IconButton>)
     }
 }

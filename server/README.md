@@ -6,6 +6,13 @@ A graphql backend that stores and serves created find-replaces. Built with Rust 
 - Rust 1.42+
 - Sqlite3
 
+## Debug
+
+```bash
+cargo build -j $(nproc)
+IP_PORT=0.0.0.0:80 ./target/debug/yolotrader_server
+```
+
 ## Setup
 
 ```bash

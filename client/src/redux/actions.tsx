@@ -16,19 +16,9 @@ export const pushPermissionDenied = (): PushAction => ({
     payload: { userConsent: Notification.permission, isAsking: false }
 })
 
-export const subscriptionRegistrationRequest = (subscription: PushSubscription): PushAction => ({
+export const subscriptionRegistration = (subscription: PushSubscription): PushAction => ({
     type: PushActionTypes.REGISTRATION_REQUESTED,
-    payload: { isRegistering: true, subscription }
-})
-
-export const subscriptionRegistrationSuccess = (): PushAction => ({
-    type: PushActionTypes.REGISTRATION_SUCCESS,
-    payload: { isRegistering: false }
-})
-
-export const subscriptionRegistrationFailure = (): PushAction => ({
-    type: PushActionTypes.REGISTRATION_FAILURE,
-    payload: { isRegistering: false }
+    payload: { subscription }
 })
 
 // stocks

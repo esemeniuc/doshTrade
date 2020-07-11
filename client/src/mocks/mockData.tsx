@@ -1,7 +1,7 @@
-    import {StockData} from "../components/StockTableView"
+import { StockData } from "../components/StockTableTypes"
 
 function createData(ticker: string, code: string, price: number, sinceOpen: number, rsi: string): StockData {
-    return {ticker, code, price, sinceOpen, rsi};
+    return { ticker, code, price, sinceOpen, rsi };
 }
 
 export const mockStockData = [

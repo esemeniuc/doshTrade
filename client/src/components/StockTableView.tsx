@@ -1,10 +1,7 @@
 import React from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import Container from "@material-ui/core/Container";
 import {
-    AppBar, Box,
-    Chip,
-    Paper, Toolbar, Typography
+    Paper
 } from "@material-ui/core";
 import StockTableViewRow from './StockTableViewRow'
 
@@ -16,6 +13,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import { Order, stableSort, getComparator } from '../util/sort'
+import { Column, StockData } from './StockTableTypes';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -44,14 +42,6 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-export interface Column {
-    id: 'ticker' | 'code' | 'price' | 'sinceOpen' | 'rsi';
-    numeric: boolean;
-    label: string;
-    minWidth?: number;
-    format?: (value: number) => string;
-}
-
 export const columns: Column[] = [
     { id: 'ticker', numeric: false, label: 'Ticker', minWidth: 50 },
     {
@@ -75,14 +65,6 @@ export const columns: Column[] = [
         format: (value: number) => value.toFixed(2),
     },
 ];
-
-export interface StockData {
-    ticker: string;
-    code: string;
-    price: number;
-    sinceOpen: number;
-    rsi: string;
-}
 
 interface EnhancedTableProps {
     classes: ReturnType<typeof useStyles>;
@@ -139,7 +121,7 @@ function StockTableView({ stockData }: { stockData: StockData[] }) {
 
     const handleRequestSort = (_: React.MouseEvent<unknown>, property: keyof StockData) => {
         // cycle through 'asc', 'desc', and undefined
-        if (orderBy == undefined) {
+        if (orderBy === undefined) {
             setOrder('asc');
             setOrderBy(property);
         } else {

@@ -26,18 +26,16 @@ export enum PushActionTypes {
 export type IPushState = {
     userConsent: NotificationPermission,
     isAsking: boolean,
-    subscription?: PushSubscription,
-    isRegistering: boolean
+    subscription: PushSubscription | null
 }
+
+export const kPushSubscriptionStorageKey = "kPushSubscriptionStorageKey"
 
 const initialPushState = {
     userConsent: Notification.permission,
     isAsking: false,
-    subscription: undefined,
-    isRegistering: false
+    subscription: getLocalItem<PushSubscription>(kPushSubscriptionStorageKey),
 }
-
-export const kPushSubscriptionStorageKey = "kPushSubscriptionStorageKey"
 
 export type PushPayload = {
     [PushActionTypes.PERMISSION_REQUESTED]: {
@@ -52,14 +50,7 @@ export type PushPayload = {
         userConsent: NotificationPermission
     },
     [PushActionTypes.REGISTRATION_REQUESTED]: {
-        isRegistering: boolean,
         subscription: PushSubscription
-    },
-    [PushActionTypes.REGISTRATION_SUCCESS]: {
-        isRegistering: boolean,
-    },
-    [PushActionTypes.REGISTRATION_FAILURE]: {
-        isRegistering: boolean,
     },
 }
 

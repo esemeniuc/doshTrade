@@ -28,18 +28,7 @@ const pushReducer = (state: IPushState, action: PushAction): IPushState => {
         case PushActionTypes.REGISTRATION_REQUESTED:
             return {
                 ...state,
-                subscription: action.payload.subscription,
-                isRegistering: true
-            }
-        case PushActionTypes.REGISTRATION_SUCCESS:
-            return {
-                ...state,
-                isRegistering: false
-            }
-        case PushActionTypes.REGISTRATION_FAILURE:
-            return {
-                ...state,
-                isRegistering: false
+                subscription: action.payload.subscription
             }
         default:
             return state;

@@ -1,4 +1,4 @@
-import React, { createContext, useReducer, useEffect, Dispatch } from 'react';
+import React, { createContext, useReducer, Dispatch } from 'react';
 import { mainReducer } from './reducers'
 import { IState, AppAction, initialState } from './types';
 import { useMainEffects } from './effects';
