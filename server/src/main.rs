@@ -130,7 +130,7 @@ async fn main() -> std::io::Result<()> {
 
     // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
-        .data(Storage::default())
+        .data(pool)
         .finish();
 
     println!("Playground: http://{}/graphiql", ip_port);

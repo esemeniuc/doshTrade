@@ -1,5 +1,6 @@
 use async_graphql::*;
 //for field macro
+use crate::models::Client;
 use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
 use futures::lock::Mutex;
 use futures::{Stream, StreamExt};
@@ -44,13 +45,16 @@ pub struct MutationRoot;
 impl MutationRoot {
     async fn notification_request(
         &self,
+        ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
         //store ticker and subscriptions
-        let subscription_info = web_push::SubscriptionInfo::from(push_subscription);
+        let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
         //TODO store the subscription
         //add user to client table
+        let pool = ctx.data::<crate::db::DbPool>();
+        Client::insert(&pool.get().unwrap(), push_subscription);
         //dont double add
 
         //delete all previous tickers for the user

@@ -14,15 +14,13 @@ pub struct Client {
 impl Client {
     pub fn insert(
         conn: &crate::db::DbPoolConn,
-        other_endpoint: &str,
-        other_p256dh: &str,
-        other_auth: &str,
+        client: crate::push_notification::PushSubscription,
     ) -> QueryResult<usize> {
         diesel::insert_into(clients::table)
             .values((
-                endpoint.eq(other_endpoint),
-                p256dh.eq(other_p256dh),
-                auth.eq(other_auth),
+                endpoint.eq(client.endpoint),
+                p256dh.eq(client.keys.p256dh),
+                auth.eq(client.keys.auth),
             ))
             .execute(conn)
     }
