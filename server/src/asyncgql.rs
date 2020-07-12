@@ -49,13 +49,13 @@ impl MutationRoot {
         ticker_symbols: Vec<String>,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
+        let pool = ctx.data::<crate::db::DbPool>();
+
         //store ticker and subscriptions
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
-        //TODO store the subscription
         //add user to client table
-        let pool = ctx.data::<crate::db::DbPool>();
+        //cannot have duplicates due to unique constraint
         Client::insert(&pool.get().unwrap(), push_subscription);
-        //dont double add
 
         //delete all previous tickers for the user
         //create row for each ticker
