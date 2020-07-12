@@ -55,7 +55,7 @@ impl MutationRoot {
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
         //add user to client table
         //cannot have duplicates due to unique constraint
-        Client::insert(&pool.get().unwrap(), push_subscription);
+        Client::insert(&pool.get().unwrap(), &push_subscription);
 
         //delete all previous tickers for the user
         //create row for each ticker

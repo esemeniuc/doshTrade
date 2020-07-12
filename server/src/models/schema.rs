@@ -10,8 +10,8 @@ table! {
     clients (id) {
         id -> Integer,
         endpoint -> Text,
-        p256dh -> Nullable<Text>,
-        auth -> Nullable<Text>,
+        p256dh -> Text,
+        auth -> Text,
     }
 }
 
