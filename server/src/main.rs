@@ -101,7 +101,7 @@ async fn main() -> std::io::Result<()> {
             Arg::with_name("database_url")
                 .long("database_url")
                 .value_name("DATABASE_URL")
-                .help("The SQLite database file to use"),
+                .help("The SQLite database file to use, eg. \"db.sqlite\"."),
         )
         .arg(
             Arg::with_name("ip")
