@@ -4,6 +4,7 @@ use crate::models::Client;
 use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
 use futures::lock::Mutex;
 use futures::{Stream, StreamExt};
+use log::{error, info, trace, warn};
 use slab::Slab;
 use std::sync::Arc;
 use std::time::Duration;
@@ -49,7 +50,13 @@ impl MutationRoot {
         ticker_symbols: Vec<String>,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
-        let pool = ctx.data::<crate::db::DbPool>();
+        let pool = match ctx.data::<crate::db::DbPool>() {
+            Ok(val) => val,
+            Err(e) => {
+                error!("Error getting db pool from context: {}", e.0);
+                return false;
+            }
+        };
 
         //store ticker and subscriptions
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
