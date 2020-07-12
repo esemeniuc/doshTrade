@@ -50,9 +50,12 @@ impl MutationRoot {
         //store ticker and subscriptions
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription);
         //TODO store the subscription
-        //CREATE TABLE subscriptions(
-        //clientID VARCHAR,
-        //stockTicker VARCHAR,)
+        //add user to client table
+        //dont double add
+
+        //delete all previous tickers for the user
+        //create row for each ticker
+
         //example
         // userA, [A,B,C] -> 3 rows in db
         // userB, [B,C] -> 2 rows in db
