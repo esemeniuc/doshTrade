@@ -1,4 +1,5 @@
-const pushServerPublicKey = "BLyw-zDWcSgiDd_sh6PsOq6ui7EN_LIq9pcZ3CXyJY-brYaqtj-M5sBzOBxNA-CCDHzTFG8tTF2Ue1BGO1hghu8"
+const pushServerPublicKey =
+  "BLyw-zDWcSgiDd_sh6PsOq6ui7EN_LIq9pcZ3CXyJY-brYaqtj-M5sBzOBxNA-CCDHzTFG8tTF2Ue1BGO1hghu8";
 /**
  * checks if Push notification and service workers are supported by your browser
  */
@@ -26,7 +27,13 @@ function sendNotification() {
     tag: "new-product",
     image: img,
     badge: "https://spyna.it/icons/android-icon-192x192.png",
-    actions: [{ action: "Detail", title: "View", icon: "https://via.placeholder.com/128/ff0000" }]
+    actions: [
+      {
+        action: "Detail",
+        title: "View",
+        icon: "https://via.placeholder.com/128/ff0000",
+      },
+    ],
   };
   navigator.serviceWorker.ready.then(function (serviceWorker) {
     serviceWorker.showNotification(title, options);
@@ -46,12 +53,12 @@ function registerServiceWorker() {
  *
  */
 async function createNotificationSubscription() {
-  //wait for service worker installation to be ready
+  // wait for service worker installation to be ready
   const serviceWorker = await navigator.serviceWorker.ready;
   // subscribe and return the subscription
   return await serviceWorker.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: pushServerPublicKey
+    applicationServerKey: pushServerPublicKey,
   });
 }
 
@@ -59,7 +66,7 @@ async function createNotificationSubscription() {
  * returns the subscription if present or nothing
  */
 function getUserSubscription() {
-  //wait for service worker installation to be ready, and then
+  // wait for service worker installation to be ready, and then
   return navigator.serviceWorker.ready
     .then(function (serviceWorker) {
       return serviceWorker.pushManager.getSubscription();
@@ -75,5 +82,5 @@ export {
   registerServiceWorker,
   sendNotification,
   createNotificationSubscription,
-  getUserSubscription
+  getUserSubscription,
 };
