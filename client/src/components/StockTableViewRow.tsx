@@ -5,7 +5,6 @@ import {
   TableRow,
   IconButton,
   makeStyles,
-  Theme,
   createStyles,
 } from "@material-ui/core";
 import {
@@ -21,7 +20,7 @@ import {
   tickerUnsubscribe,
 } from "../redux/actions";
 
-const useStyles = makeStyles((theme: Theme) =>
+const useStyles = makeStyles(() =>
   createStyles({
     mutedButton: {
       color: "gray",

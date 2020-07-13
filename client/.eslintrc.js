@@ -7,7 +7,9 @@ module.exports = {
         'prettier',
         'prettier/react',
         'prettier/@typescript-eslint',
-        'plugin:prettier/recommended'
+        'plugin:prettier/recommended',
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking"
     ],
     plugins: ['react', '@typescript-eslint', 'jest'],
     env: {
@@ -30,6 +32,10 @@ module.exports = {
     },
     rules: {
         'linebreak-style': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+        'react/prop-types': 'off',
+        'no-alert': 'off',
+        'no-console': 'off',
         'prettier/prettier': [
             'error',
             {
