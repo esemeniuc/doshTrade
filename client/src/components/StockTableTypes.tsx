@@ -7,8 +7,6 @@ export interface Column {
     format?: (value: number) => string;
 }
 
-
-
 export interface StockData {
     ticker: string;
     code: string;

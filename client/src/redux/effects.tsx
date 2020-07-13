@@ -8,7 +8,6 @@ import { loader } from 'graphql.macro';
 
 const PUSH_NOTIFICATION_SUBSCRIPTION = loader('../graphql/notificationRequest.gql');
 
-
 const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
     const [addPushSubscription] = useMutation(PUSH_NOTIFICATION_SUBSCRIPTION);
     useEffect(() => {

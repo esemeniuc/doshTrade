@@ -20,24 +20,23 @@ const useStyles = makeStyles((theme: Theme) =>
 function BellButton({ ticker }: { ticker: string }) {
     const { state: { stockSubscriptionState: { tickers }, pushState: { userConsent, subscription } }, dispatch } = React.useContext(AppContext)
     const classes = useStyles();
-    // TODO: handle these states somewhere
-    // if (error) {
-    //     return (<IconButton style={{ color: 'gray' }} onClick={() => { alert("error! " + error) }}><NotificationsOff /></IconButton>)
-    // } else if (!pushNotificationSupported) {
+    // TODO: handle this case
+    // if (!pushNotificationSupported) {
     //     return (<IconButton style={{ color: 'gray' }} onClick={() => { alert("push not supported") }}><NotificationsOff /></IconButton>)
     // } 
     if (userConsent === 'default') {
         return (<IconButton className={classes.mutedButton} onClick={() => { dispatch(pushPermissionRequest()) }}><NotificationsNone /></IconButton>)
     } else if (userConsent === 'denied') {
         return (<IconButton className={classes.mutedButton} onClick={() => { alert("push permission is denied") }}><NotificationsOff /></IconButton>)
-    } else if (!subscription) {
-        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(pushPermissionRequest()) }}><NotificationsNone /></IconButton>)
-    } else if (!tickers.includes(ticker)) {
-        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerSubscribe(ticker)) }}><NotificationsNone /></IconButton>)
-    } else {
-
-        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerUnsubscribe(ticker)) }}><Notifications /></IconButton>)
     }
+    if (!subscription) {
+        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(pushPermissionRequest()) }}><NotificationsNone /></IconButton>)
+    }
+    if (!tickers.includes(ticker)) {
+        return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerSubscribe(ticker)) }}><NotificationsNone /></IconButton>)
+    }
+
+    return (<IconButton className={classes.activeButton} onClick={() => { dispatch(tickerUnsubscribe(ticker)) }}><Notifications /></IconButton>)
 }
 
 function RsiCellContent(column: Column, value: string | number) {
