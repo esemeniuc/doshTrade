@@ -1,7 +1,8 @@
 use async_graphql::*;
 //for field macro
-use crate::models::Client;
+use crate::models::{Client, ClientSubscription};
 use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
+use diesel::QueryResult;
 use futures::lock::Mutex;
 use futures::{Stream, StreamExt};
 use log::{error, info, trace, warn};
@@ -57,13 +58,21 @@ impl MutationRoot {
                 return false;
             }
         };
+        let conn = pool.get().unwrap();
 
         //store ticker and subscriptions
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
         //add user to client table
         //cannot have duplicates due to unique constraint
-        Client::insert(&pool.get().unwrap(), &push_subscription);
-
+        Client::insert(&conn, &push_subscription);
+        let client_id = 1; //TODO get client
+        for ticker in ticker_symbols.iter() {
+            let stock_id = 1; //TODO get stock
+            if let Err(e) = ClientSubscription::insert(&conn, client_id, stock_id) {
+                error!("Error inserting client_subscription row: {}", e);
+                return false;
+            }
+        }
         //delete all previous tickers for the user
         //create row for each ticker
 
