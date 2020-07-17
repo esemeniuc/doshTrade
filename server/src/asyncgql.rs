@@ -1,6 +1,6 @@
 use async_graphql::*;
 //for field macro
-use crate::models::{Client, ClientSubscription};
+use crate::models::{Client, ClientSubscription, Stock as DbStock};
 use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
 use diesel::QueryResult;
 use futures::lock::Mutex;
@@ -9,6 +9,7 @@ use log::{error, info, trace, warn};
 use slab::Slab;
 use std::sync::Arc;
 use std::time::Duration;
+use crate::models::intraday_price::IntradayPrice;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
 
@@ -127,9 +128,33 @@ pub struct SubscriptionRoot;
 impl SubscriptionRoot {
     async fn yolo_hand_curated_stocks(
         &self,
+        ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
     ) -> impl Stream<Item = Vec<Stock>> {
-        let prices = ticker_symbols
+        let pool = match ctx.data::<crate::db::DbPool>() {
+            Ok(val) => val,
+            Err(e) => {
+                error!("Error getting db pool from context: {}", e.0);
+                panic!();
+               // let emptyStockList: Vec<Stock> = Vec::new();
+               // futures::stream::once( async { emptyStockList } )
+            }
+        };
+        let conn = pool.get().unwrap();
+
+        for ticker in ticker_symbols.iter() {
+            let stock_id = DbStock::find(&conn, ticker).and_then(|stock| {
+                IntradayPrice::get_latest(&conn,stock.id)
+            }).and_then(
+                |intraday_price| {
+                    print!("{:?}",intraday_price);
+                    Ok(intraday_price)
+                }
+            );
+
+        }
+
+        let prices:Vec<Stock> = ticker_symbols
             .into_iter()
             .map(|ticker| Stock {
                 ticker,
