@@ -1,11 +1,6 @@
 import React, { createContext, useReducer, Dispatch } from "react";
 import mainReducer from "./reducers";
-import {
-  IState,
-  AppAction,
-  IStockSubscriptionState,
-  StockSubscriptionActionType,
-} from "./types";
+import { IState, AppAction, StockSubscriptionActionType } from "./types";
 import { useMainEffects } from "./effects";
 import { getLocalItem } from "../util/localStorage";
 import { kPushSubscriptionStorageKey } from "../constants";
@@ -16,16 +11,13 @@ const initialPushState = {
   subscription: getLocalItem<PushSubscription>(kPushSubscriptionStorageKey),
 };
 
-const initialStockSubscriptionState = (): IStockSubscriptionState => {
-  const tickers = getLocalItem<string[]>(
-    StockSubscriptionActionType.TICKER_ADD
-  );
-  return { tickers: tickers ?? [] };
+const initialStockSubscriptionState = {
+  tickers: getLocalItem<string[]>(StockSubscriptionActionType.TICKER_ADD) ?? [],
 };
 
 export const initialState: IState = {
   pushState: initialPushState,
-  stockSubscriptionState: initialStockSubscriptionState(),
+  stockSubscriptionState: initialStockSubscriptionState,
 };
 
 const AppContext = createContext<{
