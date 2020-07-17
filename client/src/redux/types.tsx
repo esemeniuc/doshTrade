@@ -1,5 +1,3 @@
-import { getLocalItem } from "../util/localStorage";
-
 export type ActionMap<M extends { [index: string]: any }> = {
   [Key in keyof M]: M[Key] extends undefined
     ? { type: Key }
@@ -25,14 +23,6 @@ export type IPushState = {
   userConsent: NotificationPermission;
   isAsking: boolean;
   subscription: PushSubscription | null;
-};
-
-export const kPushSubscriptionStorageKey = "kPushSubscriptionStorageKey";
-
-const initialPushState = {
-  userConsent: Notification.permission,
-  isAsking: false,
-  subscription: getLocalItem<PushSubscription>(kPushSubscriptionStorageKey),
 };
 
 export type PushPayload = {
@@ -64,13 +54,6 @@ export type IStockSubscriptionState = {
   tickers: string[];
 };
 
-const initialStockSubscriptionState = (): IStockSubscriptionState => {
-  const tickers = getLocalItem<string[]>(
-    StockSubscriptionActionType.TICKER_ADD
-  );
-  return { tickers: tickers ?? [] };
-};
-
 export type StockSubscriptionPayload = {
   [StockSubscriptionActionType.TICKER_ADD]: {
     ticker: string;
@@ -83,8 +66,3 @@ export type StockSubscriptionPayload = {
 export type StockSubscriptionAction = ActionMap<
   StockSubscriptionPayload
 >[keyof ActionMap<StockSubscriptionPayload>];
-
-export const initialState: IState = {
-  pushState: initialPushState,
-  stockSubscriptionState: initialStockSubscriptionState(),
-};

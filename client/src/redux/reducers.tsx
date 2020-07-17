@@ -9,17 +9,6 @@ import {
   StockSubscriptionActionType,
 } from "./types";
 
-export const mainReducer = (
-  { pushState, stockSubscriptionState }: IState,
-  action: AppAction
-) => ({
-  pushState: pushReducer(pushState, action as PushAction),
-  stockSubscriptionState: stockSubscriptionReducer(
-    stockSubscriptionState,
-    action as StockSubscriptionAction
-  ),
-});
-
 const pushReducer = (state: IPushState, action: PushAction): IPushState => {
   switch (action.type) {
     case PushActionTypes.PERMISSION_REQUESTED:
@@ -71,3 +60,16 @@ const stockSubscriptionReducer = (
       return state;
   }
 };
+
+const mainReducer = (
+  { pushState, stockSubscriptionState }: IState,
+  action: AppAction
+) => ({
+  pushState: pushReducer(pushState, action as PushAction),
+  stockSubscriptionState: stockSubscriptionReducer(
+    stockSubscriptionState,
+    action as StockSubscriptionAction
+  ),
+});
+
+export default mainReducer;
