@@ -1,9 +1,14 @@
-
 export function getLocalItem<T>(key: string): T | null {
-    let item = window.localStorage.getItem(key)
-    return item ? JSON.parse(item) : null
+  const item = window.localStorage.getItem(key);
+  let parsed = null;
+  try {
+    parsed = item ? JSON.parse(item) : null;
+  } catch (err) {
+    window.localStorage.clear();
+  }
+  return parsed;
 }
 
-export function setLocalItem<T>(key: string, value: T) {
-    window.localStorage.setItem(key, JSON.stringify(value));
-} 
+export function setLocalItem<T>(key: string, value: T | null) {
+  window.localStorage.setItem(key, JSON.stringify(value));
+}

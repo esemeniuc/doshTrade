@@ -140,7 +140,6 @@ async fn main() -> std::io::Result<()> {
             Cors::default()
         } else {
             Cors::new()
-                .allowed_origin("https://yolotrader.com")
                 .allowed_methods(vec!["GET", "POST"])
                 .finish()
         };

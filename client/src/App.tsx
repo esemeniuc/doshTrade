@@ -10,7 +10,6 @@ import StockTableView from "./components/StockTableView";
 import { mockStockData } from "./mocks/mockData"
 import * as registerServiceWorker from './push/registerServiceWorker';
 import { ContextProvider } from './redux/context';
-import NotificationsProvider from "./NotificationsProvider";
 
 const theme = createMuiTheme({
     palette: {
