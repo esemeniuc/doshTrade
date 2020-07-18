@@ -39,7 +39,12 @@ pub type Storage = Arc<Mutex<Slab<Book>>>;
 pub struct QueryRoot;
 
 #[async_graphql::Object]
-impl QueryRoot {}
+impl QueryRoot {
+	async fn get_debug(&self, push_subscription: crate::push_notification::PushSubscription ) -> bool {
+		println!("Debug got push_subscription.endpoint {}", push_subscription.endpoint);
+		true
+	}
+}
 
 pub struct MutationRoot;
 

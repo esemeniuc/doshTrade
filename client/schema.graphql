@@ -22,7 +22,12 @@ input PushSubscriptionKeys {
   auth: String!
 }
 
-type QueryRoot
+type QueryRoot {
+  getDebug(
+    pushSubscription: PushSubscription!
+  ): Boolean!
+}
+
 type Stock {
   ticker: String!
   price: String!
