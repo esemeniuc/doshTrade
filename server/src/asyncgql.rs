@@ -41,7 +41,13 @@ pub struct QueryRoot;
 #[async_graphql::Object]
 impl QueryRoot {
 	async fn get_debug(&self, push_subscription: crate::push_notification::PushSubscription ) -> bool {
-		println!("Debug got push_subscription.endpoint {}", push_subscription.endpoint);
+		println!("push_subscription: {:?}", push_subscription);
+		// TODO:
+		let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
+		let message = crate::push_notification::generate_push_message(subscription_info)
+			.expect("failed to generate push message");
+
+		crate::push_notification::send_it(message).await;
 		true
 	}
 }
