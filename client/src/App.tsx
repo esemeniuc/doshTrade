@@ -6,8 +6,6 @@ import { green, red } from "@material-ui/core/colors";
 import { getMainDefinition } from '@apollo/client/utilities';
 import { WebSocketLink } from '@apollo/link-ws';
 import StockListContainer from "./containers/StockListContainer";
-import StockTableView from "./components/StockTableView";
-import { mockStockData } from "./mocks/mockData"
 import * as registerServiceWorker from './push/registerServiceWorker';
 import { ContextProvider } from './redux/context';
 

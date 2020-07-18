@@ -1,5 +1,5 @@
-subscription yoloHandCuratedStocks($tickerSymbols: [String!]!){
-  yoloHandCuratedStocks(tickerSymbols: $tickerSymbols) {
+subscription yoloHandCurated($tickerSymbols: [String!]!){
+  stock: yoloHandCuratedStocks(tickerSymbols: $tickerSymbols) {
     ticker
     price
     percentChange

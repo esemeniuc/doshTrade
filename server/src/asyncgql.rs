@@ -142,6 +142,7 @@ impl SubscriptionRoot {
         let conn = pool.get().unwrap();
 
         for ticker in ticker_symbols.iter() {
+			println!("ticker inside: {}", ticker);
             let stock_id = DbStock::find(&conn, ticker)
                 .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
                 .and_then(|intraday_price| {

@@ -3,11 +3,10 @@ import Container from "@material-ui/core/Container";
 import { AppBar, Box, Toolbar, Typography } from "@material-ui/core";
 import { useSubscription } from "@apollo/client";
 import { loader } from "graphql.macro";
-import { mockStockData } from "../mocks/mockData";
 import StockTableView from "../components/StockTableView";
 import TransitionsModal from "./TransitionsModal";
 import { AppContext } from "../redux/context";
-import { yoloHandCuratedStocks_yoloHandCuratedStocks } from "../graphql/__generated__/yoloHandCuratedStocks";
+import { yoloHandCurated_stock, yoloHandCurated } from "../graphql/__generated__/yoloHandCurated";
 
 const STOCK_PRICES_SUBSCRIPTION = loader(
   "../graphql/yoloHandCuratedStocks.gql"
@@ -15,9 +14,7 @@ const STOCK_PRICES_SUBSCRIPTION = loader(
 
 function StockListContainer() {
   const tickerSymbols = ["TSLA", "BANANA"];
-  const { data, loading, error } = useSubscription<
-    yoloHandCuratedStocks_yoloHandCuratedStocks
-  >(STOCK_PRICES_SUBSCRIPTION, { variables: { tickerSymbols } });
+  const { data, loading, error } = useSubscription<yoloHandCurated>(STOCK_PRICES_SUBSCRIPTION, { variables: { tickerSymbols } });
   const {
     state: { pushState },
   } = useContext(AppContext);
@@ -54,7 +51,7 @@ function StockListContainer() {
         title="Push Access"
         description="You will be notified when your favorite stocks dip"
       />
-      <StockTableView stockData={mockStockData} />
+      {data && <StockTableView stockData={data.stock} />}
     </Container>
   );
 }
