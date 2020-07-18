@@ -4,10 +4,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL subscription operation: yoloHandCuratedStocks
+// GraphQL subscription operation: yoloHandCurated
 // ====================================================
 
-export interface yoloHandCuratedStocks_yoloHandCuratedStocks {
+export interface yoloHandCurated_stock {
   __typename: "Stock";
   ticker: string;
   price: string;
@@ -15,10 +15,10 @@ export interface yoloHandCuratedStocks_yoloHandCuratedStocks {
   rsi: number;
 }
 
-export interface yoloHandCuratedStocks {
-  yoloHandCuratedStocks: yoloHandCuratedStocks_yoloHandCuratedStocks[];
+export interface yoloHandCurated {
+  stock: yoloHandCurated_stock[];
 }
 
-export interface yoloHandCuratedStocksVariables {
+export interface yoloHandCuratedVariables {
   tickerSymbols: string[];
 }

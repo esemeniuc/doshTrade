@@ -13,8 +13,8 @@ juniper = "0.14.2"
 rust-embed= "5.5.1"
 log = "0.4.8"
 
-async-graphql = "1.16.5"
-async-graphql-actix-web = "1.16.4"
+async-graphql = "1.16.9"
+async-graphql-actix-web = "1.16.6"
 actix-web = { version = "2.0.0", features = ["rustls"] }
 actix-rt = "1.1.1"
 actix-web-actors = "2.0.0"
@@ -24,9 +24,9 @@ futures = "0.3.5"
 
 actix = "0.9.0"
 actix-cors = "0.2.0"
-actix-web-httpauth = "0.4.1"
+actix-web-httpauth = "0.4.2"
 mime_guess = "2.0.3"
-chrono = { version = "0.4.12", features = ["serde"] }
+chrono = { version = "0.4.13", features = ["serde"] }
 jsonwebtoken = "7.2.0"
 serde = { version = "1.0.114", features = ["derive"] }
 names = "0.11.0"

@@ -12,8 +12,9 @@ import {
   NotificationsNone,
   NotificationsOff,
 } from "@material-ui/icons";
-import { StockData, Column } from "./StockTableTypes";
+import { Column } from "./StockTableTypes";
 import { AppContext } from "../redux/context";
+import { yoloHandCurated_stock } from "../graphql/__generated__/yoloHandCurated";
 import {
   pushPermissionRequest,
   tickerSubscribe,
@@ -130,7 +131,7 @@ function StockTableViewRow({
   row,
   columns,
 }: {
-  row: StockData;
+  row: yoloHandCurated_stock;
   columns: Column[];
 }) {
   return (
@@ -149,7 +150,7 @@ function StockTableViewRow({
   );
 }
 
-function cellContent(rowData: StockData, column: Column) {
+function cellContent(rowData: yoloHandCurated_stock, column: Column) {
   const value = rowData[column.id];
   switch (column.id) {
     case "rsi":
@@ -158,7 +159,7 @@ function cellContent(rowData: StockData, column: Column) {
       return TickerCellContent(column, value);
     case "price":
       return PriceCellContent(column, value);
-    case "sinceOpen":
+    case "percentChange":
       return SinceOpenCellContent(column, value as number);
     default:
       return column.format && typeof value === "number"

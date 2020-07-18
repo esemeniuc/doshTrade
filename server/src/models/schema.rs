@@ -1,6 +1,23 @@
 table! {
+    client_subscriptions (client_subscription_id) {
+        client_subscription_id -> Integer,
+        client_id -> Integer,
+        stock_id -> Integer,
+    }
+}
+
+table! {
+    clients (id) {
+        id -> Integer,
+        endpoint -> Text,
+        p256dh -> Text,
+        auth -> Text,
+    }
+}
+
+table! {
     intraday_prices (id) {
-        id -> Text,
+        id -> Integer,
         stock_id -> Integer,
         price -> Double,
         volume -> Integer,
@@ -28,17 +45,6 @@ table! {
     }
 }
 
-joinable!(intraday_prices -> stocks (stock_id));
-
-allow_tables_to_appear_in_same_query!(
-    intraday_prices,
-    stocks,
-    users,
-);
-
-
-
-
 table! {
     events (id) {
         id -> Integer,
@@ -62,12 +68,19 @@ table! {
     }
 }
 
-
 joinable!(events -> properties (property_id));
 joinable!(properties -> users (user_id));
 
+joinable!(client_subscriptions -> clients (client_id));
+joinable!(client_subscriptions -> stocks (stock_id));
+joinable!(intraday_prices -> stocks (stock_id));
+
 allow_tables_to_appear_in_same_query!(
+    client_subscriptions,
+    clients,
+    intraday_prices,
+    stocks,
+    users,
     events,
     properties,
-    users,
 );

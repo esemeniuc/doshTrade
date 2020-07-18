@@ -11,7 +11,8 @@ import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import StockTableViewRow from "./StockTableViewRow";
 import { Order, stableSort, getComparator } from "../util/sort";
-import { Column, StockData } from "./StockTableTypes";
+import { columns } from "./StockTableTypes";
+import { yoloHandCurated_stock } from "../graphql/__generated__/yoloHandCurated";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -40,43 +41,19 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export const columns: Column[] = [
-  { id: "ticker", numeric: false, label: "Ticker", minWidth: 50 },
-  {
-    id: "price",
-    numeric: true,
-    label: "Price",
-    minWidth: 100,
-    format: (value: number) => value.toLocaleString("en-US"),
-  },
-  {
-    id: "sinceOpen",
-    numeric: true,
-    label: "Since open",
-    minWidth: 100,
-  },
-  {
-    id: "rsi",
-    numeric: true,
-    label: "RSI",
-    minWidth: 80,
-    format: (value: number) => value.toFixed(2),
-  },
-];
-
 interface EnhancedTableProps {
   classes: ReturnType<typeof useStyles>;
   onRequestSort: (
     event: React.MouseEvent<unknown>,
-    property: keyof StockData
+    property: keyof yoloHandCurated_stock
   ) => void;
   order: Order;
-  orderBy: keyof StockData | undefined;
+  orderBy: keyof yoloHandCurated_stock | undefined;
 }
 
 function EnhancedStockTableHead(props: EnhancedTableProps) {
   const { classes, order, orderBy, onRequestSort } = props;
-  const createSortHandler = (property: keyof StockData) => (
+  const createSortHandler = (property: keyof yoloHandCurated_stock) => (
     event: React.MouseEvent<unknown>
   ) => {
     onRequestSort(event, property);
@@ -116,16 +93,17 @@ function EnhancedStockTableHead(props: EnhancedTableProps) {
   );
 }
 
-function StockTableView({ stockData }: { stockData: StockData[] }) {
+function StockTableView({ stockData }: { stockData: yoloHandCurated_stock[] }) {
   const classes = useStyles();
   const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof StockData | undefined>(
+  const [orderBy, setOrderBy] = React.useState<keyof yoloHandCurated_stock | undefined>(
     undefined
   );
 
+  console.log('stockData: ', stockData)
   const handleRequestSort = (
     _: React.MouseEvent<unknown>,
-    property: keyof StockData
+    property: keyof yoloHandCurated_stock
   ) => {
     // cycle through 'asc', 'desc', and undefined
     if (orderBy === undefined) {
@@ -152,22 +130,22 @@ function StockTableView({ stockData }: { stockData: StockData[] }) {
         <TableBody>
           {orderBy
             ? stableSort(
-                stockData,
-                getComparator(order, orderBy)
-              ).map((row) => (
-                <StockTableViewRow
-                  row={row}
-                  columns={columns}
-                  key={row.ticker}
-                />
-              ))
+              stockData,
+              getComparator(order, orderBy)
+            ).map((row) => (
+              <StockTableViewRow
+                row={row}
+                columns={columns}
+                key={row.ticker}
+              />
+            ))
             : stockData.map((row) => (
-                <StockTableViewRow
-                  row={row}
-                  columns={columns}
-                  key={row.ticker}
-                />
-              ))}
+              <StockTableViewRow
+                row={row}
+                columns={columns}
+                key={row.ticker}
+              />
+            ))}
         </TableBody>
       </Table>
     </TableContainer>
