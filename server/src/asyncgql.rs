@@ -1,5 +1,6 @@
 use async_graphql::*;
 //for field macro
+use crate::models::schema::intraday_prices::dsl::intraday_prices;
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
 use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
 use diesel::QueryResult;
@@ -40,16 +41,19 @@ pub struct QueryRoot;
 
 #[async_graphql::Object]
 impl QueryRoot {
-	async fn get_debug(&self, push_subscription: crate::push_notification::PushSubscription ) -> bool {
-		println!("push_subscription: {:?}", push_subscription);
-		// TODO:
-		let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
-		let message = crate::push_notification::generate_push_message(subscription_info)
-			.expect("failed to generate push message");
+    async fn get_debug(
+        &self,
+        push_subscription: crate::push_notification::PushSubscription,
+    ) -> bool {
+        println!("push_subscription: {:?}", push_subscription);
+        // TODO:
+        let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
+        let message = crate::push_notification::generate_push_message(subscription_info)
+            .expect("failed to generate push message");
 
-		crate::push_notification::send_it(message).await;
-		true
-	}
+        crate::push_notification::send_it(message).await;
+        true
+    }
 }
 
 pub struct MutationRoot;
@@ -152,26 +156,22 @@ impl SubscriptionRoot {
         };
         let conn = pool.get().unwrap();
 
-        for ticker in ticker_symbols.iter() {
-			println!("ticker inside: {}", ticker);
-            let stock_id = DbStock::find(&conn, ticker)
-                .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
-                .and_then(|intraday_price| {
-                    print!("{:?}", intraday_price);
-                    Ok(intraday_price)
-                });
-        }
-
         let prices: Vec<Stock> = ticker_symbols
             .into_iter()
-            .map(|ticker| Stock {
-                ticker,
-                price: "666.66".to_string(),
-                rsi: 0.1,
-                percent_change: 0.2,
-                timestamp: "12345".to_string(),
+            .filter_map(|ticker| {
+                DbStock::find(&conn, &ticker)
+                    .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
+                    .map(|intraday_price| Stock {
+                        ticker,
+                        price: intraday_price.price.to_string(),
+                        rsi: 0.1,            //TODO: calculate this
+                        percent_change: 0.2, //TODO: calculate this
+                        timestamp: intraday_price.timestamp.to_string(),
+                    })
+                    .ok()
             })
             .collect();
+
         futures::stream::once(async { prices })
     }
 }
