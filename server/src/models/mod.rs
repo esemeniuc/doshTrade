@@ -1,10 +1,10 @@
-pub mod client;
-pub mod client_subscription;
+mod client;
+mod client_subscription;
 pub mod event;
-pub mod intraday_price;
-pub mod property;
-pub mod stock;
-pub mod user;
+mod intraday_price;
+mod property;
+mod stock;
+mod user;
 
 //Models
 pub use client::Client;
