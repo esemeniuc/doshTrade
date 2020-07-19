@@ -5,7 +5,7 @@ use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock}
 use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
 use diesel::QueryResult;
 use futures::lock::Mutex;
-use futures::{Stream, StreamExt};
+use futures::{FutureExt, Stream, StreamExt};
 use log::{error, info, trace, warn};
 use slab::Slab;
 use std::sync::Arc;
@@ -124,7 +124,7 @@ impl MutationRoot {
     }
 }
 
-#[async_graphql::SimpleObject(desc = "Represents a stock status")]
+#[async_graphql::SimpleObject(name = "foo", desc = "Represents a stock status")]
 #[derive(Clone)]
 struct Stock {
     ticker: String,
@@ -145,33 +145,31 @@ impl SubscriptionRoot {
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
     ) -> impl Stream<Item = Vec<Stock>> {
-        let pool = match ctx.data::<crate::db::DbPool>() {
-            Ok(val) => val,
-            Err(e) => {
-                error!("Error getting db pool from context: {}", e.0);
-                panic!();
-                // let emptyStockList: Vec<Stock> = Vec::new();
-                // futures::stream::once( async { emptyStockList } )
-            }
-        };
-        let conn = pool.get().unwrap();
+        fn get_price(conn: &crate::db::DbPoolConn, ticker: String) -> QueryResult<Stock> {
+            DbStock::find(&conn, &ticker)
+                .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
+                .map(|intraday_price| Stock {
+                    ticker,
+                    price: intraday_price.price.to_string(),
+                    rsi: 0.1,            //TODO: calculate this
+                    percent_change: 0.2, //TODO: calculate this
+                    timestamp: intraday_price.timestamp.to_string(),
+                })
+        }
 
-        let prices: Vec<Stock> = ticker_symbols
-            .into_iter()
-            .filter_map(|ticker| {
-                DbStock::find(&conn, &ticker)
-                    .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
-                    .map(|intraday_price| Stock {
-                        ticker,
-                        price: intraday_price.price.to_string(),
-                        rsi: 0.1,            //TODO: calculate this
-                        percent_change: 0.2, //TODO: calculate this
-                        timestamp: intraday_price.timestamp.to_string(),
-                    })
-                    .ok()
+        let pool = ctx
+            .data::<crate::db::DbPool>()
+            .and_then(|pool| pool.get().map_err(|e| FieldError::from(e)));
+
+        let prices = pool
+            .map(|conn| {
+                ticker_symbols
+                    .into_iter()
+                    .filter_map(|ticker| get_price(&conn, ticker).ok())
+                    .collect::<Vec<Stock>>()
             })
-            .collect();
+            .unwrap_or(vec![]);
 
-        futures::stream::once(async { prices })
+        async { prices }.into_stream()
     }
 }
