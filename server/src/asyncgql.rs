@@ -124,7 +124,7 @@ impl MutationRoot {
     }
 }
 
-#[async_graphql::SimpleObject(name = "foo", desc = "Represents a stock status")]
+#[async_graphql::SimpleObject(desc = "Represents a stock's status")]
 #[derive(Clone)]
 struct Stock {
     ticker: String,
@@ -144,34 +144,29 @@ impl SubscriptionRoot {
         &self,
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
-    ) -> impl Stream<Item = Vec<Stock>> {
+    ) -> FieldResult<impl Stream<Item = Vec<Stock>>> {
         let conn = ctx
             .data::<crate::db::DbPool>()
             .and_then(|pool| pool.get().map_err(|e| FieldError::from(e)));
 
-        let conn = match conn {
-            Ok(val) => val,
-            Err(e) => {
-                return futures::stream::once(futures_util::future::ready(vec![]));
-            }
-        };
-
-        fn get_price(conn: &crate::db::DbPoolConn, ticker: String) -> QueryResult<Stock> {
+        fn get_price(conn: &crate::db::DbPoolConn, ticker: &String) -> QueryResult<Stock> {
             DbStock::find(&conn, &ticker)
                 .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
                 .map(|intraday_price| Stock {
-                    ticker,
+                    ticker: ticker.to_owned(),
                     price: intraday_price.price.to_string(),
                     rsi: 0.1,            //TODO: calculate this
                     percent_change: 0.2, //TODO: calculate this
                     timestamp: intraday_price.timestamp.to_string(),
                 })
         }
-        let prices = ticker_symbols
-            .into_iter()
-            .filter_map(|ticker| get_price(&conn, ticker).ok())
-            .collect::<Vec<Stock>>();
-
-        futures::stream::once(futures_util::future::ready(prices))
+        conn.map(|conn| {
+            tokio::time::interval(Duration::from_secs(5)).map(move |_| {
+                ticker_symbols
+                    .iter()
+                    .filter_map(|ticker| get_price(&conn, ticker).ok())
+                    .collect::<Vec<Stock>>()
+            })
+        })
     }
 }
