@@ -145,6 +145,17 @@ impl SubscriptionRoot {
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
     ) -> impl Stream<Item = Vec<Stock>> {
+        let conn = ctx
+            .data::<crate::db::DbPool>()
+            .and_then(|pool| pool.get().map_err(|e| FieldError::from(e)));
+
+        let conn = match conn {
+            Ok(val) => val,
+            Err(e) => {
+                return futures::stream::once(futures_util::future::ready(vec![]));
+            }
+        };
+
         fn get_price(conn: &crate::db::DbPoolConn, ticker: String) -> QueryResult<Stock> {
             DbStock::find(&conn, &ticker)
                 .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
@@ -156,20 +167,11 @@ impl SubscriptionRoot {
                     timestamp: intraday_price.timestamp.to_string(),
                 })
         }
+        let prices = ticker_symbols
+            .into_iter()
+            .filter_map(|ticker| get_price(&conn, ticker).ok())
+            .collect::<Vec<Stock>>();
 
-        let pool = ctx
-            .data::<crate::db::DbPool>()
-            .and_then(|pool| pool.get().map_err(|e| FieldError::from(e)));
-
-        let prices = pool
-            .map(|conn| {
-                ticker_symbols
-                    .into_iter()
-                    .filter_map(|ticker| get_price(&conn, ticker).ok())
-                    .collect::<Vec<Stock>>()
-            })
-            .unwrap_or(vec![]);
-
-        async { prices }.into_stream()
+        futures::stream::once(futures_util::future::ready(prices))
     }
 }
