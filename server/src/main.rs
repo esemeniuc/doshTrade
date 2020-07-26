@@ -25,20 +25,16 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Person {
+struct IEXPrice {
     latest_price: f64,
-    latest_volume: u64,
-    latest_update: u64,
+    latest_volume: i64,
+    latest_update: i64,
 }
 
-async fn getter_wrap(tickers: Vec<String>) {
-    match getter(tickers).await {
-        Ok(_) => trace!("getter() completed successfully"),
-        Err(e) => error!("getter() failed with error {}", e),
-    };
-}
-
-async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
+async fn getter(
+    conn: &crate::db::DbPoolConn,
+    tickers: Vec<String>,
+) -> Result<(), actix_web::Error> {
     // std::env::set_var("RUST_LOG", "actix_http=trace");
     trace!("getting updates");
     trace!(
@@ -48,16 +44,23 @@ async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
             .unwrap()
             .as_secs()
     );
+
     let client = Client::default();
     // Create request builder and send request
-    let mut response = client
-        .get("https://sandbox.iexapis.com/stable/stock/twtr/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839") // <--- notice the "s" in "https://..."
-        .send()
-        .await?; // <- Send http request
-
-    let body = response.body().await?;
-    let p: Person = serde_json::from_slice(body.as_ref())?;
-    trace!("Downloaded: {:?} ", p);
+    for ticker in tickers {
+        let url = format!("https://sandbox.iexapis.com/stable/stock/{}/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839", ticker);
+        let mut response = client.get(url).send().await?;
+        let body = response.body().await?;
+        let p: IEXPrice = serde_json::from_slice(body.as_ref())?;
+        IntradayPrice::insert(
+            conn,
+            ticker,
+            p.latest_price,
+            p.latest_volume,
+            chrono::NaiveDateTime::from_timestamp(p.latest_update, 0),
+        );
+        trace!("Downloaded: {:?} ", p);
+    }
     trace!(
         "after {}",
         SystemTime::now()
@@ -68,21 +71,33 @@ async fn getter(tickers: Vec<String>) -> Result<(), actix_web::Error> {
     Ok(())
 }
 
+use crate::models::IntradayPrice;
 use crate::push_notification::send_it;
 use actix::prelude::*;
 use std::time::Duration;
 use std::time::SystemTime;
 
-struct MyActor;
+struct MyActor {
+    pool: db::DbPool,
+}
 
 impl Actor for MyActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(Duration::from_secs(1), move |_this, ctx| {
-            // actix_rt::spawn(foo(ii));
-            actix_rt::spawn(getter_wrap(vec!["A".to_string()]));
-            // ctx.spawn(actix::fut::wrap_future(getter(&vec!["A".to_string()])));
+        ctx.run_interval(Duration::from_secs(1), move |this, ctx| {
+            let conn = match this.pool.get() {
+                Ok(v) => v,
+                Err(e) => {
+                    warn!("Failed to get pool conn connection");
+                    return;
+                }
+            };
+
+            ctx.spawn(actix::fut::wrap_future(async move {
+                //spawn a separate task since we don't want to block based on prev request
+                getter(&conn, vec!["A".to_string()]);
+            }));
         });
     }
 }
@@ -91,8 +106,6 @@ impl Actor for MyActor {
 async fn main() -> std::io::Result<()> {
     // let now_future = actix::clock::delay_for(Duration::from_secs(5));
     std::env::set_var("RUST_LOG", "actix_web=info");
-    // let a = getter(&vec!["AAPL".to_string(), "GOOG".to_string()]).await;
-    MyActor.start();
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
@@ -126,11 +139,11 @@ async fn main() -> std::io::Result<()> {
     let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
 
-    // actix_rt::spawn(async move { MyActor.start(); }); //start background fetcher
+    MyActor { pool: pool.clone() }.start();
 
     // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
-        .data(pool)
+        .data(pool.clone())
         .finish();
 
     println!("Playground: http://{}/graphiql", ip_port);
@@ -139,9 +152,7 @@ async fn main() -> std::io::Result<()> {
         let cors_rules = if cfg!(debug_assertions) {
             Cors::default()
         } else {
-            Cors::new()
-                .allowed_methods(vec!["GET", "POST"])
-                .finish()
+            Cors::new().allowed_methods(vec!["GET", "POST"]).finish()
         };
         App::new()
             .wrap(cors_rules)
