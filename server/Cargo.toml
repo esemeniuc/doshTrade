@@ -10,16 +10,16 @@ edition = "2018"
 diesel = { version = "1.4.5", features = ["sqlite", "r2d2", "chrono"] }
 diesel_migrations = "1.4.0"
 juniper = "0.14.2"
-rust-embed= "5.5.1"
-log = "0.4.8"
+rust-embed= "5.6.0"
+log = "0.4.11"
 
-async-graphql = "1.16.9"
-async-graphql-actix-web = "1.16.6"
+async-graphql = "1.16.13"
+async-graphql-actix-web = "1.16.10"
 actix-web = { version = "2.0.0", features = ["rustls"] }
 actix-rt = "1.1.1"
 actix-web-actors = "2.0.0"
 slab = "0.4.2"
-tokio = { version = "0.2.21", features = ["time", "stream"] }
+tokio = { version = "0.2.22", features = ["time", "stream"] }
 futures = "0.3.5"
 futures-util = "0.3.5"
 
@@ -31,7 +31,7 @@ chrono = { version = "0.4.13", features = ["serde"] }
 jsonwebtoken = "7.2.0"
 serde = { version = "1.0.114", features = ["derive"] }
 names = "0.11.0"
-serde_json = "1.0.56"
+serde_json = "1.0.57"
 rand = "0.7.3"
 clap = "2.33.1"
 web-push = "0.7.2"

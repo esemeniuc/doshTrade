@@ -5,6 +5,8 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 #[macro_use]
+extern crate log;
+#[macro_use]
 extern crate juniper;
 
 mod asyncgql;
@@ -36,7 +38,7 @@ async fn getter(
     tickers: Vec<String>,
 ) -> Result<(), actix_web::Error> {
     // std::env::set_var("RUST_LOG", "actix_http=trace");
-    trace!("getting updates");
+    trace!("getting updates from IEX");
     trace!(
         "start {}",
         SystemTime::now()
@@ -96,7 +98,8 @@ impl Actor for MyActor {
 
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawn a separate task since we don't want to block based on prev request
-                getter(&conn, vec!["A".to_string()]);
+                let result = getter(&conn, vec!["A".to_string()]).await;
+                result.map_err(|err| warn!("Failed to get data from iex, {}", err));
             }));
         });
     }
