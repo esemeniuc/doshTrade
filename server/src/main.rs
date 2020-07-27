@@ -155,6 +155,7 @@ async fn main() -> std::io::Result<()> {
 
     let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
+    db::seed(&pool.get().unwrap()).expect("Unable to seed the database");
 
     MyActor { pool: pool.clone() }.start();
 

@@ -1,13 +1,15 @@
-use diesel::prelude::*;
-use diesel::r2d2::{Pool, PooledConnection, ConnectionManager};
 use diesel::connection::SimpleConnection;
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 
 pub type DbPool = Pool<ConnectionManager<SqliteConnection>>;
 pub type DbPoolConn = PooledConnection<ConnectionManager<SqliteConnection>>;
 
-pub fn establish_connection(database_url :&str) -> DbPool {
+pub fn establish_connection(database_url: &str) -> DbPool {
     let manager = ConnectionManager::<SqliteConnection>::new(database_url);
-    Pool::builder().build(manager).expect("Failed to create pool.")
+    Pool::builder()
+        .build(manager)
+        .expect("Failed to create pool.")
 }
 
 #[allow(dead_code)]
@@ -16,13 +18,17 @@ pub fn establish_connection_temp_db() -> DbPool {
 
     #[derive(Debug)]
     struct SqliteForeignKey {}
-    impl diesel::r2d2::CustomizeConnection::<SqliteConnection, diesel::r2d2::Error> for SqliteForeignKey {
+    impl diesel::r2d2::CustomizeConnection<SqliteConnection, diesel::r2d2::Error> for SqliteForeignKey {
         fn on_acquire(&self, conn: &mut SqliteConnection) -> Result<(), diesel::r2d2::Error> {
-            conn.batch_execute("PRAGMA foreign_keys = ON").map_err(diesel::r2d2::Error::QueryError)
+            conn.batch_execute("PRAGMA foreign_keys = ON")
+                .map_err(diesel::r2d2::Error::QueryError)
         }
     }
 
-    Pool::builder().connection_customizer(Box::new(SqliteForeignKey {})).build(manager).expect("Failed to create pool.")
+    Pool::builder()
+        .connection_customizer(Box::new(SqliteForeignKey {}))
+        .build(manager)
+        .expect("Failed to create pool.")
 }
 
 pub fn run_migrations(conn: &DbPoolConn) -> Result<(), diesel_migrations::RunMigrationsError> {
@@ -33,6 +39,24 @@ pub fn run_migrations(conn: &DbPoolConn) -> Result<(), diesel_migrations::RunMig
     // By default the output is thrown out. If you want to redirect it to stdout, you
     // should call embedded_migrations::run_with_output.
     embedded_migrations::run_with_output(conn, &mut std::io::stdout())
+}
+
+pub fn seed(conn: &DbPoolConn) -> QueryResult<usize> {
+    use crate::models::schema::stocks::dsl::*;
+
+    diesel::insert_into(stocks)
+        .values((ticker.eq("NFLX"), name.eq("Netflix")))
+        .execute(conn)
+        .and_then(|_| {
+            diesel::insert_into(stocks)
+                .values((ticker.eq("AAPL"), name.eq("AAPL")))
+                .execute(conn)
+        })
+        .and_then(|_| {
+            diesel::insert_into(stocks)
+                .values((ticker.eq("GOOG"), name.eq("Google")))
+                .execute(conn)
+        })
 }
 
 #[allow(dead_code)]
