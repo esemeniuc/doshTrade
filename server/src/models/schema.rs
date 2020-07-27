@@ -20,7 +20,7 @@ table! {
         id -> Integer,
         stock_id -> Integer,
         price -> Double,
-        volume -> Integer,
+        volume -> BigInt,
         timestamp -> Timestamp,
     }
 }

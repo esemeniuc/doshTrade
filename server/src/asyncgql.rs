@@ -1,10 +1,11 @@
 use async_graphql::*;
 //for field macro
+use crate::models::schema::intraday_prices::dsl::intraday_prices;
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
 use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
 use diesel::QueryResult;
 use futures::lock::Mutex;
-use futures::{Stream, StreamExt};
+use futures::{FutureExt, Stream, StreamExt};
 use log::{error, info, trace, warn};
 use slab::Slab;
 use std::sync::Arc;
@@ -39,7 +40,21 @@ pub type Storage = Arc<Mutex<Slab<Book>>>;
 pub struct QueryRoot;
 
 #[async_graphql::Object]
-impl QueryRoot {}
+impl QueryRoot {
+    async fn get_debug(
+        &self,
+        push_subscription: crate::push_notification::PushSubscription,
+    ) -> bool {
+        println!("push_subscription: {:?}", push_subscription);
+        // TODO:
+        let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
+        let message = crate::push_notification::generate_push_message(subscription_info)
+            .expect("failed to generate push message");
+
+        crate::push_notification::send_it(message).await;
+        true
+    }
+}
 
 pub struct MutationRoot;
 
@@ -109,7 +124,7 @@ impl MutationRoot {
     }
 }
 
-#[async_graphql::SimpleObject(desc = "Represents a stock status")]
+#[async_graphql::SimpleObject(desc = "Represents a stock's status")]
 #[derive(Clone)]
 struct Stock {
     ticker: String,
@@ -129,38 +144,29 @@ impl SubscriptionRoot {
         &self,
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
-    ) -> impl Stream<Item = Vec<Stock>> {
-        let pool = match ctx.data::<crate::db::DbPool>() {
-            Ok(val) => val,
-            Err(e) => {
-                error!("Error getting db pool from context: {}", e.0);
-                panic!();
-                // let emptyStockList: Vec<Stock> = Vec::new();
-                // futures::stream::once( async { emptyStockList } )
-            }
-        };
-        let conn = pool.get().unwrap();
+    ) -> FieldResult<impl Stream<Item = Vec<Stock>>> {
+        let conn = ctx
+            .data::<crate::db::DbPool>()
+            .and_then(|pool| pool.get().map_err(|e| FieldError::from(e)));
 
-        for ticker in ticker_symbols.iter() {
-			println!("ticker inside: {}", ticker);
-            let stock_id = DbStock::find(&conn, ticker)
+        fn get_price(conn: &crate::db::DbPoolConn, ticker: &String) -> QueryResult<Stock> {
+            DbStock::find(&conn, &ticker)
                 .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
-                .and_then(|intraday_price| {
-                    print!("{:?}", intraday_price);
-                    Ok(intraday_price)
-                });
+                .map(|intraday_price| Stock {
+                    ticker: ticker.to_owned(),
+                    price: intraday_price.price.to_string(),
+                    rsi: 0.1,            //TODO: calculate this
+                    percent_change: 0.2, //TODO: calculate this
+                    timestamp: intraday_price.timestamp.to_string(),
+                })
         }
-
-        let prices: Vec<Stock> = ticker_symbols
-            .into_iter()
-            .map(|ticker| Stock {
-                ticker,
-                price: "666.66".to_string(),
-                rsi: 0.1,
-                percent_change: 0.2,
-                timestamp: "12345".to_string(),
+        conn.map(|conn| {
+            tokio::time::interval(Duration::from_secs(5)).map(move |_| {
+                ticker_symbols
+                    .iter()
+                    .filter_map(|ticker| get_price(&conn, ticker).ok())
+                    .collect::<Vec<Stock>>()
             })
-            .collect();
-        futures::stream::once(async { prices })
+        })
     }
 }

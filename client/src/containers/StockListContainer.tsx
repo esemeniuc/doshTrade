@@ -7,6 +7,7 @@ import StockTableView from "../components/StockTableView";
 import TransitionsModal from "./TransitionsModal";
 import { AppContext } from "../redux/context";
 import { yoloHandCurated_stock, yoloHandCurated } from "../graphql/__generated__/yoloHandCurated";
+import DebugButton from "../components/DebugButton";
 
 const STOCK_PRICES_SUBSCRIPTION = loader(
   "../graphql/yoloHandCuratedStocks.gql"
@@ -52,6 +53,7 @@ function StockListContainer() {
         description="You will be notified when your favorite stocks dip"
       />
       {data && <StockTableView stockData={data.stock} />}
+      <DebugButton />
     </Container>
   );
 }
