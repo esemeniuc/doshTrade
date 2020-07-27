@@ -24,12 +24,12 @@ impl IntradayPrice {
 
     pub fn insert(
         conn: &crate::db::DbPoolConn,
-        other_stock_ticker: String,
+        other_stock_ticker: &String,
         other_price: f64,
         other_volume: i64,
         other_timestamp: chrono::NaiveDateTime,
     ) -> QueryResult<usize> {
-        crate::models::Stock::find(conn, &other_stock_ticker).and_then(|stock| {
+        crate::models::Stock::find(conn, other_stock_ticker).and_then(|stock| {
             diesel::insert_into(intraday_prices::table)
                 .values((
                     stock_id.eq(stock.id),

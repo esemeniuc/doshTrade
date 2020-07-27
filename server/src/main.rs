@@ -33,14 +33,13 @@ struct IEXPrice {
     latest_update: i64,
 }
 
-async fn getter(
+async fn fetch_tickers(
     conn: &crate::db::DbPoolConn,
     tickers: Vec<String>,
 ) -> Result<(), actix_web::Error> {
-    // std::env::set_var("RUST_LOG", "actix_http=trace");
-    trace!("getting updates from IEX");
+    info!("Getting updates from IEX for {:#?}", tickers);
     trace!(
-        "start {}",
+        "Started at {}",
         SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
@@ -50,21 +49,30 @@ async fn getter(
     let client = Client::default();
     // Create request builder and send request
     for ticker in tickers {
+        info!("Fetching ticker: {}", ticker);
         let url = format!("https://sandbox.iexapis.com/stable/stock/{}/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839", ticker);
+        info!("Using url: {}", url);
         let mut response = client.get(url).send().await?;
         let body = response.body().await?;
-        let p: IEXPrice = serde_json::from_slice(body.as_ref())?;
-        IntradayPrice::insert(
+        let price: IEXPrice = serde_json::from_slice(body.as_ref())?;
+        info!("Downloaded: {:#?} ", price);
+        let query_result = IntradayPrice::insert(
             conn,
-            ticker,
-            p.latest_price,
-            p.latest_volume,
-            chrono::NaiveDateTime::from_timestamp(p.latest_update, 0),
+            &ticker,
+            price.latest_price,
+            price.latest_volume,
+            chrono::NaiveDateTime::from_timestamp(price.latest_update, 0),
         );
-        trace!("Downloaded: {:?} ", p);
+        match query_result {
+            Ok(rows) => info!("Inserted intraday update for ticker: {}", ticker),
+            Err(e) => warn!(
+                "Failed to fetch intraday update for ticker: {} with error: {}",
+                ticker, e
+            ),
+        }
     }
     trace!(
-        "after {}",
+        "Ended at {}",
         SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
@@ -91,15 +99,18 @@ impl Actor for MyActor {
             let conn = match this.pool.get() {
                 Ok(v) => v,
                 Err(e) => {
-                    warn!("Failed to get pool conn connection");
+                    warn!("Failed to get pool conn connection {:?}", e);
                     return;
                 }
             };
 
             ctx.spawn(actix::fut::wrap_future(async move {
-                //spawn a separate task since we don't want to block based on prev request
-                let result = getter(&conn, vec!["A".to_string()]).await;
-                result.map_err(|err| warn!("Failed to get data from iex, {}", err));
+                //spawns a separate task since we don't want to block based on prev request
+                //TODO: find out which tickers are needed to fetch
+                match fetch_tickers(&conn, vec!["AAPL".to_string(), "NFLX".to_string()]).await {
+                    Ok(_) => info!("Fetched all tickers"),
+                    Err(e) => warn!("Failed to get data from iex, {}", e),
+                }
             }));
         });
     }
@@ -107,8 +118,11 @@ impl Actor for MyActor {
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    // let now_future = actix::clock::delay_for(Duration::from_secs(5));
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
+    // std::env::set_var("RUST_LOG", "actix_web=info");
+    for argument in std::env::args() {
+        println!("{}", argument);
+    }
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
