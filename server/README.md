@@ -32,8 +32,11 @@ IP_PORT=0.0.0.0:80 ./target/release/replace_sh
 
 #### Build client, build server, deploy
 ```bash
-# build client/server
-cd ../client && yarn build && cd - && cargo build --release -j $(nproc)
+# build client
+(cd ../client && yarn build)
+
+#build server
+docker run --rm -v "$PWD":/replace.sh/server -v "$PWD/../client":/replace.sh/client -w /replace.sh/server rust:slim sh -c "apt update && apt install -y libsqlite3-dev && cargo build --release -j $(nproc)"
 
 # copy files
 scp -C target/release/replace_sh root@direct.replace.sh:~/replace_sh.swp
