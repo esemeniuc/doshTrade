@@ -124,7 +124,7 @@ impl MutationRoot {
 }
 
 #[derive(async_graphql::SimpleObject, Clone)]
-//(desc = "Represents a stock's status")
+#[graphql(desc = "Represents a stock's status")]
 struct Stock {
     ticker: String,
     price: String,

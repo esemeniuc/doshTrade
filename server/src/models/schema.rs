@@ -45,32 +45,6 @@ table! {
     }
 }
 
-table! {
-    events (id) {
-        id -> Integer,
-        url -> Text,
-        ip -> Text,
-        user_agent -> Text,
-        fingerprint -> Text,
-        is_private -> Bool,
-        property_id -> Text,
-        created_at -> Timestamp,
-    }
-}
-
-table! {
-    properties (id) {
-        id -> Text,
-        website_name -> Text,
-        website_url -> Text,
-        user_id -> Integer,
-        created_at -> Timestamp,
-    }
-}
-
-joinable!(events -> properties (property_id));
-joinable!(properties -> users (user_id));
-
 joinable!(client_subscriptions -> clients (client_id));
 joinable!(client_subscriptions -> stocks (stock_id));
 joinable!(intraday_prices -> stocks (stock_id));
@@ -81,6 +55,4 @@ allow_tables_to_appear_in_same_query!(
     intraday_prices,
     stocks,
     users,
-    events,
-    properties,
 );

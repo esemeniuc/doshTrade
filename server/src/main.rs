@@ -59,12 +59,16 @@ async fn fetch_tickers(
         let body = response.body().await?;
         let price: IEXPrice = serde_json::from_slice(body.as_ref())?;
         info!("Downloaded: {:#?} ", price);
+
+        let secs = price.latest_update / 1000; //time comes in as milliseconds, convert to sec
+        let remaining_nanos = (price.latest_update % 1000) * 1_000_000;
+
         let query_result = IntradayPrice::insert(
             conn,
             &ticker,
             price.latest_price,
             price.latest_volume,
-            chrono::NaiveDateTime::from_timestamp(price.latest_update, 0),
+            chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32),
         );
         match query_result {
             Ok(rows) => info!("Inserted intraday update for ticker: {}", ticker),
@@ -92,7 +96,7 @@ impl Actor for MyActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(Duration::from_secs(1), move |this, ctx| {
+        ctx.run_interval(Duration::from_secs(10), move |this, ctx| {
             let conn = match this.pool.get() {
                 Ok(v) => v,
                 Err(e) => {
