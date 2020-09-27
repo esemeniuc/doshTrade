@@ -1,8 +1,10 @@
-use juniper::{FieldResult, RootNode};
 use std::ops::Deref;
-use crate::models::{User, Event, Property};
+
+use juniper::{FieldResult, RootNode};
+
 use crate::auth;
 use crate::models::event::PrivateCounts;
+use crate::models::{Event, Property, User};
 
 //file based on https://github.com/actix/examples/tree/master/juniper
 pub struct Context {
@@ -23,12 +25,12 @@ impl Query {
     fn is_auth(context: &Context, jwt: Option<String>) -> FieldResult<bool> {
         let jwt = match jwt {
             Some(jwt) => jwt,
-            None => return Ok(false)
+            None => return Ok(false),
         };
 
         let user_id = match crate::auth::get_user_id(&jwt) {
             Ok(user_id) => user_id,
-            Err(e) => return Ok(false)
+            Err(e) => return Ok(false),
         };
 
         match User::is_in_db(&context.db_conn, user_id) {
@@ -38,53 +40,107 @@ impl Query {
     }
 
     #[graphql(description = "Returns all web property stats for a users'")]
-    fn private_mode_stats(context: &Context, property_id: juniper::ID) -> FieldResult<Option<Vec<PrivateCounts>>> {
+    fn private_mode_stats(
+        context: &Context,
+        property_id: juniper::ID,
+    ) -> FieldResult<Option<Vec<PrivateCounts>>> {
         let user_id = match auth::get_user_id(&context.token) {
             Ok(user_id) => user_id,
-            _ => return Err(juniper::FieldError::new("AUTHORIZATION_ERROR", graphql_value!({"error_description": "Not authorized: invalid token"})))
+            _ => {
+                return Err(juniper::FieldError::new(
+                    "AUTHORIZATION_ERROR",
+                    graphql_value!({"error_description": "Not authorized: invalid token"}),
+                ));
+            }
         };
 
-        if Property::is_property_id_belong_to_user_id(&context.db_conn, &property_id, user_id) != Ok(true) {
-            return Err(juniper::FieldError::new("AUTHORIZATION_ERROR", graphql_value!({"error_description": "Not found: no property id found for given user"})));
+        if Property::is_property_id_belong_to_user_id(&context.db_conn, &property_id, user_id)
+            != Ok(true)
+        {
+            return Err(juniper::FieldError::new(
+                "AUTHORIZATION_ERROR",
+                graphql_value!({"error_description": "Not found: no property id found for given user"}),
+            ));
         }
         Ok(Event::get_private_stats(&context.db_conn, &property_id.deref()).ok())
     }
 
-    #[graphql(description = "Returns a users' web property stats in the given date range. Date format: 'YYYY-MM-DD'")]
-    fn private_mode_stats_by_date(context: &Context, property_id: juniper::ID, start_date: String, end_date: String) -> FieldResult<Option<Vec<PrivateCounts>>> {
+    #[graphql(
+        description = "Returns a users' web property stats in the given date range. Date format: 'YYYY-MM-DD'"
+    )]
+    fn private_mode_stats_by_date(
+        context: &Context,
+        property_id: juniper::ID,
+        start_date: String,
+        end_date: String,
+    ) -> FieldResult<Option<Vec<PrivateCounts>>> {
         let user_id = match auth::get_user_id(&context.token) {
             Ok(user_id) => user_id,
-            _ => return Err(juniper::FieldError::new("AUTHORIZATION_ERROR", graphql_value!({"error_description": "Not authorized: invalid token"})))
+            _ => {
+                return Err(juniper::FieldError::new(
+                    "AUTHORIZATION_ERROR",
+                    graphql_value!({"error_description": "Not authorized: invalid token"}),
+                ));
+            }
         };
 
-        if Property::is_property_id_belong_to_user_id(&context.db_conn, &property_id, user_id) != Ok(true) {
-            return Err(juniper::FieldError::new("AUTHORIZATION_ERROR", graphql_value!({"error_description": "Not found: no property id found for given user"})));
+        if Property::is_property_id_belong_to_user_id(&context.db_conn, &property_id, user_id)
+            != Ok(true)
+        {
+            return Err(juniper::FieldError::new(
+                "AUTHORIZATION_ERROR",
+                graphql_value!({"error_description": "Not found: no property id found for given user"}),
+            ));
         }
 
         let start_date = match chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d") {
             Ok(date) => date,
-            Err(_) => return Err(juniper::FieldError::new("INPUT_ERROR", graphql_value!({"error_description": "Date format is not ISO 8601 format, eg. YYYY-MM-DD"}))),
+            Err(_) => {
+                return Err(juniper::FieldError::new(
+                    "INPUT_ERROR",
+                    graphql_value!({"error_description": "Date format is not ISO 8601 format, eg. YYYY-MM-DD"}),
+                ));
+            }
         };
 
         let end_date = match chrono::NaiveDate::parse_from_str(&end_date, "%Y-%m-%d") {
             Ok(date) => date,
-            Err(_) => return Err(juniper::FieldError::new("INPUT_ERROR", graphql_value!({"error_description": "Date format is not ISO 8601 format, eg. YYYY-MM-DD"}))),
+            Err(_) => {
+                return Err(juniper::FieldError::new(
+                    "INPUT_ERROR",
+                    graphql_value!({"error_description": "Date format is not ISO 8601 format, eg. YYYY-MM-DD"}),
+                ));
+            }
         };
-        Ok(Event::get_private_stats_by_date(&context.db_conn, &property_id.deref(), &start_date, &end_date).ok())
+        Ok(Event::get_private_stats_by_date(
+            &context.db_conn,
+            &property_id.deref(),
+            &start_date,
+            &end_date,
+        )
+        .ok())
     }
 
     #[graphql(description = "Returns a users' web properties")]
     fn get_properties(context: &Context) -> FieldResult<Vec<Property>> {
         let user_id = match auth::get_user_id(&context.token) {
             Ok(user_id) => user_id,
-            _ => return Err(juniper::FieldError::new("AUTHORIZATION_ERROR", graphql_value!({"error_description": "Not authorized: invalid token"})))
+            _ => {
+                return Err(juniper::FieldError::new(
+                    "AUTHORIZATION_ERROR",
+                    graphql_value!({"error_description": "Not authorized: invalid token"}),
+                ));
+            }
         };
 
         match Property::get_properties(&context.db_conn, user_id) {
             Ok(properties) => Ok(properties),
             Err(e) => {
                 eprintln!("Error querying for list of properties {}", e);
-                Err(juniper::FieldError::new("UNKNOWN_ERROR", graphql_value!({"error_description": "Internal server error"})))
+                Err(juniper::FieldError::new(
+                    "UNKNOWN_ERROR",
+                    graphql_value!({"error_description": "Internal server error"}),
+                ))
             }
         }
     }
@@ -98,69 +154,88 @@ impl Mutation {
     fn login(context: &Context, email: String, password: String) -> FieldResult<String> {
         match User::login(&context.db_conn, &email, &password) {
             Ok(user) => Ok(user.auth_bearer_token),
-            Err(e) => Err(juniper::FieldError::new("AUTHENTICATION_ERROR",
-                                                   graphql_value!({"error_description": "Not authorized: email or password is incorrect"}))),
+            Err(e) => Err(juniper::FieldError::new(
+                "AUTHENTICATION_ERROR",
+                graphql_value!({"error_description": "Not authorized: email or password is incorrect"}),
+            )),
         }
     }
 
     #[graphql(description = "Signs a user up, returning a JWT")]
-    fn signup(context: &Context,
-              first_name: String,
-              last_name: String,
-              email: String,
-              password: String,
+    fn signup(
+        context: &Context,
+        first_name: String,
+        last_name: String,
+        email: String,
+        password: String,
     ) -> FieldResult<String> {
-        let user = User::insert(&context.db_conn,
-                                &first_name,
-                                &last_name,
-                                &email,
-                                &password);
+        let user = User::insert(&context.db_conn, &first_name, &last_name, &email, &password);
 
         match user {
             Ok(user) => Ok(user.auth_bearer_token),
             Err(e) => {
                 println!("Error inserting user: {}", e);
-                Err(juniper::FieldError::new("DB_INSERT_ERROR", graphql_value!({"error_description": "Cannot save to db"})))
+                Err(juniper::FieldError::new(
+                    "DB_INSERT_ERROR",
+                    graphql_value!({"error_description": "Cannot save to db"}),
+                ))
             }
         }
     }
 
-    #[graphql(description = "Creates a new property under the user's account, returns the property")]
-    fn create_property(context: &Context, website_name: String, website_url: String) -> FieldResult<Option<Property>> {
+    #[graphql(
+        description = "Creates a new property under the user's account, returns the property"
+    )]
+    fn create_property(
+        context: &Context,
+        website_name: String,
+        website_url: String,
+    ) -> FieldResult<Option<Property>> {
         let user = match User::from_jwt(&context.db_conn, &context.token) {
             Ok(user) => user,
-            Err(_e) => return Err(juniper::FieldError::new("AUTHENTICATION_ERROR", graphql_value!({"error_description": "User not found"})))
+            Err(_e) => {
+                return Err(juniper::FieldError::new(
+                    "AUTHENTICATION_ERROR",
+                    graphql_value!({"error_description": "User not found"}),
+                ));
+            }
         };
 
-        let property_id = match Property::generate_property_id_for_user_id(&context.db_conn, user.id) {
-            Ok(property_id) => property_id,
-            Err(_e) => return Err(juniper::FieldError::new("SERVER_ERROR", graphql_value!({"error_description": "Could not generate property id"})))
-        };
+        let property_id =
+            match Property::generate_property_id_for_user_id(&context.db_conn, user.id) {
+                Ok(property_id) => property_id,
+                Err(_e) => {
+                    return Err(juniper::FieldError::new(
+                        "SERVER_ERROR",
+                        graphql_value!({"error_description": "Could not generate property id"}),
+                    ));
+                }
+            };
 
-        match Property::insert(&context.db_conn,
-                               &property_id,
-                               &website_name,
-                               &website_url,
-                               user.id) {
+        match Property::insert(
+            &context.db_conn,
+            &property_id,
+            &website_name,
+            &website_url,
+            user.id,
+        ) {
             Ok(property) => Ok(Some(property)),
             Err(e) => {
                 println!("Error inserting user: {}", e);
-                Err(juniper::FieldError::new("DB_INSERT_ERROR", graphql_value!({"error_description": "Cannot save to db"})))
+                Err(juniper::FieldError::new(
+                    "DB_INSERT_ERROR",
+                    graphql_value!({"error_description": "Cannot save to db"}),
+                ))
             }
         }
     }
-}
-
-pub type Schema = RootNode<'static, Query, Mutation>;
-
-pub fn create_schema() -> Schema {
-    Schema::new(Query {}, Mutation {})
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use actix_web::{test, web, App};
+
+    use super::*;
 
     #[test]
     fn test_signup_login() {
@@ -177,48 +252,62 @@ mod tests {
           )
         }
     "#;
-        let (res, errs) = juniper::execute(signup,
-                                           None,
-                                           &create_schema(),
-                                           &Default::default(),
-                                           &Context {
-                                               db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                               token: "".to_string(),
-                                           }).unwrap();
+        let (res, errs) = juniper::execute(
+            signup,
+            None,
+            &create_schema(),
+            &Default::default(),
+            &Context {
+                db_conn: pool.get().expect("couldn't get db connection from pool"),
+                token: "".to_string(),
+            },
+        )
+        .unwrap();
 
-        let signup_jwt = res.as_object_value().unwrap()
-            .get_field_value("signup").unwrap()
-            .as_scalar_value::<String>().unwrap()
+        let signup_jwt = res
+            .as_object_value()
+            .unwrap()
+            .get_field_value("signup")
+            .unwrap()
+            .as_scalar_value::<String>()
+            .unwrap()
             .to_owned();
         let signup_jwt_clone = signup_jwt.clone();
         assert!(errs.is_empty());
         assert!(signup_jwt.len() > 0);
         assert!(auth::is_valid_token(signup_jwt.as_str()));
-        assert_eq!(res, graphql_value!({"signup": signup_jwt}));
+        assert_eq!(res, graphql_value!({ "signup": signup_jwt }));
 
         let login = r#"
         query{
           login(email: "a@a.com", password: "pass")
         }
     "#;
-        let (res, errs) = juniper::execute(login,
-                                           None,
-                                           &create_schema(),
-                                           &Default::default(),
-                                           &Context {
-                                               db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                               token: "".to_string(),
-                                           }).unwrap();
+        let (res, errs) = juniper::execute(
+            login,
+            None,
+            &create_schema(),
+            &Default::default(),
+            &Context {
+                db_conn: pool.get().expect("couldn't get db connection from pool"),
+                token: "".to_string(),
+            },
+        )
+        .unwrap();
 
-        let login_jwt = res.as_object_value().unwrap()
-            .get_field_value("login").unwrap()
-            .as_scalar_value::<String>().unwrap()
+        let login_jwt = res
+            .as_object_value()
+            .unwrap()
+            .get_field_value("login")
+            .unwrap()
+            .as_scalar_value::<String>()
+            .unwrap()
             .to_owned();
         let login_jwt_clone = login_jwt.clone();
         assert!(errs.is_empty());
         assert!(login_jwt.len() > 0);
         assert!(auth::is_valid_token(login_jwt.as_str()));
-        assert_eq!(res, graphql_value!({"login": login_jwt}));
+        assert_eq!(res, graphql_value!({ "login": login_jwt }));
         assert_ne!(signup_jwt_clone, login_jwt_clone);
     }
 
@@ -238,17 +327,24 @@ mod tests {
               )
             }
         "#;
-            let (res, errs) = juniper::execute(signup,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: "".to_string(),
-                                               }).unwrap();
-            let signup_jwt = res.as_object_value().unwrap()
-                .get_field_value("signup").unwrap()
-                .as_scalar_value::<String>().unwrap()
+            let (res, errs) = juniper::execute(
+                signup,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: "".to_string(),
+                },
+            )
+            .unwrap();
+            let signup_jwt = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("signup")
+                .unwrap()
+                .as_scalar_value::<String>()
+                .unwrap()
                 .to_owned();
             assert!(errs.is_empty());
             signup_jwt.clone()
@@ -260,17 +356,24 @@ mod tests {
               login(email: "a@a.com", password: "pass")
             }
         "#;
-            let (res, errs) = juniper::execute(login,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: "".to_string(),
-                                               }).unwrap();
-            let login_jwt = res.as_object_value().unwrap()
-                .get_field_value("login").unwrap()
-                .as_scalar_value::<String>().unwrap()
+            let (res, errs) = juniper::execute(
+                login,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: "".to_string(),
+                },
+            )
+            .unwrap();
+            let login_jwt = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("login")
+                .unwrap()
+                .as_scalar_value::<String>()
+                .unwrap()
                 .to_owned();
             assert!(errs.is_empty());
             assert_ne!(signup_jwt_clone, login_jwt);
@@ -286,20 +389,29 @@ mod tests {
               }
             }
         "#;
-            let (res, errs) = juniper::execute(create_property,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: login_jwt_clone,
-                                               }).unwrap();
+            let (res, errs) = juniper::execute(
+                create_property,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: login_jwt_clone,
+                },
+            )
+            .unwrap();
 
-            let create_property = res.as_object_value().unwrap()
-                .get_field_value("createProperty").unwrap()
-                .as_object_value().unwrap()
-                .get_field_value("id").unwrap()
-                .as_scalar_value::<String>().unwrap()
+            let create_property = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("createProperty")
+                .unwrap()
+                .as_object_value()
+                .unwrap()
+                .get_field_value("id")
+                .unwrap()
+                .as_scalar_value::<String>()
+                .unwrap()
                 .to_owned();
             assert_eq!(create_property, "1-1");
             assert!(errs.is_empty());
@@ -314,20 +426,29 @@ mod tests {
               }
             }
         "#;
-            let (res, errs) = juniper::execute(create_property,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: signup_jwt_clone,
-                                               }).unwrap();
+            let (res, errs) = juniper::execute(
+                create_property,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: signup_jwt_clone,
+                },
+            )
+            .unwrap();
 
-            let create_property = res.as_object_value().unwrap()
-                .get_field_value("createProperty").unwrap()
-                .as_object_value().unwrap()
-                .get_field_value("id").unwrap()
-                .as_scalar_value::<String>().unwrap()
+            let create_property = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("createProperty")
+                .unwrap()
+                .as_object_value()
+                .unwrap()
+                .get_field_value("id")
+                .unwrap()
+                .as_scalar_value::<String>()
+                .unwrap()
                 .to_owned();
             assert_eq!(create_property, "1-2");
             assert!(errs.is_empty());
@@ -342,14 +463,17 @@ mod tests {
               }
             }
         "#;
-            let (_res, errs) = juniper::execute(create_property,
-                                                None,
-                                                &create_schema(),
-                                                &Default::default(),
-                                                &Context {
-                                                    db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                    token: "".to_string(),
-                                                }).unwrap();
+            let (_res, errs) = juniper::execute(
+                create_property,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: "".to_string(),
+                },
+            )
+            .unwrap();
 
             assert!(!errs.is_empty());
         }
@@ -371,17 +495,24 @@ mod tests {
               )
             }
         "#;
-            let (res, errs) = juniper::execute(signup,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: "".to_string(),
-                                               }).unwrap();
-            let signup_jwt = res.as_object_value().unwrap()
-                .get_field_value("signup").unwrap()
-                .as_scalar_value::<String>().unwrap()
+            let (res, errs) = juniper::execute(
+                signup,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: "".to_string(),
+                },
+            )
+            .unwrap();
+            let signup_jwt = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("signup")
+                .unwrap()
+                .as_scalar_value::<String>()
+                .unwrap()
                 .to_owned();
             assert!(errs.is_empty());
             signup_jwt.clone()
@@ -393,17 +524,24 @@ mod tests {
               login(email: "a@a.com", password: "pass")
             }
         "#;
-            let (res, errs) = juniper::execute(login,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: "".to_string(),
-                                               }).unwrap();
-            let login_jwt = res.as_object_value().unwrap()
-                .get_field_value("login").unwrap()
-                .as_scalar_value::<String>().unwrap()
+            let (res, errs) = juniper::execute(
+                login,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: "".to_string(),
+                },
+            )
+            .unwrap();
+            let login_jwt = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("login")
+                .unwrap()
+                .as_scalar_value::<String>()
+                .unwrap()
                 .to_owned();
             assert!(errs.is_empty());
             assert_ne!(signup_jwt_clone, login_jwt);
@@ -419,20 +557,29 @@ mod tests {
               }
             }
         "#;
-            let (res, errs) = juniper::execute(create_property,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: login_jwt_clone.clone(),
-                                               }).unwrap();
+            let (res, errs) = juniper::execute(
+                create_property,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: login_jwt_clone.clone(),
+                },
+            )
+            .unwrap();
 
-            let create_property = res.as_object_value().unwrap()
-                .get_field_value("createProperty").unwrap()
-                .as_object_value().unwrap()
-                .get_field_value("id").unwrap()
-                .as_scalar_value::<String>().unwrap()
+            let create_property = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("createProperty")
+                .unwrap()
+                .as_object_value()
+                .unwrap()
+                .get_field_value("id")
+                .unwrap()
+                .as_scalar_value::<String>()
+                .unwrap()
                 .to_owned();
             assert_eq!(create_property, "1-1");
             assert!(errs.is_empty());
@@ -447,10 +594,12 @@ mod tests {
                 fingerprint: "SOME_FINGERPRINT".to_string(),
                 is_private: true,
             };
-            let mut app = test::init_service(App::new()
-                .data(pool.clone())
-                .route("/event", web::post().to(crate::handler::event)))
-                .await;
+            let mut app = test::init_service(
+                App::new()
+                    .data(pool.clone())
+                    .route("/event", web::post().to(crate::handler::event)),
+            )
+            .await;
             let req = test::TestRequest::post()
                 .uri("/event")
                 // .header("authorization", format!("Bearer {}", signup_jwt_clone))
@@ -470,10 +619,12 @@ mod tests {
                 fingerprint: "SOME_FINGERPRINT".to_string(),
                 is_private: false,
             };
-            let mut app = test::init_service(App::new()
-                .data(pool.clone())
-                .route("/event", web::post().to(crate::handler::event)))
-                .await;
+            let mut app = test::init_service(
+                App::new()
+                    .data(pool.clone())
+                    .route("/event", web::post().to(crate::handler::event)),
+            )
+            .await;
             let req = test::TestRequest::post()
                 .uri("/event")
                 // .header("authorization", format!("Bearer {}", signup_jwt_clone))
@@ -493,10 +644,12 @@ mod tests {
                 fingerprint: "SOME_FINGERPRINT".to_string(),
                 is_private: false,
             };
-            let mut app = test::init_service(App::new()
-                .data(pool.clone())
-                .route("/event", web::post().to(crate::handler::event)))
-                .await;
+            let mut app = test::init_service(
+                App::new()
+                    .data(pool.clone())
+                    .route("/event", web::post().to(crate::handler::event)),
+            )
+            .await;
             let req = test::TestRequest::post()
                 .uri("/event")
                 // .header("authorization", format!("Bearer {}", signup_jwt_clone))
@@ -514,18 +667,25 @@ mod tests {
                           privateModeStats(propertyId: "1-1")
                         }
                   "#;
-            let (res, errs) = juniper::execute(private_mode_stats,
-                                               None,
-                                               &create_schema(),
-                                               &Default::default(),
-                                               &Context {
-                                                   db_conn: pool.get().expect("couldn't get db connection from pool"),
-                                                   token: login_jwt_clone.clone(),
-                                               }).unwrap();
+            let (res, errs) = juniper::execute(
+                private_mode_stats,
+                None,
+                &create_schema(),
+                &Default::default(),
+                &Context {
+                    db_conn: pool.get().expect("couldn't get db connection from pool"),
+                    token: login_jwt_clone.clone(),
+                },
+            )
+            .unwrap();
 
-            let private_mode_stats: Vec<f64> = res.as_object_value().unwrap()
-                .get_field_value("privateModeStats").unwrap()
-                .as_list_value().unwrap()
+            let private_mode_stats: Vec<f64> = res
+                .as_object_value()
+                .unwrap()
+                .get_field_value("privateModeStats")
+                .unwrap()
+                .as_list_value()
+                .unwrap()
                 .to_owned()
                 .iter()
                 .map(|e: &juniper::Value| e.as_scalar_value::<f64>().unwrap().to_owned())

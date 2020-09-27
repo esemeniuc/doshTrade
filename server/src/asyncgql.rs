@@ -1,15 +1,17 @@
+use std::sync::Arc;
+use std::time::Duration;
+
 use async_graphql::*;
-//for field macro
-use crate::models::schema::intraday_prices::dsl::intraday_prices;
-use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
-use async_graphql::{Context, FieldResult, Schema, SimpleBroker, ID};
+use async_graphql::{Context, FieldResult, Schema, SimpleObject, ID};
 use diesel::QueryResult;
 use futures::lock::Mutex;
 use futures::{FutureExt, Stream, StreamExt};
 use log::{error, info, trace, warn};
 use slab::Slab;
-use std::sync::Arc;
-use std::time::Duration;
+
+use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
+//for field macro
+use crate::models::schema::intraday_prices::dsl::intraday_prices;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
 
@@ -124,8 +126,8 @@ impl MutationRoot {
     }
 }
 
-#[async_graphql::SimpleObject(desc = "Represents a stock's status")]
-#[derive(Clone)]
+#[derive(async_graphql::SimpleObject, Clone)]
+//(desc = "Represents a stock's status")
 struct Stock {
     ticker: String,
     price: String,

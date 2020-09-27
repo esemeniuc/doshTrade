@@ -1,17 +1,19 @@
-use crate::db::DbPool;
-use crate::graphql;
-use crate::models::Event;
+use std::borrow::Cow;
+
 use actix_web::body::Body;
 use actix_web::web::Json;
 use actix_web::{web, Error, HttpRequest, HttpResponse, Result};
+use actix_web_actors::ws;
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
+use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use async_graphql::Schema;
+use async_graphql_actix_web::{Request, Response, WSSubscription};
 use rust_embed::RustEmbed;
-use std::borrow::Cow;
 
 use crate::asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
-use actix_web_actors::ws;
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use async_graphql_actix_web::{GQLRequest, GQLResponse, WSSubscription};
+use crate::db::DbPool;
+use crate::graphql;
+use crate::models::Event;
 
 //from https://github.com/pyros2097/rust-embed/blob/master/examples/actix.rs
 #[derive(RustEmbed)]
@@ -68,8 +70,8 @@ pub fn dist(req: HttpRequest) -> HttpResponse {
 //         .body(user))
 // }
 
-pub(crate) async fn graphql(schema: web::Data<BooksSchema>, req: GQLRequest) -> GQLResponse {
-    req.into_inner().execute(&schema).await.into()
+pub(crate) async fn graphql(schema: web::Data<BooksSchema>, req: Request) -> Response {
+    schema.execute(req.into_inner()).await.into()
 }
 
 pub(crate) async fn index_playground() -> Result<HttpResponse> {
@@ -85,5 +87,10 @@ pub(crate) async fn index_ws(
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {
-    ws::start_with_protocols(WSSubscription::new(&schema), &["graphql-ws"], &req, payload)
+    ws::start_with_protocols(
+        WSSubscription::new(Schema::clone(&*schema)),
+        &["graphql-ws"],
+        &req,
+        payload,
+    )
 }

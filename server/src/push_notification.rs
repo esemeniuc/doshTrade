@@ -1,15 +1,13 @@
 use web_push::*;
 
-#[async_graphql::InputObject]
-#[derive(Clone, Debug)]
+#[derive(async_graphql::InputObject, Clone, Debug)]
 pub struct PushSubscriptionKeys {
     #[field(name = "p256dh")]
     pub p256dh: String,
     pub auth: String,
 }
 
-#[async_graphql::InputObject]
-#[derive(Clone, Debug)]
+#[derive(async_graphql::InputObject, Clone, Debug)]
 pub struct PushSubscription {
     pub endpoint: String,
     pub expiration_time: Option<String>,

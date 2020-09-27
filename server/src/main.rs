@@ -1,13 +1,30 @@
-mod push_notification;
-
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate juniper;
+#[macro_use]
+extern crate log;
+
+use std::time::Duration;
+use std::time::SystemTime;
+
+use actix::prelude::*;
+use actix_cors::Cors;
+use actix_web::client::Client;
+use actix_web::{guard, web, App, HttpServer, Result};
+use async_graphql::Schema;
+use clap::{App as ClapApp, Arg};
+use log::{error, info, trace, warn};
+use serde::{Deserialize, Serialize};
+
+use asyncgql::{MutationRoot, QueryRoot, Storage, SubscriptionRoot};
+
+use crate::models::IntradayPrice;
+use crate::push_notification::send_it;
+
+mod push_notification;
 
 mod asyncgql;
 mod auth;
@@ -15,15 +32,6 @@ mod db;
 mod graphql;
 mod handler;
 mod models;
-
-use actix_cors::Cors;
-use actix_web::client::Client;
-use actix_web::{guard, web, App, HttpServer, Result};
-use async_graphql::Schema;
-use asyncgql::{MutationRoot, QueryRoot, Storage, SubscriptionRoot};
-use clap::{App as ClapApp, Arg};
-use log::{error, info, trace, warn};
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,12 +88,6 @@ async fn fetch_tickers(
     );
     Ok(())
 }
-
-use crate::models::IntradayPrice;
-use crate::push_notification::send_it;
-use actix::prelude::*;
-use std::time::Duration;
-use std::time::SystemTime;
 
 struct MyActor {
     pool: db::DbPool,
