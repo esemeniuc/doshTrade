@@ -1,6 +1,7 @@
+use diesel::prelude::*;
+
 use crate::models::schema::clients;
 use crate::models::schema::clients::dsl::*;
-use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Debug)]
 pub struct Client {

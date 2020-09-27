@@ -2,12 +2,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_graphql::*;
-use async_graphql::{Context, FieldResult, Schema, SimpleObject, ID};
+use async_graphql::{Context, FieldResult, Schema, ID};
 use diesel::QueryResult;
 use futures::lock::Mutex;
 use futures::{FutureExt, Stream, StreamExt};
 use log::{error, info, trace, warn};
-use slab::Slab;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
 //for field macro
@@ -36,8 +35,6 @@ impl Book {
         &self.author
     }
 }
-
-pub type Storage = Arc<Mutex<Slab<Book>>>;
 
 pub struct QueryRoot;
 

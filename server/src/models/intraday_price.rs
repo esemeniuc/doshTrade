@@ -1,6 +1,7 @@
+use diesel::prelude::*;
+
 use crate::models::schema::intraday_prices;
 use crate::models::schema::intraday_prices::dsl::*;
-use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Debug)]
 pub struct IntradayPrice {

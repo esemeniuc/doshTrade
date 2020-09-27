@@ -1,7 +1,7 @@
-use jsonwebtoken::{encode, decode, Validation, Algorithm, Header, EncodingKey, DecodingKey};
-use serde::{Deserialize, Serialize};
-use rand::{Rng, thread_rng};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -28,10 +28,12 @@ pub fn generate_bearer_token(user_id: i32, created_at: chrono::NaiveDateTime) ->
         nonce: chars,
     };
 
-    encode(&Header::new(Algorithm::RS256), //header
-           &my_claims, //body
-           &EncodingKey::from_rsa_pem(PRIV_KEY.as_bytes()).expect("Requires valid PEM"), //secret
-    ).expect("JWT encode error")
+    encode(
+        &Header::new(Algorithm::RS256), //header
+        &my_claims,                     //body
+        &EncodingKey::from_rsa_pem(PRIV_KEY.as_bytes()).expect("Requires valid PEM"), //secret
+    )
+    .expect("JWT encode error")
 }
 
 /// Validates if a token is not expired, and is signed with decloak private key
@@ -39,10 +41,16 @@ pub fn generate_bearer_token(user_id: i32, created_at: chrono::NaiveDateTime) ->
 #[allow(dead_code)]
 pub fn is_valid_token(jwt: &str) -> bool {
     // Adding some leeway (in seconds) for exp and nbf checks
-    let validation = Validation { leeway: 60, algorithms: vec![Algorithm::RS256], ..Default::default() };
-    let token = decode::<Claims>(&jwt,
-                                 &DecodingKey::from_rsa_pem(PUB_KEY.as_bytes()).expect("Requires valid PEM"),
-                                 &validation);
+    let validation = Validation {
+        leeway: 60,
+        algorithms: vec![Algorithm::RS256],
+        ..Default::default()
+    };
+    let token = decode::<Claims>(
+        &jwt,
+        &DecodingKey::from_rsa_pem(PUB_KEY.as_bytes()).expect("Requires valid PEM"),
+        &validation,
+    );
     match token {
         Ok(_) => true,
         Err(_) => false,
@@ -51,10 +59,16 @@ pub fn is_valid_token(jwt: &str) -> bool {
 
 pub fn get_user_id(jwt: &str) -> jsonwebtoken::errors::Result<i32> {
     // Adding some leeway (in seconds) for exp and nbf checks
-    let validation = Validation { leeway: 60, algorithms: vec![Algorithm::RS256], ..Default::default() };
-    let token_data = decode::<Claims>(&jwt,
-                                      &DecodingKey::from_rsa_pem(PUB_KEY.as_bytes()).expect("Requires valid PEM"),
-                                      &validation);
+    let validation = Validation {
+        leeway: 60,
+        algorithms: vec![Algorithm::RS256],
+        ..Default::default()
+    };
+    let token_data = decode::<Claims>(
+        &jwt,
+        &DecodingKey::from_rsa_pem(PUB_KEY.as_bytes()).expect("Requires valid PEM"),
+        &validation,
+    );
     token_data.map(|token| token.claims.sub)
 }
 

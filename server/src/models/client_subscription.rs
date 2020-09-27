@@ -1,6 +1,7 @@
+use diesel::prelude::*;
+
 use crate::models::schema::client_subscriptions;
 use crate::models::schema::client_subscriptions::dsl::*;
-use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Debug)]
 pub struct ClientSubscription {

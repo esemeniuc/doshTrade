@@ -2,10 +2,6 @@
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-#[macro_use]
-extern crate juniper;
-#[macro_use]
-extern crate log;
 
 use std::time::Duration;
 use std::time::SystemTime;
@@ -19,7 +15,7 @@ use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 
-use asyncgql::{MutationRoot, QueryRoot, Storage, SubscriptionRoot};
+use asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
 
 use crate::models::IntradayPrice;
 use crate::push_notification::send_it;
@@ -29,7 +25,6 @@ mod push_notification;
 mod asyncgql;
 mod auth;
 mod db;
-mod graphql;
 mod handler;
 mod models;
 

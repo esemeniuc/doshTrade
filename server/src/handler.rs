@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
 use actix_web::body::Body;
-use actix_web::web::Json;
 use actix_web::{web, Error, HttpRequest, HttpResponse, Result};
 use actix_web_actors::ws;
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
@@ -10,10 +9,7 @@ use async_graphql::Schema;
 use async_graphql_actix_web::{Request, Response, WSSubscription};
 use rust_embed::RustEmbed;
 
-use crate::asyncgql::{BooksSchema, MutationRoot, QueryRoot, Storage, SubscriptionRoot};
-use crate::db::DbPool;
-use crate::graphql;
-use crate::models::Event;
+use crate::asyncgql::{BooksSchema, MutationRoot, QueryRoot, SubscriptionRoot};
 
 //from https://github.com/pyros2097/rust-embed/blob/master/examples/actix.rs
 #[derive(RustEmbed)]
@@ -44,31 +40,6 @@ pub fn dist(req: HttpRequest) -> HttpResponse {
     let path = &req.path()["/".len()..]; // trim the preceding `/` in path
     handle_embedded_file(path)
 }
-
-// pub async fn graphql(
-//     schema: web::Data<Arc<graphql::Schema>>,
-//     pool: web::Data<DbPool>,
-//     request: web::Json<juniper::http::GraphQLRequest>,
-//     raw_request: HttpRequest, //needed to extract the http authorization bearer token
-// ) -> Result<HttpResponse, Error> {
-//     let token = match Authorization::<Bearer>::parse(&raw_request) {
-//         Ok(auth) => auth.into_scheme().token().to_string(),
-//         _ => "".to_string(), //no valid token
-//     };
-//     println!("user provided token: {}", token);
-//     let user = web::block(move || {
-//         let res = request.execute(&schema,
-//                                   &graphql::Context {
-//                                       db_conn: pool.get().expect("Couldn't get db connection from pool"),
-//                                       token,
-//                                   });
-//         Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
-//     })
-//         .await?;
-//     Ok(HttpResponse::Ok()
-//         .content_type("application/json")
-//         .body(user))
-// }
 
 pub(crate) async fn graphql(schema: web::Data<BooksSchema>, req: Request) -> Response {
     schema.execute(req.into_inner()).await.into()

@@ -1,6 +1,7 @@
+use diesel::prelude::*;
+
 use crate::models::schema::stocks;
 use crate::models::schema::stocks::dsl::*;
-use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Debug)]
 pub struct Stock {
@@ -10,11 +11,7 @@ pub struct Stock {
 }
 
 impl Stock {
-    pub fn find(
-        conn: &crate::db::DbPoolConn,
-        ticker_symbol: &String,
-    ) -> QueryResult<Stock> {
-        stocks.filter(ticker.eq(ticker_symbol))
-            .first::<Stock>(conn)
+    pub fn find(conn: &crate::db::DbPoolConn, ticker_symbol: &String) -> QueryResult<Stock> {
+        stocks.filter(ticker.eq(ticker_symbol)).first::<Stock>(conn)
     }
 }
