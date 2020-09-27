@@ -45,11 +45,9 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
       }
       createNotificationSubscription()
         .then(function (subscription) {
-          setLocalItem<
-            PushSubscription
-          >(kPushSubscriptionStorageKey, subscription);
+          setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, subscription);
           addPushSubscription({
-            variables: { tickerSymbols: [], subscription },
+            variables: { tickerSymbols: [], subscription }, //reset server state if server has old subscription
           });
           console.log("Fresh subscription! \n", JSON.stringify(subscription));
         })
@@ -85,7 +83,7 @@ const useStockSubscriptionEffects = (
       console.log("Ticker added without a subscription!!");
       return;
     }
-    addPushSubscription({ variables: { tickerSymbols: [], subscription } });
+    addPushSubscription({ variables: { tickerSymbols: state.tickers, subscription } });
   }, [state.tickers]);
 };
 
