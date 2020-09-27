@@ -14,7 +14,7 @@ const STOCK_PRICES_SUBSCRIPTION = loader(
 );
 
 function StockListContainer() {
-  const tickerSymbols = ["TSLA", "BANANA"];
+  const tickerSymbols = ["AAPL", "NFLX"];
   const { data, loading, error } = useSubscription<yoloHandCurated>(STOCK_PRICES_SUBSCRIPTION, { variables: { tickerSymbols } });
   const {
     state: { pushState },

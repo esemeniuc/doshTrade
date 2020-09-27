@@ -1,7 +1,7 @@
-import React, { createContext, useReducer, Dispatch } from "react";
-import { mainReducer } from "./reducers";
-import { IState, AppAction, initialState } from "./types";
-import { useMainEffects } from "./effects";
+import React, {createContext, Dispatch, ReactNode, useReducer} from "react";
+import {mainReducer} from "./reducers";
+import {AppAction, initialState, IState} from "./types";
+import {useMainEffects} from "./effects";
 
 const AppContext = createContext<{
   state: IState;
@@ -11,15 +11,15 @@ const AppContext = createContext<{
   dispatch: () => null,
 });
 
-const ContextProvider: React.FC = ({ children }) => {
+function ContextProvider(props: { children: ReactNode }) {
   const [state, dispatch] = useReducer(mainReducer, initialState);
   useMainEffects(state, dispatch);
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
-      {children}
-    </AppContext.Provider>
+      <AppContext.Provider value={{state, dispatch}}>
+        {props.children}
+      </AppContext.Provider>
   );
-};
+}
 
 export { ContextProvider, AppContext };

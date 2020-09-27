@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import { Paper } from "@material-ui/core";
 
@@ -95,8 +95,8 @@ function EnhancedStockTableHead(props: EnhancedTableProps) {
 
 function StockTableView({ stockData }: { stockData: yoloHandCurated_stock[] }) {
   const classes = useStyles();
-  const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof yoloHandCurated_stock | undefined>(
+  const [order, setOrder] = useState<Order>("asc");
+  const [orderBy, setOrderBy] = useState<keyof yoloHandCurated_stock | undefined>(
     undefined
   );
 

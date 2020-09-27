@@ -4,6 +4,9 @@ schema {
   subscription: SubscriptionRoot
 }
 
+# Directs the executor to query only when the field exists.
+directive @ifdef on FIELD
+
 type MutationRoot {
   notificationRequest(
     tickerSymbols: [String!]!
@@ -23,15 +26,18 @@ input PushSubscriptionKeys {
 }
 
 type QueryRoot {
-  getDebug(
-    pushSubscription: PushSubscription!
-  ): Boolean!
+  getDebug(pushSubscription: PushSubscription!): Boolean!
 }
 
+# Represents a stock's status
 type Stock {
   ticker: String!
   price: String!
+
+  # TODO: figure out RSI
   rsi: Float!
+
+  # % Change from the start of day
   percentChange: Float!
   timestamp: String!
 }
@@ -39,4 +45,3 @@ type Stock {
 type SubscriptionRoot {
   yoloHandCuratedStocks(tickerSymbols: [String!]!): [Stock!]!
 }
-

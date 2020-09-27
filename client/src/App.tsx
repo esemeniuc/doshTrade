@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { BrowserRouter as Router } from "react-router-dom";
 import { ApolloClient, ApolloProvider, HttpLink, InMemoryCache, split } from '@apollo/client';
 import { createMuiTheme, CssBaseline, ThemeProvider } from "@material-ui/core";
@@ -47,7 +47,7 @@ const client = new ApolloClient({
 
 
 function App() {
-    React.useEffect(() => {
+    useEffect(() => {
         registerServiceWorker.register();
     }, [])
 
@@ -57,7 +57,7 @@ function App() {
                 <ContextProvider>
                     <CssBaseline />
                     <Router>
-                        <StockListContainer></StockListContainer>
+                        <StockListContainer/>
                     </Router>
                 </ContextProvider>
             </ThemeProvider>

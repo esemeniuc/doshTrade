@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useContext} from "react";
 import {
   TableCell,
   Typography,
@@ -39,7 +39,7 @@ function BellButton({ ticker }: { ticker: string }) {
       pushState: { userConsent, subscription },
     },
     dispatch,
-  } = React.useContext(AppContext);
+  } = useContext(AppContext);
   const classes = useStyles();
   // TODO: handle this case
   // if (!pushNotificationSupported) {
