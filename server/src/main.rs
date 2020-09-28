@@ -17,107 +17,15 @@ use serde::{Deserialize, Serialize};
 
 use asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
 
-use crate::models::IntradayPrice;
-use crate::push_notification::send_it;
-
-mod push_notification;
-
 mod asyncgql;
 mod auth;
+mod background_tasks;
 mod db;
 mod handler;
 mod models;
+mod push_notification;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct IEXPrice {
-    latest_price: f64,
-    latest_volume: i64,
-    latest_update: i64,
-}
-
-async fn fetch_tickers(
-    conn: &crate::db::DbPoolConn,
-    tickers: Vec<String>,
-) -> Result<(), actix_web::Error> {
-    info!("Getting updates from IEX for {:#?}", tickers);
-    trace!(
-        "Started at {}",
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-    );
-
-    let client = Client::default();
-    // Create request builder and send request
-    for ticker in tickers {
-        info!("Fetching ticker: {}", ticker);
-        let url = format!("https://sandbox.iexapis.com/stable/stock/{}/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839", ticker);
-        info!("Using url: {}", url);
-        let mut response = client.get(url).send().await?;
-        let body = response.body().await?;
-        let price: IEXPrice = serde_json::from_slice(body.as_ref())?;
-        info!("Downloaded: {:#?} ", price);
-
-        let secs = price.latest_update / 1000; //time comes in as milliseconds, convert to sec
-        let remaining_nanos = (price.latest_update % 1000) * 1_000_000;
-
-        let query_result = IntradayPrice::insert(
-            conn,
-            &ticker,
-            price.latest_price,
-            price.latest_volume,
-            chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32),
-        );
-        match query_result {
-            Ok(rows) => info!("Inserted intraday update for ticker: {}", ticker),
-            Err(e) => warn!(
-                "Failed to fetch intraday update for ticker: {} with error: {}",
-                ticker, e
-            ),
-        }
-    }
-    trace!(
-        "Ended at {}",
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-    );
-    Ok(())
-}
-
-struct MyActor {
-    pool: db::DbPool,
-}
-
-impl Actor for MyActor {
-    type Context = Context<Self>;
-
-    fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(Duration::from_secs(10), move |this, ctx| {
-            let conn = match this.pool.get() {
-                Ok(v) => v,
-                Err(e) => {
-                    warn!("Failed to get pool conn connection {:?}", e);
-                    return;
-                }
-            };
-
-            ctx.spawn(actix::fut::wrap_future(async move {
-                //spawns a separate task since we don't want to block based on prev request
-                //TODO: find out which tickers are needed to fetch
-                match fetch_tickers(&conn, vec!["AAPL".to_string(), "NFLX".to_string()]).await {
-                    Ok(_) => info!("Fetched all tickers"),
-                    Err(e) => warn!("Failed to get data from iex, {}", e),
-                }
-            }));
-        });
-    }
-}
-
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     // std::env::set_var("RUST_LOG", "actix_web=info");
@@ -158,7 +66,7 @@ async fn main() -> std::io::Result<()> {
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
     db::seed(&pool.get().unwrap()).expect("Unable to seed the database");
 
-    MyActor { pool: pool.clone() }.start();
+    background_tasks::MyActor { pool: pool.clone() }.start();
 
     // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)

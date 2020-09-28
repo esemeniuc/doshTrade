@@ -7,3 +7,5 @@ CREATE TABLE IF NOT EXISTS intraday_prices
     timestamp TIMESTAMP      NOT NULL,
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );
+
+CREATE INDEX index_intraday_prices_on_timestamp ON intraday_prices(timestamp);

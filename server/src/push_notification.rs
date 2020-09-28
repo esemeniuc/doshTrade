@@ -27,7 +27,7 @@ impl From<PushSubscription> for SubscriptionInfo {
 }
 
 fn generate_vapid_signature(
-    subscription_info: &SubscriptionInfo,
+    subscription_info: &web_push::SubscriptionInfo,
 ) -> Result<VapidSignature, WebPushError> {
     let file = std::fs::File::open("private.pem").unwrap();
 
@@ -48,7 +48,7 @@ pub fn generate_push_message(
     builder.build()
 }
 
-pub async fn send_it(message: WebPushMessage) {
+pub async fn send_demo(message: WebPushMessage) {
     let client = WebPushClient::new();
     let response = client.send(message).await;
     response

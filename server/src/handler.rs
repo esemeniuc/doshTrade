@@ -1,15 +1,14 @@
 use std::borrow::Cow;
 
 use actix_web::body::Body;
-use actix_web::{web, Error, HttpRequest, HttpResponse, Result};
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use actix_web_actors::ws;
-use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::Schema;
 use async_graphql_actix_web::{Request, Response, WSSubscription};
 use rust_embed::RustEmbed;
 
-use crate::asyncgql::{BooksSchema, MutationRoot, QueryRoot, SubscriptionRoot};
+use crate::asyncgql::BooksSchema;
 
 //from https://github.com/pyros2097/rust-embed/blob/master/examples/actix.rs
 #[derive(RustEmbed)]

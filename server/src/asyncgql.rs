@@ -1,16 +1,14 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use async_graphql::*;
 use async_graphql::{Context, FieldResult, Schema, ID};
-use diesel::QueryResult;
-use futures::lock::Mutex;
+use diesel::{QueryDsl, QueryResult};
 use futures::{FutureExt, Stream, StreamExt};
 use log::{error, info, trace, warn};
 
+use crate::models::schema::client_subscriptions::dsl::client_subscriptions;
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
 //for field macro
-use crate::models::schema::intraday_prices::dsl::intraday_prices;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
 
@@ -50,7 +48,7 @@ impl QueryRoot {
         let message = crate::push_notification::generate_push_message(subscription_info)
             .expect("failed to generate push message");
 
-        crate::push_notification::send_it(message).await;
+        crate::push_notification::send_demo(message).await;
         true
     }
 }
@@ -59,36 +57,44 @@ pub struct MutationRoot;
 
 #[async_graphql::Object]
 impl MutationRoot {
+    ///Returns a list of successfully added tickers.
+    ///Invalid (not found) tickers will not be returned.
     async fn notification_request(
         &self,
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
         push_subscription: crate::push_notification::PushSubscription,
-    ) -> bool {
+    ) -> Vec<String> {
         let pool = match ctx.data::<crate::db::DbPool>() {
             Ok(val) => val,
             Err(e) => {
                 error!("Error getting db pool from context: {}", e.0);
-                return false;
+                return vec![];
             }
         };
-        let conn = pool.get().unwrap();
 
         //store ticker and subscriptions
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
         //add user to client table
         //cannot have duplicates due to unique constraint
-        Client::insert(&conn, &push_subscription);
-        let client_id = 1; //TODO get client
-        for ticker in ticker_symbols.iter() {
-            let stock_id = 1; //TODO get stock
-            if let Err(e) = ClientSubscription::insert(&conn, client_id, stock_id) {
-                error!("Error inserting client_subscription row: {}", e);
-                return false;
-            }
-        }
-        //delete all previous tickers for the user
-        //create row for each ticker
+
+        let successful_tickers = || -> QueryResult<Vec<String>> {
+            let conn = pool.get().unwrap();
+
+            let client = Client::insert(&conn, &push_subscription)?;
+            ClientSubscription::delete_all(&conn, client.id)?;
+            let output: Vec<_> = ticker_symbols
+                .iter()
+                .filter_map(|ticker| crate::models::Stock::find(&conn, ticker).ok())
+                .filter_map(
+                    |stock| match ClientSubscription::insert(&conn, client.id, stock.id) {
+                        Ok(_) => Some(stock.ticker),
+                        Err(_) => None,
+                    },
+                )
+                .collect();
+            Ok(output)
+        };
 
         //example
         // userA, [A,B,C] -> 3 rows in db
@@ -114,12 +120,7 @@ impl MutationRoot {
 
         //send demo message
 
-        //send demo message
-        let message = crate::push_notification::generate_push_message(subscription_info)
-            .expect("failed to generate push message");
-
-        crate::push_notification::send_it(message).await;
-        true
+        vec![]
     }
 }
 

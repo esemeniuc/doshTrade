@@ -2,6 +2,7 @@ use diesel::prelude::*;
 
 use crate::models::schema::clients;
 use crate::models::schema::clients::dsl::*;
+use crate::push_notification::PushSubscription;
 
 #[derive(Identifiable, Queryable, Debug)]
 pub struct Client {
@@ -12,6 +13,14 @@ pub struct Client {
 }
 
 impl Client {
+    pub fn find(conn: &crate::db::DbPoolConn, client: &PushSubscription) -> QueryResult<Client> {
+        clients
+            .filter(endpoint.eq(&client.endpoint))
+            .filter(p256dh.eq(&client.keys.p256dh))
+            .filter(auth.eq(&client.keys.auth))
+            .first::<Client>(conn)
+    }
+
     pub fn insert(
         conn: &crate::db::DbPoolConn,
         client: &crate::push_notification::PushSubscription,

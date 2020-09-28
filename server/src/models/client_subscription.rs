@@ -21,4 +21,8 @@ impl ClientSubscription {
             .values((client_id.eq(other_client_id), stock_id.eq(other_stock_id)))
             .execute(conn)
     }
+
+    pub fn delete_all(conn: &crate::db::DbPoolConn, other_client_id: i32) -> QueryResult<usize> {
+        diesel::delete(client_subscriptions.filter(client_id.eq(other_client_id))).execute(conn)
+    }
 }
