@@ -73,20 +73,16 @@ impl MutationRoot {
             }
         };
 
-        //store ticker and subscriptions
-        let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
-        //add user to client table
-        //cannot have duplicates due to unique constraint
-
         let successful_tickers = || -> QueryResult<Vec<String>> {
             let conn = pool.get().unwrap();
-
+            //add user to client table
             let client = Client::insert(&conn, &push_subscription)?;
             ClientSubscription::delete_all(&conn, client.id)?;
             let output: Vec<_> = ticker_symbols
                 .iter()
                 .filter_map(|ticker| crate::models::Stock::find(&conn, ticker).ok())
                 .filter_map(
+                    //store ticker and subscription
                     |stock| match ClientSubscription::insert(&conn, client.id, stock.id) {
                         Ok(_) => Some(stock.ticker),
                         Err(_) => None,
@@ -94,6 +90,14 @@ impl MutationRoot {
                 )
                 .collect();
             Ok(output)
+        };
+
+        return match successful_tickers() {
+            Ok(val) => val,
+            Err(e) => {
+                warn!("notification_request() failed with code{}", e);
+                vec![]
+            }
         };
 
         //example
@@ -117,10 +121,6 @@ impl MutationRoot {
         // WHERE stocks.ticker = $$$TICKER
         // ORDER by timestamp DESC
         // LIMIT 5 (whatever is actually necessary for calc)
-
-        //send demo message
-
-        vec![]
     }
 }
 
