@@ -26,7 +26,7 @@ input PushSubscriptionKeys {
 }
 
 type QueryRoot {
-  getDebug(pushSubscription: PushSubscription!): Boolean!
+  sendDemoNotification(pushSubscription: PushSubscription!): Boolean!
 }
 
 # Represents a stock's status

@@ -6,13 +6,13 @@
 import { PushSubscription } from "./../../../__generated__/globalTypes";
 
 // ====================================================
-// GraphQL query operation: GetDebug
+// GraphQL query operation: SendDemoNotification
 // ====================================================
 
-export interface GetDebug {
-  getDebug: boolean;
+export interface SendDemoNotification {
+  sendDemoNotification: boolean;
 }
 
-export interface GetDebugVariables {
+export interface SendDemoNotificationVariables {
   subscription: PushSubscription;
 }
