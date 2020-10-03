@@ -10,6 +10,7 @@ pub struct Client {
     pub endpoint: String,
     pub p256dh: String,
     pub auth: String,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 impl Client {
@@ -30,6 +31,7 @@ impl Client {
                 endpoint.eq(client.endpoint.to_owned()),
                 p256dh.eq(client.keys.p256dh.to_owned()),
                 auth.eq(client.keys.auth.to_owned()),
+                created_at.eq(chrono::Local::now().naive_utc()),
             ))
             .execute(conn)
             .and_then(|_| {

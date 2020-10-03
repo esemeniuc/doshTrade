@@ -2,14 +2,16 @@ use std::time::{Duration, SystemTime};
 
 use actix::prelude::*;
 use actix_cors::Cors;
-use actix_web::client::Client;
 use actix_web::{guard, web, App, HttpServer, Result};
 use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
-use crate::models::IntradayPrice;
+use crate::models::schema::client_subscriptions::dsl::client_subscriptions;
+use crate::models::schema::clients::dsl::clients;
+use crate::models::{Client, ClientSubscription, IntradayPrice};
+use diesel::{QueryDsl, QueryResult, RunQueryDsl, Table};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,20 +21,42 @@ struct IEXPrice {
     latest_update: i64,
 }
 
-pub async fn background_send_push_notifications(conn: &crate::db::DbPoolConn) -> Result<(), ()> {
+pub async fn background_send_push_notifications(conn: &crate::db::DbPoolConn) {
     let client = web_push::WebPushClient::new();
+    let db_clients: Vec<Client> = match client_subscriptions
+        .inner_join(clients) //get the client
+        .select(clients::all_columns()) //only need the client cols
+        .load(conn)
+    {
+        Ok(val) => val,
+        Err(e) => {
+            warn!("Failed to fetch client subs from db with error {}", e);
+            return;
+        }
+    };
 
-    //TODO: get all notifications from db
-    //send demo message
-    let subscription_info: web_push::SubscriptionInfo = unimplemented!();
-    let message = crate::push_notification::generate_push_message(subscription_info)
-        .expect("failed to generate push message");
-
-    let response = client.send(message).await;
-    response
-        .map_err(|e| println!("got error in sendit(), {} ", e))
-        .map(|result| println!("Got response: {:?}", result));
-    Ok(())
+    let messages_to_send: Vec<_> = db_clients
+        .into_iter()
+        .map(|sub| web_push::SubscriptionInfo::from(sub))
+        .filter_map(|sub| crate::push_notification::generate_push_message(sub).ok())
+        .map(|msg| client.send(msg))
+        .collect();
+    //send it!
+    let send_results = futures::future::join_all(messages_to_send).await;
+    let send_errors: Vec<_> = send_results
+        .iter()
+        .filter(|elem| Result::is_err(elem))
+        .collect();
+    match send_errors.len() {
+        0 => info!(
+            "Successfully sent all {} push notifications",
+            send_results.len()
+        ),
+        _ => warn!(
+            "background_send_push_notifications() failed to send {} push notifications",
+            send_errors.len()
+        ),
+    }
 }
 
 pub async fn background_fetch_tickers(
@@ -48,7 +72,7 @@ pub async fn background_fetch_tickers(
             .as_secs()
     );
 
-    let client = Client::default();
+    let client = actix_web::client::Client::default();
     // Create request builder and send request
     for ticker in tickers {
         info!("Fetching ticker: {}", ticker);
@@ -128,10 +152,7 @@ impl Actor for MyActor {
 
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
-                match background_send_push_notifications(&conn).await {
-                    Ok(_) => info!("Sent all push notifications"),
-                    Err(e) => warn!("Failed to send notifications {:?}", e),
-                }
+                background_send_push_notifications(&conn).await
             }));
         });
     }

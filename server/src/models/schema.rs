@@ -3,6 +3,7 @@ table! {
         client_subscription_id -> Integer,
         client_id -> Integer,
         stock_id -> Integer,
+        created_at -> Timestamp,
     }
 }
 
@@ -12,6 +13,7 @@ table! {
         endpoint -> Text,
         p256dh -> Text,
         auth -> Text,
+        created_at -> Timestamp,
     }
 }
 

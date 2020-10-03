@@ -1,3 +1,4 @@
+use crate::models::ClientSubscription;
 use web_push::*;
 
 #[derive(async_graphql::InputObject, Clone, Debug)]
@@ -21,6 +22,18 @@ impl From<PushSubscription> for SubscriptionInfo {
             keys: SubscriptionKeys {
                 p256dh: push_subscription.keys.p256dh,
                 auth: push_subscription.keys.auth,
+            },
+        }
+    }
+}
+
+impl From<crate::models::Client> for SubscriptionInfo {
+    fn from(client: crate::models::Client) -> Self {
+        SubscriptionInfo {
+            endpoint: client.endpoint,
+            keys: SubscriptionKeys {
+                p256dh: client.p256dh,
+                auth: client.auth,
             },
         }
     }

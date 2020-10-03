@@ -2,6 +2,7 @@ use diesel::prelude::*;
 
 use crate::models::schema::client_subscriptions;
 use crate::models::schema::client_subscriptions::dsl::*;
+use web_push::SubscriptionInfo;
 
 #[derive(Identifiable, Queryable, Debug)]
 pub struct ClientSubscription {
@@ -18,7 +19,11 @@ impl ClientSubscription {
         other_stock_id: i32,
     ) -> QueryResult<usize> {
         diesel::insert_into(client_subscriptions::table)
-            .values((client_id.eq(other_client_id), stock_id.eq(other_stock_id)))
+            .values((
+                client_id.eq(other_client_id),
+                stock_id.eq(other_stock_id),
+                created_at.eq(chrono::Local::now().naive_utc()),
+            ))
             .execute(conn)
     }
 
