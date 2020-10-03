@@ -2,13 +2,11 @@ use std::time::Duration;
 
 use async_graphql::*;
 use async_graphql::{Context, FieldResult, Schema, ID};
-use diesel::{QueryDsl, QueryResult};
-use futures::{FutureExt, Stream, StreamExt};
+use diesel::QueryResult;
+use futures::{Stream, StreamExt};
 use log::{error, info, trace, warn};
 
-use crate::models::schema::client_subscriptions::dsl::client_subscriptions;
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
-//for field macro
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
 
@@ -38,7 +36,7 @@ pub struct QueryRoot;
 
 #[async_graphql::Object]
 impl QueryRoot {
-    async fn get_debug(
+    async fn send_demo_notification(
         &self,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {

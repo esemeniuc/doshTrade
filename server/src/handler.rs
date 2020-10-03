@@ -31,7 +31,6 @@ fn handle_embedded_file(path: &str) -> HttpResponse {
 }
 
 pub fn index() -> HttpResponse {
-    println!("index HttpResponse ");
     handle_embedded_file("index.html")
 }
 

@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 use crate::asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
 use crate::models::schema::client_subscriptions::dsl::client_subscriptions;
 use crate::models::schema::clients::dsl::clients;
-use crate::models::{Client, ClientSubscription, IntradayPrice};
-use diesel::{QueryDsl, QueryResult, RunQueryDsl, Table};
+use crate::models::{Client, IntradayPrice};
+use diesel::{QueryDsl, RunQueryDsl, Table};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

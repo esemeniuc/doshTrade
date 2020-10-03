@@ -1,4 +1,3 @@
-use crate::models::ClientSubscription;
 use web_push::*;
 
 #[derive(async_graphql::InputObject, Clone, Debug)]

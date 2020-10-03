@@ -2,7 +2,6 @@ use diesel::prelude::*;
 
 use crate::models::schema::client_subscriptions;
 use crate::models::schema::client_subscriptions::dsl::*;
-use web_push::SubscriptionInfo;
 
 #[derive(Identifiable, Queryable, Debug)]
 pub struct ClientSubscription {

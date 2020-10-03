@@ -3,13 +3,9 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 
-use std::time::Duration;
-use std::time::SystemTime;
-
 use actix::prelude::*;
 use actix_cors::Cors;
-use actix_web::client::Client;
-use actix_web::{guard, web, App, HttpServer, Result};
+use actix_web::{guard, web, App, HttpServer};
 use async_graphql::Schema;
 use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
@@ -29,9 +25,8 @@ mod push_notification;
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     // std::env::set_var("RUST_LOG", "actix_web=info");
-    for argument in std::env::args() {
-        println!("{}", argument);
-    }
+    info!("Starting yolotrader with args: {:?}", std::env::args());
+
     let matches = ClapApp::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
@@ -61,6 +56,7 @@ async fn main() -> std::io::Result<()> {
     let ip = matches.value_of("ip").unwrap_or("0.0.0.0");
     let port = matches.value_of("port").unwrap_or("8080");
     let ip_port = format!("{}:{}", ip, port);
+    info!("Playground available at: http://{}/graphiql", ip_port);
 
     let pool = db::establish_connection(database_url);
     db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
@@ -68,12 +64,9 @@ async fn main() -> std::io::Result<()> {
 
     background_tasks::MyActor { pool: pool.clone() }.start();
 
-    // let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
         .data(pool.clone())
         .finish();
-
-    println!("Playground: http://{}/graphiql", ip_port);
 
     HttpServer::new(move || {
         let cors_rules = if cfg!(debug_assertions) {
