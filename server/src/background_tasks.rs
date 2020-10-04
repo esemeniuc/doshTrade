@@ -1,13 +1,11 @@
 use std::time::{Duration, SystemTime};
 
 use actix::prelude::*;
-use actix_cors::Cors;
-use actix_web::{guard, web, App, HttpServer, Result};
+use actix_web::Result;
 use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
 use crate::models::schema::client_subscriptions::dsl::client_subscriptions;
 use crate::models::schema::clients::dsl::clients;
 use crate::models::{Client, IntradayPrice};

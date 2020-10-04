@@ -43,18 +43,25 @@ pub fn run_migrations(conn: &DbPoolConn) -> Result<(), diesel_migrations::RunMig
 
 pub fn seed(conn: &DbPoolConn) -> QueryResult<usize> {
     use crate::models::schema::stocks::dsl::*;
+    //TODO don't insert every time on startup
+    // let stocks_list = vec![
+    //     (ticker.eq("NFLX"), name.eq("Netflix")),
+    //     (ticker.eq("AAPL"), name.eq("Apple")),
+    //     (ticker.eq("GOOG"), name.eq("Google")),
+    // ];
+    //cant insert vec: https://github.com/diesel-rs/diesel/issues/2258#issuecomment-569809673
 
     diesel::insert_into(stocks)
-        .values((ticker.eq("NFLX"), name.eq("Netflix")))
+        .values((ticker.eq("AAPL"), name.eq("Apple")))
         .execute(conn)
         .and_then(|_| {
             diesel::insert_into(stocks)
-                .values((ticker.eq("AAPL"), name.eq("AAPL")))
+                .values((ticker.eq("GOOG"), name.eq("Google")))
                 .execute(conn)
         })
         .and_then(|_| {
             diesel::insert_into(stocks)
-                .values((ticker.eq("GOOG"), name.eq("Google")))
+                .values((ticker.eq("NFLX"), name.eq("Netflix")))
                 .execute(conn)
         })
 }

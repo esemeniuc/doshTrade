@@ -63,6 +63,7 @@ pub fn generate_push_message(
 pub async fn send_demo(message: WebPushMessage) {
     let client = WebPushClient::new();
     let response = client.send(message).await;
+    //TODO use something other map
     response
         .map_err(|e| println!("got error in sendit(), {} ", e))
         .map(|result| println!("Got response: {:?}", result));

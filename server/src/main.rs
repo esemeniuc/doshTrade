@@ -9,7 +9,6 @@ use actix_web::{guard, web, App, HttpServer};
 use async_graphql::Schema;
 use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
-use serde::{Deserialize, Serialize};
 
 use asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
 

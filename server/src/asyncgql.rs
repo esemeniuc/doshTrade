@@ -36,12 +36,12 @@ pub struct QueryRoot;
 
 #[async_graphql::Object]
 impl QueryRoot {
+    ///sends demo notification to client browser to verify notifications work as intended
     async fn send_demo_notification(
         &self,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
-        println!("push_subscription: {:?}", push_subscription);
-        // TODO:
+        info!("push_subscription: {:?}", push_subscription);
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
         let message = crate::push_notification::generate_push_message(subscription_info)
             .expect("failed to generate push message");
@@ -57,6 +57,7 @@ pub struct MutationRoot;
 impl MutationRoot {
     ///Returns a list of successfully added tickers.
     ///Invalid (not found) tickers will not be returned.
+    //TODO handle unsubscribe action
     async fn notification_request(
         &self,
         ctx: &Context<'_>,
@@ -74,7 +75,7 @@ impl MutationRoot {
         let successful_tickers = || -> QueryResult<Vec<String>> {
             let conn = pool.get().unwrap();
             //add user to client table
-            let client = Client::insert(&conn, &push_subscription)?;
+            let client = Client::upsert(&conn, &push_subscription)?;
             ClientSubscription::delete_all(&conn, client.id)?;
             let output: Vec<_> = ticker_symbols
                 .iter()

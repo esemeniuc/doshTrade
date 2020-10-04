@@ -22,24 +22,27 @@ impl Client {
             .first::<Client>(conn)
     }
 
-    pub fn insert(
+    pub fn upsert(
         conn: &crate::db::DbPoolConn,
         client: &crate::push_notification::PushSubscription,
     ) -> QueryResult<Client> {
-        diesel::insert_into(clients::table)
-            .values((
-                endpoint.eq(client.endpoint.to_owned()),
-                p256dh.eq(client.keys.p256dh.to_owned()),
-                auth.eq(client.keys.auth.to_owned()),
-                created_at.eq(chrono::Local::now().naive_utc()),
-            ))
-            .execute(conn)
-            .and_then(|_| {
-                clients
-                    .filter(endpoint.eq(client.endpoint.to_owned()))
-                    .filter(p256dh.eq(client.keys.p256dh.to_owned()))
-                    .filter(auth.eq(client.keys.auth.to_owned()))
-                    .first::<Client>(conn)
-            })
+        let query = clients
+            .filter(endpoint.eq(client.endpoint.to_owned()))
+            .filter(p256dh.eq(client.keys.p256dh.to_owned()))
+            .filter(auth.eq(client.keys.auth.to_owned()));
+
+        if query.clone().count().get_result(conn) == Ok(0) {
+            return diesel::insert_into(clients)
+                .values((
+                    endpoint.eq(client.endpoint.to_owned()),
+                    p256dh.eq(client.keys.p256dh.to_owned()),
+                    auth.eq(client.keys.auth.to_owned()),
+                    created_at.eq(chrono::Local::now().naive_utc()),
+                ))
+                .execute(conn)
+                .and_then(|_| query.first::<Client>(conn));
+        }
+
+        query.first::<Client>(conn)
     }
 }
