@@ -6,8 +6,8 @@ use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::models::schema::client_subscriptions::dsl::client_subscriptions;
-use crate::models::schema::clients::dsl::clients;
+use crate::models::schema::client_subscriptions::dsl::*;
+use crate::models::schema::clients::dsl::*;
 use crate::models::{Client, IntradayPrice};
 use diesel::{QueryDsl, RunQueryDsl, Table};
 
@@ -23,7 +23,8 @@ pub async fn background_send_push_notifications(conn: &crate::db::DbPoolConn) {
     let client = web_push::WebPushClient::new();
     let db_clients: Vec<Client> = match client_subscriptions
         .inner_join(clients) //get the client
-        .select(clients::all_columns()) //only need the client cols
+        //TODO: get actual stock info!
+        .select(clients::all_columns()) //need the client cols for destination, need stock tickers
         .load(conn)
     {
         Ok(val) => val,
@@ -133,7 +134,7 @@ impl Actor for MyActor {
                 let tickers = vec!["AAPL".to_string(), "NFLX".to_string(), "GOOG".to_string()];
                 match background_fetch_tickers(&conn, tickers).await {
                     Ok(_) => info!("Fetched all tickers"),
-                    Err(e) => warn!("Failed to get data from iex, {}", e),
+                    Err(e) => warn!("Failed to get data from IEX, {}", e),
                 }
             }));
         });

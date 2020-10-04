@@ -41,7 +41,7 @@ impl QueryRoot {
         &self,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
-        info!("push_subscription: {:?}", push_subscription);
+        trace!("Sending push subscription!: {:?}", push_subscription);
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
         let message = crate::push_notification::generate_push_message(subscription_info)
             .expect("failed to generate push message");
