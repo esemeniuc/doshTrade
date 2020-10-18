@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use async_graphql::*;
-use async_graphql::{Context, FieldResult, Schema, ID};
+use async_graphql::{Context, Schema, ID};
 use futures::{Stream, StreamExt};
 use log::{error, info, trace, warn};
 
@@ -66,7 +66,7 @@ impl MutationRoot {
         let pool = match ctx.data::<crate::db::DbPool>() {
             Ok(val) => val,
             Err(e) => {
-                error!("Error getting db pool from context: {}", e.0);
+                error!("Error getting db pool from context: {:?}", e);
                 return vec![];
             }
         };
@@ -131,7 +131,7 @@ impl MutationRoot {
 }
 
 #[derive(async_graphql::SimpleObject, Clone)]
-#[graphql(desc = "Represents a stock's status")]
+///Represents a stock's status
 struct Stock {
     ticker: String,
     price: String,
@@ -152,19 +152,29 @@ impl SubscriptionRoot {
         ticker_symbols: Vec<String>,
     ) -> impl Stream<Item = Vec<Stock>> {
         let conn = ctx.data_unchecked::<sqlx::SqlitePool>().to_owned();
-
-        let a = tokio::time::interval(Duration::from_secs(5)).then(|_| async {
-            vec![Stock {
-                ticker: "".to_string(),
-                price: "".to_string(),
-                rsi: 0.0,
-                percent_change: 0.0,
-                timestamp: "".to_string(),
-            }]
-        });
+        tokio::time::interval(Duration::from_secs(5))
+            .map(move |_| {
+                let b = futures::stream::iter(ticker_symbols.to_owned().into_iter());
+                let c = b.then(|ticker| async {
+                    (
+                        IntradayPrice::get_latest_by_ticker(&unimplemented!(), &ticker).await,
+                        ticker,
+                    )
+                });
+                c
+            })
+            .then(|_| async move {
+                vec![Stock {
+                    ticker: "".to_string(),
+                    price: "".to_string(),
+                    rsi: 0.0,
+                    percent_change: 0.0,
+                    timestamp: "".to_string(),
+                }]
+            })
         // .collect::<Vec<_>>()
         // .await;
-        a
+
         // tokio::time::interval(Duration::from_secs(5)).then(move |_| {
         //     let b = futures::stream::iter(ticker_symbols.to_owned().into_iter());
         //     let c = b.then(|ticker| async {

@@ -1,5 +1,3 @@
-use crate::push_notification::PushSubscription;
-
 #[derive(Debug)]
 pub struct Client {
     pub id: i32,

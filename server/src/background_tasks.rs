@@ -7,7 +7,7 @@ use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use web_push::SubscriptionKeys;
 
-use crate::models::{Client, IntradayPrice};
+use crate::models::IntradayPrice;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
