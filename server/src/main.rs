@@ -1,13 +1,8 @@
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
-
 use actix::prelude::*;
 use actix_cors::Cors;
 use actix_web::{guard, web, App, HttpServer};
 use async_graphql::Schema;
-use clap::{App as ClapApp, Arg};
+use clap::Arg;
 use log::{error, info, trace, warn};
 
 use asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
@@ -26,7 +21,7 @@ async fn main() -> std::io::Result<()> {
     // std::env::set_var("RUST_LOG", "actix_web=info");
     info!("Starting yolotrader with args: {:?}", std::env::args());
 
-    let matches = ClapApp::new("yolotrader server")
+    let matches = clap::App::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")
         .about("Backend server for yolotrader")
@@ -51,20 +46,29 @@ async fn main() -> std::io::Result<()> {
         )
         .get_matches();
 
-    let database_url = matches.value_of("database_url").unwrap_or("db.sqlite");
+    let database_url = matches
+        .value_of("database_url")
+        .unwrap_or("sqlite://db.sqlite?mode=rwc");
     let ip = matches.value_of("ip").unwrap_or("0.0.0.0");
     let port = matches.value_of("port").unwrap_or("8080");
     let ip_port = format!("{}:{}", ip, port);
     info!("Playground available at: http://{}/graphiql", ip_port);
 
-    let pool = db::establish_connection(database_url);
-    db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
-    db::seed(&pool.get().unwrap()).expect("Unable to seed the database");
+    let pool = sqlx::sqlite::SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect(database_url)
+        .await
+        .expect("Unable to connect to database pool");
+    // let pool = sqlx::sqlite::SqlitePool::connect(database_url)
+    //     .await
+    //     .expect("Unable to connect to database pool");
+    // db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
+    db::seed(&pool).await.expect("Unable to seed the database");
 
     background_tasks::MyActor { pool: pool.clone() }.start();
 
     let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
-        .data(pool.clone())
+        .data(pool)
         .finish();
 
     HttpServer::new(move || {

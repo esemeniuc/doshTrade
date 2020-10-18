@@ -1,9 +1,6 @@
-use diesel::prelude::*;
+use sqlx::sqlite::SqliteDone;
 
-use crate::models::schema::intraday_prices;
-use crate::models::schema::intraday_prices::dsl::*;
-
-#[derive(Identifiable, Queryable, Debug)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct IntradayPrice {
     pub id: i32,
     pub stock_id: i32,
@@ -13,32 +10,49 @@ pub struct IntradayPrice {
 }
 
 impl IntradayPrice {
-    pub fn get_latest(
+    pub async fn get_latest_by_id(
         conn: &crate::db::DbPoolConn,
         other_stock_id: i32,
-    ) -> QueryResult<IntradayPrice> {
-        intraday_prices
-            .filter(stock_id.eq(other_stock_id))
-            .order(timestamp.desc())
-            .first::<IntradayPrice>(conn)
+    ) -> sqlx::Result<IntradayPrice> {
+        sqlx::query_as::<_, IntradayPrice>(
+            "SELECT * FROM intraday_prices
+         WHERE stock_id = ?
+         ORDER BY timestamp DESC
+         LIMIT 1",
+        )
+        .bind(other_stock_id)
+        .fetch_one(conn)
+        .await
     }
 
-    pub fn insert(
+    pub async fn get_latest_by_ticker(
+        conn: &crate::db::DbPoolConn,
+        ticker: &String, //TODO check if ref is ok
+    ) -> sqlx::Result<IntradayPrice> {
+        sqlx::query_as::<_, IntradayPrice>(
+            "SELECT * FROM intraday_prices
+         JOIN stocks ON stocks.ticker = ?
+         ORDER BY intraday_prices.timestamp DESC
+         LIMIT 1",
+        )
+        .bind(ticker)
+        .fetch_one(conn)
+        .await
+    }
+
+    pub async fn insert(
         conn: &crate::db::DbPoolConn,
         other_stock_ticker: &String,
         other_price: f64,
         other_volume: i64,
         other_timestamp: chrono::NaiveDateTime,
-    ) -> QueryResult<usize> {
-        crate::models::Stock::find(conn, other_stock_ticker).and_then(|stock| {
-            diesel::insert_into(intraday_prices::table)
-                .values((
-                    stock_id.eq(stock.id),
-                    price.eq(other_price),
-                    volume.eq(other_volume),
-                    timestamp.eq(other_timestamp),
-                ))
-                .execute(conn)
-        })
+    ) -> sqlx::Result<SqliteDone> {
+        sqlx::query("INSERT INTO intraday_prices VALUES (null, (SELECT id from stocks where ticker = ?), ?, ?, ?)")
+            .bind(other_stock_ticker)
+            .bind(other_price)
+            .bind(other_volume)
+            .bind(other_timestamp)
+            .execute(conn)
+            .await
     }
 }

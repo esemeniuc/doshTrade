@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use async_graphql::*;
 use async_graphql::{Context, FieldResult, Schema, ID};
-use diesel::QueryResult;
 use futures::{Stream, StreamExt};
 use log::{error, info, trace, warn};
 
@@ -72,33 +71,41 @@ impl MutationRoot {
             }
         };
 
-        let successful_tickers = || -> QueryResult<Vec<String>> {
-            let conn = pool.get().unwrap();
-            //add user to client table
-            let client = Client::upsert(&conn, &push_subscription)?;
-            ClientSubscription::delete_all(&conn, client.id)?;
-            let output: Vec<_> = ticker_symbols
-                .iter()
-                .filter_map(|ticker| crate::models::Stock::find(&conn, ticker).ok())
-                .filter_map(
-                    //store ticker and subscription
-                    |stock| match ClientSubscription::insert(&conn, client.id, stock.id) {
-                        Ok(_) => Some(stock.ticker),
-                        Err(_) => None,
-                    },
-                )
-                .collect();
-            Ok(output)
-        };
-
-        return match successful_tickers() {
-            Ok(val) => val,
+        //add user to client table
+        let client_id = match Client::upsert(pool, &push_subscription).await {
+            Ok(id) => id,
             Err(e) => {
-                warn!("notification_request() failed with code{}", e);
-                vec![]
+                warn!("notification_request() failed with error: {}", e);
+                return vec![];
             }
         };
 
+        match ClientSubscription::delete_all(pool, client_id).await {
+            Ok(_) => (),
+            Err(e) => {
+                warn!("notification_request() failed with error: {}", e);
+                return vec![];
+            }
+        };
+
+        //tick
+        //
+        // let a = ticker_symbols
+        //     .iter()
+        //     .map(|ticker| crate::models::Stock::find(pool, ticker))
+        let b = futures::stream::iter(ticker_symbols)
+            .map(|ticker| crate::models::Stock::find(pool, ticker));
+
+        // futures::future::join_all(inserts).await
+        //     .filter_map(
+        //         //store ticker and subscription
+        //         |stock| match ClientSubscription::insert(pool, client_id, stock.id) {
+        //             Ok(_) => Some(stock.ticker),
+        //             Err(_) => None,
+        //         },
+        //     )
+        //     .collect()
+        unimplemented!()
         //example
         // userA, [A,B,C] -> 3 rows in db
         // userB, [B,C] -> 2 rows in db
@@ -143,29 +150,43 @@ impl SubscriptionRoot {
         &self,
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
-    ) -> FieldResult<impl Stream<Item = Vec<Stock>>> {
-        let conn = ctx
-            .data::<crate::db::DbPool>()
-            .and_then(|pool| pool.get().map_err(|e| FieldError::from(e)));
+    ) -> impl Stream<Item = Vec<Stock>> {
+        let conn = ctx.data_unchecked::<sqlx::SqlitePool>().to_owned();
 
-        fn get_price(conn: &crate::db::DbPoolConn, ticker: &String) -> QueryResult<Stock> {
-            DbStock::find(&conn, &ticker)
-                .and_then(|stock| IntradayPrice::get_latest(&conn, stock.id))
-                .map(|intraday_price| Stock {
-                    ticker: ticker.to_owned(),
-                    price: intraday_price.price.to_string(),
-                    rsi: 0.1,            //TODO: calculate this
-                    percent_change: 0.2, //TODO: calculate this
-                    timestamp: intraday_price.timestamp.to_string(),
-                })
-        }
-        conn.map(|conn| {
-            tokio::time::interval(Duration::from_secs(5)).map(move |_| {
-                ticker_symbols
-                    .iter()
-                    .filter_map(|ticker| get_price(&conn, ticker).ok())
-                    .collect::<Vec<Stock>>()
-            })
-        })
+        let a = tokio::time::interval(Duration::from_secs(5)).then(|_| async {
+            vec![Stock {
+                ticker: "".to_string(),
+                price: "".to_string(),
+                rsi: 0.0,
+                percent_change: 0.0,
+                timestamp: "".to_string(),
+            }]
+        });
+        // .collect::<Vec<_>>()
+        // .await;
+        a
+        // tokio::time::interval(Duration::from_secs(5)).then(move |_| {
+        //     let b = futures::stream::iter(ticker_symbols.to_owned().into_iter());
+        //     let c = b.then(|ticker| async {
+        //         (
+        //             IntradayPrice::get_latest_by_ticker(&conn, &ticker).await,
+        //             ticker,
+        //         )
+        //     });
+        //     let d = c.filter_map(|ticker_and_intraday_price| async {
+        //         match ticker_and_intraday_price.0 {
+        //             Ok(intraday_price) => Some(Stock {
+        //                 ticker: ticker_and_intraday_price.1.to_owned(),
+        //                 price: intraday_price.price.to_string(),
+        //                 rsi: 0.1,            //TODO: calculate this
+        //                 percent_change: 0.2, //TODO: calculate this
+        //                 timestamp: intraday_price.timestamp.to_string(),
+        //             }),
+        //             Err(e) => None,
+        //         }
+        //     });
+        //     let e = d.collect::<Vec<_>>();
+        //     return e;
+        // })
     }
 }

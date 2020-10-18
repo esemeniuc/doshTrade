@@ -1,6 +1,0 @@
-CREATE TABLE IF NOT EXISTS stocks
-(
-    id     INTEGER NOT NULL PRIMARY KEY,
-    ticker VARCHAR NOT NULL,
-    name   VARCHAR NOT NULL
-);

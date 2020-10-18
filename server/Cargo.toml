@@ -7,8 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-diesel = { version = "1.4.5", features = ["sqlite", "r2d2", "chrono"] }
-diesel_migrations = "1.4.0"
+anyhow = "1.0"
+sqlx = { version = "0.4.0-beta.1", features = [ "macros", "sqlite", "chrono", "migrate" ] }
+#sqlx = { version = "0.4.0-beta.1", default-features = false, features = [ "runtime-tokio", "macros", "sqlite", "chrono" ] }
 rust-embed= "5.6.0"
 log = "0.4.11"
 env_logger = "0.7.1"

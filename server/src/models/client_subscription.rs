@@ -1,9 +1,6 @@
-use diesel::prelude::*;
+use sqlx::sqlite::SqliteDone;
 
-use crate::models::schema::client_subscriptions;
-use crate::models::schema::client_subscriptions::dsl::*;
-
-#[derive(Identifiable, Queryable, Debug)]
+#[derive(Debug)]
 pub struct ClientSubscription {
     pub id: i32,
     pub client_id: i32,
@@ -12,21 +9,26 @@ pub struct ClientSubscription {
 }
 
 impl ClientSubscription {
-    pub fn insert(
+    pub async fn insert(
         conn: &crate::db::DbPoolConn,
-        other_client_id: i32,
-        other_stock_id: i32,
-    ) -> QueryResult<usize> {
-        diesel::insert_into(client_subscriptions::table)
-            .values((
-                client_id.eq(other_client_id),
-                stock_id.eq(other_stock_id),
-                created_at.eq(chrono::Local::now().naive_utc()),
-            ))
+        client_id: i32,
+        stock_id: i32,
+    ) -> sqlx::Result<SqliteDone> {
+        sqlx::query("INSERT INTO client_subscriptions VALUES (?, ?, ?)")
+            .bind(client_id)
+            .bind(stock_id)
+            .bind(chrono::Local::now().naive_utc())
             .execute(conn)
+            .await
     }
 
-    pub fn delete_all(conn: &crate::db::DbPoolConn, other_client_id: i32) -> QueryResult<usize> {
-        diesel::delete(client_subscriptions.filter(client_id.eq(other_client_id))).execute(conn)
+    pub async fn delete_all(
+        conn: &crate::db::DbPoolConn,
+        client_id: i32,
+    ) -> sqlx::Result<SqliteDone> {
+        sqlx::query("DELETE FROM client_subscriptionss WHERE client_id = ?")
+            .bind(client_id)
+            .execute(conn)
+            .await
     }
 }

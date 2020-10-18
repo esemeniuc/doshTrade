@@ -5,11 +5,9 @@ use actix_web::Result;
 use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
+use web_push::SubscriptionKeys;
 
-use crate::models::schema::client_subscriptions::dsl::*;
-use crate::models::schema::clients::dsl::*;
 use crate::models::{Client, IntradayPrice};
-use diesel::{QueryDsl, RunQueryDsl, Table};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,25 +17,40 @@ struct IEXPrice {
     latest_update: i64,
 }
 
-pub async fn background_send_push_notifications(conn: &crate::db::DbPoolConn) {
+pub async fn background_send_push_notifications(
+    conn: &crate::db::DbPoolConn,
+) -> Result<(), sqlx::Error> {
     let client = web_push::WebPushClient::new();
-    let db_clients: Vec<Client> = match client_subscriptions
-        .inner_join(clients) //get the client
-        //TODO: get actual stock info!
-        .select(clients::all_columns()) //need the client cols for destination, need stock tickers
-        .load(conn)
-    {
-        Ok(val) => val,
-        Err(e) => {
-            warn!("Failed to fetch client subs from db with error {}", e);
-            return;
-        }
-    };
+    #[derive(sqlx::FromRow)]
+    struct ClientSubscription {
+        stock_id: i32,
+        endpoint: String,
+        p256dh: String,
+        auth: String,
+    }
+    //TODO: use ticker info in messages!
+    let client_subs = sqlx::query_as::<_, ClientSubscription>(
+        "SELECT stock_id, endpoint, p256dh, auth FROM client_subscriptions\
+    JOIN clients ON clients.id = client_subscriptions.client_id", //need the client info for notification
+    )
+    .fetch_all(conn)
+    .await?;
 
-    let messages_to_send: Vec<_> = db_clients
+    let messages_to_send: Vec<_> = client_subs
         .into_iter()
-        .map(|sub| web_push::SubscriptionInfo::from(sub))
-        .filter_map(|sub| crate::push_notification::generate_push_message(sub).ok())
+        .map(|sub| {
+            (
+                sub.stock_id,
+                web_push::SubscriptionInfo {
+                    endpoint: sub.endpoint,
+                    keys: SubscriptionKeys {
+                        p256dh: sub.p256dh,
+                        auth: sub.auth,
+                    },
+                },
+            )
+        })
+        .filter_map(|sub| crate::push_notification::generate_push_message(sub.1).ok())
         .map(|msg| client.send(msg))
         .collect();
     //send it!
@@ -55,7 +68,8 @@ pub async fn background_send_push_notifications(conn: &crate::db::DbPoolConn) {
             "background_send_push_notifications() failed to send {} push notifications",
             send_errors.len()
         ),
-    }
+    };
+    Ok(())
 }
 
 pub async fn background_fetch_tickers(
@@ -91,7 +105,8 @@ pub async fn background_fetch_tickers(
             price.latest_price,
             price.latest_volume,
             chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32),
-        );
+        )
+        .await;
         match query_result {
             Ok(_) => info!("Inserted intraday update for ticker: {}", ticker),
             Err(e) => warn!(
@@ -111,7 +126,7 @@ pub async fn background_fetch_tickers(
 }
 
 pub(crate) struct MyActor {
-    pub(crate) pool: crate::db::DbPool,
+    pub(crate) pool: sqlx::SqlitePool,
 }
 
 impl Actor for MyActor {
@@ -120,14 +135,7 @@ impl Actor for MyActor {
     fn started(&mut self, ctx: &mut Self::Context) {
         //background fetch
         ctx.run_interval(Duration::from_secs(10), move |this, ctx| {
-            let conn = match this.pool.get() {
-                Ok(v) => v,
-                Err(e) => {
-                    warn!("Failed to get pool conn connection {:?}", e);
-                    return;
-                }
-            };
-
+            let conn = this.pool.to_owned();
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
                 //TODO: find out which tickers are needed to fetch
@@ -141,17 +149,10 @@ impl Actor for MyActor {
 
         //background send push notifications
         ctx.run_interval(Duration::from_secs(10), move |this, ctx| {
-            let conn = match this.pool.get() {
-                Ok(v) => v,
-                Err(e) => {
-                    warn!("Failed to get pool conn connection {:?}", e);
-                    return;
-                }
-            };
-
+            let conn = this.pool.to_owned();
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
-                background_send_push_notifications(&conn).await
+                background_send_push_notifications(&conn).await;
             }));
         });
     }

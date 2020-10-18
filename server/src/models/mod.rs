@@ -8,5 +8,3 @@ mod client;
 mod client_subscription;
 mod intraday_price;
 mod stock;
-
-pub mod schema; //needed to add to this sub module otherwise no model can access schema
