@@ -5,7 +5,7 @@ use async_graphql::Schema;
 use clap::Arg;
 use log::{error, info, trace, warn};
 
-use asyncgql::{MutationRoot, QueryRoot, SubscriptionRoot};
+use asyncgql::{MutationRoot, QueryRoot, Subscription};
 
 mod asyncgql;
 mod auth;
@@ -62,12 +62,11 @@ async fn main() -> std::io::Result<()> {
     // let pool = sqlx::sqlite::SqlitePool::connect(database_url)
     //     .await
     //     .expect("Unable to connect to database pool");
-    // db::run_migrations(&pool.get().unwrap()).expect("Unable to run migrations");
     db::seed(&pool).await.expect("Unable to seed the database");
 
     background_tasks::MyActor { pool: pool.clone() }.start();
 
-    let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
+    let schema = Schema::build(QueryRoot, MutationRoot, Subscription)
         .data(pool)
         .finish();
 

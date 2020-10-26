@@ -1,13 +1,12 @@
 use std::time::Duration;
 
-use async_graphql::*;
 use async_graphql::{Context, Schema, ID};
 use futures::{Stream, StreamExt};
 use log::{error, info, trace, warn};
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
 
-pub type BooksSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
+pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
 #[derive(Clone)]
 pub struct Book {
@@ -135,47 +134,45 @@ impl MutationRoot {
 struct Stock {
     ticker: String,
     price: String,
-    #[field(desc = "TODO: figure out RSI")]
+    ///TODO: figure out RSI"
     rsi: f64,
-    #[field(desc = "% Change from the start of day")]
+    ///% Change from the start of day
     percent_change: f64,
     timestamp: String,
 }
 
-pub struct SubscriptionRoot;
+pub struct Subscription;
 
 #[async_graphql::Subscription]
-impl SubscriptionRoot {
+impl Subscription {
     async fn yolo_hand_curated_stocks(
         &self,
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
     ) -> impl Stream<Item = Vec<Stock>> {
-        let conn = ctx.data_unchecked::<sqlx::SqlitePool>().to_owned();
-        tokio::time::interval(Duration::from_secs(5))
-            .map(move |_| {
-                let b = futures::stream::iter(ticker_symbols.to_owned().into_iter());
-                let c = b.then(|ticker| async {
-                    (
-                        IntradayPrice::get_latest_by_ticker(&unimplemented!(), &ticker).await,
-                        ticker,
-                    )
-                });
-                c
-            })
-            .then(|_| async move {
-                vec![Stock {
-                    ticker: "".to_string(),
-                    price: "".to_string(),
-                    rsi: 0.0,
-                    percent_change: 0.0,
-                    timestamp: "".to_string(),
-                }]
-            })
-        // .collect::<Vec<_>>()
-        // .await;
+        use std::sync::Arc;
+        let conn_owned = Arc::new(ctx.data_unchecked::<sqlx::SqlitePool>().to_owned());
+        let tickers_owned = Arc::new(ticker_symbols);
 
-        // tokio::time::interval(Duration::from_secs(5)).then(move |_| {
+        actix_web::rt::time::interval(Duration::from_secs(5))
+            .map(move |_| (Arc::clone(&conn_owned), Arc::clone(&tickers_owned)))
+            .then(|vars| {
+                async move {
+                    IntradayPrice::get_latest_by_tickers(&vars.0, &vars.1)
+                        .await
+                        .iter()
+                        .map(|intraday_price| Stock {
+                            ticker: intraday_price.ticker.to_string(),
+                            price: intraday_price.price.to_string(),
+                            rsi: 0.1,            //TODO: calculate this
+                            percent_change: 0.2, //TODO: calculate this
+                            timestamp: intraday_price.timestamp.to_string(),
+                        })
+                        .collect::<Vec<_>>()
+                }
+            })
+
+        // actix_web::rt::time::interval(Duration::from_secs(5)).then(move |_| {
         //     let b = futures::stream::iter(ticker_symbols.to_owned().into_iter());
         //     let c = b.then(|ticker| async {
         //         (

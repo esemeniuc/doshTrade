@@ -18,15 +18,15 @@ CREATE TABLE IF NOT EXISTS stocks
 
 CREATE TABLE IF NOT EXISTS intraday_prices
 (
-    id        INTEGER        NOT NULL PRIMARY KEY,
-    stock_id  INTEGER        NOT NULL,
-    price     DECIMAL(12, 2) NOT NULL,
-    volume    BIGINT         NOT NULL,
-    timestamp TIMESTAMP      NOT NULL,
+    id        INTEGER   NOT NULL PRIMARY KEY,
+    stock_id  INTEGER   NOT NULL,
+    price     DOUBLE    NOT NULL, --TODO: change to integer
+    volume    BIGINT    NOT NULL,
+    timestamp TIMESTAMP NOT NULL,
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );
 
-CREATE INDEX index_intraday_prices_on_timestamp ON intraday_prices(timestamp);
+CREATE INDEX index_intraday_prices_on_timestamp ON intraday_prices (timestamp);
 
 CREATE TABLE IF NOT EXISTS clients
 (
@@ -40,10 +40,10 @@ CREATE TABLE IF NOT EXISTS clients
 
 CREATE TABLE IF NOT EXISTS client_subscriptions
 (
-    id INTEGER NOT NULL PRIMARY KEY,
-    client_id              INTEGER NOT NULL,
-    stock_id               INTEGER NOT NULL,
-    created_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id         INTEGER   NOT NULL PRIMARY KEY,
+    client_id  INTEGER   NOT NULL,
+    stock_id   INTEGER   NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES clients (id),
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );

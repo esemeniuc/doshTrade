@@ -2,7 +2,7 @@ use web_push::*;
 
 #[derive(async_graphql::InputObject, Clone, Debug)]
 pub struct PushSubscriptionKeys {
-    #[field(name = "p256dh")]
+    #[graphql(name = "p256dh")]
     pub p256dh: String,
     pub auth: String,
 }

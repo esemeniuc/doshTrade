@@ -3,11 +3,17 @@ pub type DbPoolConn = sqlx::SqlitePool;
 
 pub async fn seed(conn: &DbPoolConn) -> sqlx::Result<sqlx::sqlite::SqliteDone> {
     // Read migrations from a local folder: ./migrations
-    let m = sqlx::migrate::Migrator::new(std::path::Path::new("./migrations")).await?;
-    m.run(conn).await?;
+    // let m = sqlx::migrate::Migrator::new(std::path::Path::new("./migrations")).await?;
+    // m.run(conn).await?;
+    sqlx::migrate!("./migrations").run(conn).await?;
 
     //TODO don't insert every time on startup
-    let stocks_list = vec![("NFLX", "Netflix"), ("AAPL", "Apple"), ("GOOG", "Google")];
+    let stocks_list = vec![
+        ("AAPL", "Apple"),
+        ("GOOG", "Google"),
+        ("GE", "General Electric"),
+        ("NFLX", "Netflix"),
+    ];
 
     let inserts = stocks_list.iter().map(|stock| {
         sqlx::query("INSERT INTO stocks VALUES (null, ?, ?)")

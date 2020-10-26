@@ -8,17 +8,19 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.33"
-sqlx = { version = "0.4.0-beta.1", features = [ "macros", "sqlite", "chrono", "migrate" ] }
-#sqlx = { version = "0.4.0-beta.1", default-features = false, features = [ "runtime-tokio", "macros", "sqlite", "chrono" ] }
-rust-embed= "5.6.0"
+sqlx = { version = "0.4.0-beta.1", features = ["macros", "sqlite", "chrono", "migrate"] }
+#sqlx = { version = "0.4.0-beta.1", default-features = false, features = ["runtime-tokio", "macros", "sqlite", "chrono", "migrate"] }
+rust-embed = "5.6.0"
 log = "0.4.11"
 env_logger = "0.8.1"
+itertools = "0.9"
 
-async-graphql = "2.0.4"
-async-graphql-actix-web = "2.0.4"
+async-graphql = "2.0.5"
+async-graphql-actix-web = "2.0.5"
 actix-web = { version = "3.1.0", features = ["rustls"] }
 actix-web-actors = "3.0.0"
-tokio = { version = "0.3.0", features = ["time", "stream"] }
+tokio = { version = "0.3.0", features = ["time", "stream", "sync", "rt","rt-multi-thread"] } #cant upgrade because tokio will complain about no timer running
+#tokio = { version = "0.2.22", features = ["time", "stream", "sync"] }
 futures = "0.3.6"
 futures-util = "0.3.6"
 

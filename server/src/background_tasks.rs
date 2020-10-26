@@ -13,7 +13,7 @@ use crate::models::IntradayPrice;
 #[serde(rename_all = "camelCase")]
 struct IEXPrice {
     latest_price: f64,
-    latest_volume: i64,
+    latest_volume: Option<i64>, //can be null before trading starts
     latest_update: i64,
 }
 
@@ -103,13 +103,13 @@ pub async fn background_fetch_tickers(
             conn,
             &ticker,
             price.latest_price,
-            price.latest_volume,
+            price.latest_volume.unwrap_or_default(),
             chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32),
         )
         .await;
         match query_result {
             Ok(_) => info!("Inserted intraday update for ticker: {}", ticker),
-            Err(e) => warn!(
+            Err(e) => error!(
                 "Failed to fetch intraday update for ticker: {} with error: {}",
                 ticker, e
             ),
@@ -139,7 +139,12 @@ impl Actor for MyActor {
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
                 //TODO: find out which tickers are needed to fetch
-                let tickers = vec!["AAPL".to_string(), "NFLX".to_string(), "GOOG".to_string()];
+                let tickers = vec![
+                    "AAPL".to_string(),
+                    "GE".to_string(),
+                    "GOOG".to_string(),
+                    "NFLX".to_string(),
+                ];
                 match background_fetch_tickers(&conn, tickers).await {
                     Ok(_) => info!("Fetched all tickers"),
                     Err(e) => warn!("Failed to get data from IEX, {}", e),
