@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use async_graphql::{Context, Schema, ID};
 use futures::{Stream, StreamExt};
-use log::{error, info, trace, warn};
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
 
@@ -39,7 +38,7 @@ impl QueryRoot {
         &self,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> bool {
-        trace!("Sending push subscription!: {:?}", push_subscription);
+        log::trace!("Sending push subscription!: {:?}", push_subscription);
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
         let message = crate::push_notification::generate_push_message(subscription_info)
             .expect("failed to generate push message");
@@ -65,7 +64,7 @@ impl MutationRoot {
         let pool = match ctx.data::<crate::db::DbPool>() {
             Ok(val) => val,
             Err(e) => {
-                error!("Error getting db pool from context: {:?}", e);
+                log::error!("Error getting db pool from context: {:?}", e);
                 return vec![];
             }
         };
@@ -74,7 +73,7 @@ impl MutationRoot {
         let client_id = match Client::upsert(pool, &push_subscription).await {
             Ok(id) => id,
             Err(e) => {
-                warn!("notification_request() failed with error: {}", e);
+                log::warn!("notification_request() failed with error: {}", e);
                 return vec![];
             }
         };
@@ -82,7 +81,7 @@ impl MutationRoot {
         match ClientSubscription::delete_all(pool, client_id).await {
             Ok(_) => (),
             Err(e) => {
-                warn!("notification_request() failed with error: {}", e);
+                log::warn!("notification_request() failed with error: {}", e);
                 return vec![];
             }
         };

@@ -3,7 +3,6 @@ use actix_cors::Cors;
 use actix_web::{guard, web, App, HttpServer};
 use async_graphql::Schema;
 use clap::Arg;
-use log::{error, info, trace, warn};
 
 use asyncgql::{MutationRoot, QueryRoot, Subscription};
 
@@ -19,7 +18,7 @@ mod push_notification;
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     // std::env::set_var("RUST_LOG", "actix_web=info");
-    info!("Starting yolotrader with args: {:?}", std::env::args());
+    log::info!("Starting yolotrader with args: {:?}", std::env::args());
 
     let matches = clap::App::new("yolotrader server")
         .version("1.0")
@@ -52,7 +51,7 @@ async fn main() -> std::io::Result<()> {
     let ip = matches.value_of("ip").unwrap_or("0.0.0.0");
     let port = matches.value_of("port").unwrap_or("8080");
     let ip_port = format!("{}:{}", ip, port);
-    info!("Playground available at: http://{}/graphiql", ip_port);
+    log::info!("Playground available at: http://{}/graphiql", ip_port);
 
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
         .max_connections(5)
