@@ -74,7 +74,7 @@ async fn main() -> std::io::Result<()> {
         let cors_rules = if cfg!(debug_assertions) {
             Cors::default()
         } else {
-            Cors::new().allowed_methods(vec!["GET", "POST"]).finish()
+            Cors::default().allowed_methods(vec!["GET", "POST"])
         };
         App::new()
             .wrap(cors_rules)

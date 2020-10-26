@@ -7,26 +7,23 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.33"
+#anyhow = "1.0.33"
 sqlx = { version = "0.4.0-beta.1", features = ["macros", "sqlite", "chrono", "migrate"] }
 #sqlx = { version = "0.4.0-beta.1", default-features = false, features = ["runtime-tokio", "macros", "sqlite", "chrono", "migrate"] }
 rust-embed = "5.6.0"
 log = "0.4.11"
 env_logger = "0.8.1"
-itertools = "0.9"
+itertools = "0.9.0"
 
-async-graphql = "2.0.5"
-async-graphql-actix-web = "2.0.5"
+async-graphql = "2.0.8"
+async-graphql-actix-web = "2.0.8"
 actix-web = { version = "3.1.0", features = ["rustls"] }
 actix-web-actors = "3.0.0"
-tokio = { version = "0.3.0", features = ["time", "stream", "sync", "rt","rt-multi-thread"] } #cant upgrade because tokio will complain about no timer running
-#tokio = { version = "0.2.22", features = ["time", "stream", "sync"] }
-futures = "0.3.6"
-futures-util = "0.3.6"
+futures = "0.3.7"
 
 actix = "0.10.0"
-actix-cors = "0.4.1"
-async-stream = "0.3.0"
+actix-cors = "0.5.0"
+#async-stream = "0.3.0"
 mime_guess = "2.0.3"
 chrono = { version = "0.4.19", features = ["serde"] }
 jsonwebtoken = "7.2.0"
