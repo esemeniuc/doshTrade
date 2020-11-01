@@ -15,13 +15,13 @@ pub async fn seed(conn: &DbPoolConn) -> sqlx::Result<sqlx::sqlite::SqliteDone> {
         ("NFLX", "Netflix"),
     ];
 
-    let inserts = stocks_list.iter().map(|stock| {
+    let inserts = stocks_list.into_iter().map(|stock| {
         sqlx::query("INSERT INTO stocks VALUES (null, ?, ?)")
             .bind(stock.0)
             .bind(stock.1)
             .execute(conn)
     });
-    //TODO check insert status
+
     futures::future::join_all(inserts).await.into_iter().fold(
         sqlx::Result::Ok(sqlx::sqlite::SqliteDone::default()),
         |acc, curr| {

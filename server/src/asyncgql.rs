@@ -171,6 +171,18 @@ impl Subscription {
                 }
             })
 
+        // actix_web::rt::time::interval(Duration::from_secs(5))
+        //     .then(|_| async move {
+        //         vec![Stock {
+        //             ticker: "".to_string(),
+        //             price: "".to_string(),
+        //             rsi: 0.0,
+        //             percent_change: 0.0,
+        //             timestamp: "".to_string(),
+        //         }]
+        //     })
+
+
         // actix_web::rt::time::interval(Duration::from_secs(5)).then(move |_| {
         //     let b = futures::stream::iter(ticker_symbols.to_owned().into_iter());
         //     let c = b.then(|ticker| async {

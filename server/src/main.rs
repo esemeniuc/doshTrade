@@ -71,7 +71,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let cors_rules = if cfg!(debug_assertions) {
-            Cors::default()
+            Cors::permissive()
         } else {
             Cors::default().allowed_methods(vec!["GET", "POST"])
         };

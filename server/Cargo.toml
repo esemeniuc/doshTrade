@@ -8,16 +8,19 @@ edition = "2018"
 
 [dependencies]
 #anyhow = "1.0.33"
-sqlx = { version = "0.4.0-beta.1", features = ["macros", "sqlite", "chrono", "migrate"] }
-#sqlx = { version = "0.4.0-beta.1", default-features = false, features = ["runtime-tokio", "macros", "sqlite", "chrono", "migrate"] }
+#sqlx = { version = "0.4.0-beta.1", features = ["macros", "sqlite", "chrono", "migrate"] }
+#sqlx = { version = "0.4.0-beta.1", default-features = false, features = [ "sqlite", "runtime-tokio", "macros" ] }
+#tokio = { version = "0.2", features = ["full"] }
+#sqlx = { git="https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-tokio", "macros", "sqlite", "chrono", "migrate"] }
+sqlx = { git="https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-actix","macros", "sqlite", "chrono", "migrate"] }
 rust-embed = "5.6.0"
 log = "0.4.11"
 env_logger = "0.8.1"
 itertools = "0.9.0"
 
-async-graphql = "2.0.8"
-async-graphql-actix-web = "2.0.8"
-actix-web = { version = "3.1.0", features = ["rustls"] }
+async-graphql = "2.0.10"
+async-graphql-actix-web = "2.0.10"
+actix-web = { version = "3.2.0", features = ["rustls"] }
 actix-web-actors = "3.0.0"
 futures = "0.3.7"
 
