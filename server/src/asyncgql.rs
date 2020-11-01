@@ -163,7 +163,7 @@ impl Subscription {
                         .map(|intraday_price| Stock {
                             ticker: intraday_price.ticker.to_string(),
                             price: intraday_price.price.to_string(),
-                            rsi: 0.1,            //TODO: calculate this
+                            rsi: intraday_price.rsi,            //TODO: calculate this
                             percent_change: 0.2, //TODO: calculate this
                             timestamp: intraday_price.timestamp.to_string(),
                         })

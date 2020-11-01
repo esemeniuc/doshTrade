@@ -9,6 +9,7 @@ pub struct IntradayPrice {
     pub volume: i64,
     pub timestamp: chrono::NaiveDateTime,
     pub ticker: String,
+    pub rsi: f64,
 }
 
 impl IntradayPrice {
@@ -34,21 +35,33 @@ impl IntradayPrice {
         conn: &crate::db::DbPoolConn,
         ticker: &String, //TODO check if ref is ok
     ) -> sqlx::Result<IntradayPrice> {
-        sqlx::query_as::<_, IntradayPrice>(
+        let a= sqlx::query_as::<_, IntradayPrice>(
             "SELECT intraday_prices.id,
              intraday_prices.stock_id,
              ROUND(intraday_prices.price,2) as price,
              intraday_prices.volume,
              intraday_prices.timestamp,
-             stocks.ticker
-         FROM intraday_prices AS intraday_prices
+             stocks.ticker,
+             0.0
+         FROM intraday_prices
          JOIN stocks ON stocks.id = intraday_prices.stock_id AND stocks.ticker = ?
          ORDER BY intraday_prices.timestamp DESC
          LIMIT 1",
         )
-        .bind(ticker)
-        .fetch_one(conn)
-        .await
+            .bind(ticker)
+            .fetch_one(conn)
+            .await;
+
+        let rsi = IntradayPrice::get_rsi(conn,1).await?; // FIXME
+        a.map(|intraday_price| IntradayPrice{
+            id:intraday_price.id,
+            stock_id: intraday_price.stock_id,
+            price: intraday_price.price,
+            volume: intraday_price.volume,
+            timestamp: intraday_price.timestamp,
+            ticker: intraday_price.ticker,
+            rsi: rsi
+        })
     }
 
     pub async fn insert(
@@ -65,5 +78,64 @@ impl IntradayPrice {
             .bind(other_timestamp)
             .execute(conn)
             .await
+    }
+
+    pub async fn get_rsi(
+        conn: &crate::db::DbPoolConn,
+        other_stock_id: i32,) -> sqlx::Result<f64> { //TODO: replace it with ticker
+        let rsi_interval = 14;
+        // psuedo sql
+        // GET Price in intraday_prices table limit 15, order by timestamp
+
+
+        #[derive(sqlx::FromRow, Debug)]
+        pub struct Price(f64);
+
+        let price_structs = sqlx::query_as::<_, Price>(
+            "SELECT price
+         FROM intraday_prices
+         WHERE stock_id = ?
+         ORDER BY timestamp DESC
+         LIMIT 15",
+        )
+            .bind(other_stock_id)
+            .fetch_all(conn)
+            .await?;
+
+        let latest_15 = price_structs
+            .iter()
+            .map(|p| p.0)
+            .collect::<Vec<f64>>();
+        //
+        let mut up_price_bars: Vec<f64> = vec!();
+        let mut down_price_bars: Vec<f64> = vec!();
+
+        for (i,p) in latest_15.iter().enumerate() {
+            if i == rsi_interval as usize {
+                break;
+            }
+            let curr = p;
+            let next = latest_15[i+1];
+            let price_bar: f64 = next - curr;
+            if price_bar < 0.0 {
+                down_price_bars.push(price_bar);
+            } else {
+                up_price_bars.push(price_bar);
+            }
+        }
+        let down_sum: f64 = Iterator::sum(down_price_bars.iter());
+        let average_down = f64::abs(f64::from(down_sum) / (down_price_bars.len() as f64));
+
+        let up_sum: f64 = Iterator::sum(up_price_bars.iter());
+        let average_up = f64::abs(f64::from(up_sum) / (up_price_bars.len() as f64));
+
+        Ok(f64::from(1) -
+            f64::from(1) /
+                (f64::from(1) + (average_up / average_down)))
+    }
+
+    fn mean(list: &[i32]) -> f64 {
+        let sum: i32 = Iterator::sum(list.iter());
+        f64::from(sum) / (list.len() as f64)
     }
 }
