@@ -26,8 +26,7 @@ impl IntradayPrice {
             Ok(v) => itertools::Either::Left(v),
             Err(v) => itertools::Either::Right(v),
         });
-        errs.iter()
-            .for_each(|x| log::error!("Failed to find ticker: {}", x));
+        errs.iter().for_each(|x| log::error!("Failed to find ticker: {}", x));
         oks
     }
 
@@ -35,7 +34,7 @@ impl IntradayPrice {
         conn: &crate::db::DbPoolConn,
         ticker: &String, //TODO check if ref is ok
     ) -> sqlx::Result<IntradayPrice> {
-        let a= sqlx::query_as::<_, IntradayPrice>(
+        let a = sqlx::query_as::<_, IntradayPrice>(
             "SELECT intraday_prices.id,
              intraday_prices.stock_id,
              ROUND(intraday_prices.price,2) as price,
@@ -52,15 +51,15 @@ impl IntradayPrice {
             .fetch_one(conn)
             .await;
 
-        let rsi = IntradayPrice::get_rsi(conn,1).await?; // FIXME
-        a.map(|intraday_price| IntradayPrice{
-            id:intraday_price.id,
+        let rsi = IntradayPrice::get_rsi(conn, 1).await?; // FIXME
+        a.map(|intraday_price| IntradayPrice {
+            id: intraday_price.id,
             stock_id: intraday_price.stock_id,
             price: intraday_price.price,
             volume: intraday_price.volume,
             timestamp: intraday_price.timestamp,
             ticker: intraday_price.ticker,
-            rsi: rsi
+            rsi: rsi,
         })
     }
 
@@ -82,7 +81,7 @@ impl IntradayPrice {
 
     pub async fn get_rsi(
         conn: &crate::db::DbPoolConn,
-        other_stock_id: i32,) -> sqlx::Result<f64> { //TODO: replace it with ticker
+        other_stock_id: i32, ) -> sqlx::Result<f64> { //TODO: replace it with ticker
         let rsi_interval = 14;
         // psuedo sql
         // GET Price in intraday_prices table limit 15, order by timestamp
@@ -110,13 +109,13 @@ impl IntradayPrice {
         let mut up_price_bars: Vec<f64> = vec!();
         let mut down_price_bars: Vec<f64> = vec!();
 
-        for (i,p) in latest_15.iter().enumerate() {
+        for (i, p) in latest_15.iter().enumerate() {
             if i == rsi_interval as usize {
                 break;
             }
             let curr = p;
-            let next = latest_15[i+1];
-            let price_bar: f64 = next - curr;
+            let next = latest_15[i + 1];
+            let price_bar = next - curr;
             if price_bar < 0.0 {
                 down_price_bars.push(price_bar);
             } else {
@@ -124,10 +123,10 @@ impl IntradayPrice {
             }
         }
         let down_sum: f64 = Iterator::sum(down_price_bars.iter());
-        let average_down = f64::abs(f64::from(down_sum) / (down_price_bars.len() as f64));
+        let average_down = f64::abs(down_sum / (down_price_bars.len() as f64));
 
         let up_sum: f64 = Iterator::sum(up_price_bars.iter());
-        let average_up = f64::abs(f64::from(up_sum) / (up_price_bars.len() as f64));
+        let average_up = f64::abs(up_sum / (up_price_bars.len() as f64));
 
         Ok(f64::from(1) -
             f64::from(1) /

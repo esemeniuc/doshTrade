@@ -14,7 +14,7 @@ impl ClientSubscription {
         client_id: i32,
         stock_id: i32,
     ) -> sqlx::Result<SqliteDone> {
-        sqlx::query("INSERT INTO client_subscriptions VALUES (?, ?, ?)")
+        sqlx::query("INSERT INTO client_subscriptions VALUES (null, ?, ?, ?)")
             .bind(client_id)
             .bind(stock_id)
             .bind(chrono::Local::now().naive_utc())
@@ -26,7 +26,7 @@ impl ClientSubscription {
         conn: &crate::db::DbPoolConn,
         client_id: i32,
     ) -> sqlx::Result<SqliteDone> {
-        sqlx::query("DELETE FROM client_subscriptionss WHERE client_id = ?")
+        sqlx::query("DELETE FROM client_subscriptions WHERE client_id = ?")
             .bind(client_id)
             .execute(conn)
             .await

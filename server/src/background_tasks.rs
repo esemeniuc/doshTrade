@@ -57,7 +57,7 @@ pub async fn background_send_push_notifications(
     let send_results = futures::future::join_all(messages_to_send).await;
     let send_errors: Vec<_> = send_results
         .iter()
-        .filter(|elem| Result::is_err(elem))
+        .filter(|elem| elem.is_err())
         .collect();
     match send_errors.len() {
         0 => info!(
@@ -145,6 +145,30 @@ impl Actor for MyActor {
                     "GOOG".to_string(),
                     "NFLX".to_string(),
                 ];
+
+
+                //example
+                // userA, [A,B,C] -> 3 rows in db
+                // userB, [B,C] -> 2 rows in db
+
+                //select distinct(stockticker) from subscriptions
+                //returns [A,B,C]
+
+                //call iex with this
+                //insert price data into intraday_prices table
+
+                //periodically scan subscriptions table
+                //calculate if a watched ticker should notify based on each row
+                //
+                //do calculation using intraday_prices table
+                //eg userA with stock ticker B ($$$TICKER)
+                //db: select the intraday updates needed for calculation
+                // SELECT price, volume FROM intraday_updates
+                // JOIN stocks ON stocks.id = intraday_prices.id
+                // WHERE stocks.ticker = $$$TICKER
+                // ORDER by timestamp DESC
+                // LIMIT 5 (whatever is actually necessary for calc)
+
                 match background_fetch_tickers(&conn, tickers).await {
                     Ok(_) => info!("Fetched all tickers"),
                     Err(e) => warn!("Failed to get data from IEX, {}", e),

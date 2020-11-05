@@ -47,3 +47,5 @@ CREATE TABLE IF NOT EXISTS client_subscriptions
     FOREIGN KEY (client_id) REFERENCES clients (id),
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );
+CREATE INDEX index_client_subscriptions_on_client_id ON client_subscriptions (client_id);
+CREATE INDEX index_client_subscriptions_on_stock_id ON client_subscriptions (stock_id);

@@ -61,7 +61,7 @@ async fn main() -> std::io::Result<()> {
     // let pool = sqlx::sqlite::SqlitePool::connect(database_url)
     //     .await
     //     .expect("Unable to connect to database pool");
-    db::seed(&pool).await.expect("Unable to seed the database");
+    db::seed(&pool).await.expect("Error seeding the database");
 
     background_tasks::MyActor { pool: pool.clone() }.start();
 

@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use async_graphql::{Context, Schema, ID};
 use futures::{Stream, StreamExt};
+use itertools::Itertools;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
 
@@ -61,13 +62,7 @@ impl MutationRoot {
         ticker_symbols: Vec<String>,
         push_subscription: crate::push_notification::PushSubscription,
     ) -> Vec<String> {
-        let pool = match ctx.data::<crate::db::DbPool>() {
-            Ok(val) => val,
-            Err(e) => {
-                log::error!("Error getting db pool from context: {:?}", e);
-                return vec![];
-            }
-        };
+        let pool = ctx.data_unchecked::<crate::db::DbPool>();
 
         //add user to client table
         let client_id = match Client::upsert(pool, &push_subscription).await {
@@ -78,6 +73,7 @@ impl MutationRoot {
             }
         };
 
+        //TODO: insert subscription where not in table rather than delete (faster maybe!)
         match ClientSubscription::delete_all(pool, client_id).await {
             Ok(_) => (),
             Err(e) => {
@@ -86,45 +82,20 @@ impl MutationRoot {
             }
         };
 
-        //tick
-        //
-        // let a = ticker_symbols
-        //     .iter()
-        //     .map(|ticker| crate::models::Stock::find(pool, ticker))
-        let b = futures::stream::iter(ticker_symbols)
-            .map(|ticker| crate::models::Stock::find(pool, ticker));
+        let valid_stocks = DbStock::tickers_to_stocks(pool, &ticker_symbols).await;
+        let inserts = valid_stocks.iter()
+            .map(|stock| ClientSubscription::insert(pool, client_id, stock.id));
+        let query_results = futures::future::join_all(inserts).await;
 
-        // futures::future::join_all(inserts).await
-        //     .filter_map(
-        //         //store ticker and subscription
-        //         |stock| match ClientSubscription::insert(pool, client_id, stock.id) {
-        //             Ok(_) => Some(stock.ticker),
-        //             Err(_) => None,
-        //         },
-        //     )
-        //     .collect()
-        unimplemented!()
-        //example
-        // userA, [A,B,C] -> 3 rows in db
-        // userB, [B,C] -> 2 rows in db
-
-        //select distinct(stockticker) from subscriptions
-        //returns [A,B,C]
-
-        //call iex with this
-        //insert price data into intraday_prices table
-
-        //periodically scan subscriptions table
-        //calculate if a watched ticker should notify based on each row
-        //
-        //do calculation using intraday_prices table
-        //eg userA with stock ticker B ($$$TICKER)
-        //db: select the intraday updates needed for calculation
-        // SELECT price, volume FROM intraday_updates
-        // JOIN stocks ON stocks.id = intraday_prices.id
-        // WHERE stocks.ticker = $$$TICKER
-        // ORDER by timestamp DESC
-        // LIMIT 5 (whatever is actually necessary for calc)
+        let (oks, errs): (Vec<_>, Vec<_>) = query_results
+            .into_iter()
+            .zip(valid_stocks)
+            .partition_map(|r| match r.0 {
+                Ok(v) => itertools::Either::Left(r.1.ticker),
+                Err(v) => itertools::Either::Right(v),
+            });
+        errs.iter().for_each(|x| log::error!("Failed to insert client subscription for ticker: {}", x));
+        oks
     }
 }
 
@@ -133,7 +104,6 @@ impl MutationRoot {
 struct Stock {
     ticker: String,
     price: String,
-    ///TODO: figure out RSI"
     rsi: f64,
     ///% Change from the start of day
     percent_change: f64,
@@ -148,7 +118,7 @@ impl Subscription {
         &self,
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
-    ) -> impl Stream<Item = Vec<Stock>> {
+    ) -> impl Stream<Item=Vec<Stock>> {
         use std::sync::Arc;
         let conn_owned = Arc::new(ctx.data_unchecked::<sqlx::SqlitePool>().to_owned());
         let tickers_owned = Arc::new(ticker_symbols);
