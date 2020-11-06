@@ -32,7 +32,7 @@ impl IntradayPrice {
 
     pub async fn get_latest_by_ticker(
         conn: &crate::db::DbPoolConn,
-        ticker: &String, //TODO check if ref is ok
+        ticker: &str,
     ) -> sqlx::Result<IntradayPrice> {
         let a = sqlx::query_as::<_, IntradayPrice>(
             "SELECT intraday_prices.id,
@@ -65,7 +65,7 @@ impl IntradayPrice {
 
     pub async fn insert(
         conn: &crate::db::DbPoolConn,
-        other_stock_ticker: &String,
+        other_stock_ticker: &str,
         other_price: f64,
         other_volume: i64,
         other_timestamp: chrono::NaiveDateTime,
