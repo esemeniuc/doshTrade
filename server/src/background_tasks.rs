@@ -13,7 +13,8 @@ use crate::models::IntradayPrice;
 #[serde(rename_all = "camelCase")]
 struct IEXPrice {
     latest_price: f64,
-    latest_volume: Option<i64>, //can be null before trading starts
+    latest_volume: Option<i64>,
+    //can be null before trading starts
     latest_update: i64,
 }
 
@@ -28,47 +29,37 @@ pub async fn background_send_push_notifications(
         p256dh: String,
         auth: String,
     }
-    //TODO: use ticker info in messages!
     let client_subs = sqlx::query_as::<_, ClientSubscription>(
         "SELECT stock_id, endpoint, p256dh, auth FROM client_subscriptions\
     JOIN clients ON clients.id = client_subscriptions.client_id", //need the client info for notification
     )
-    .fetch_all(conn)
-    .await?;
+        .fetch_all(conn)
+        .await?;
 
-    let messages_to_send: Vec<_> = client_subs
+    let messages_to_send = client_subs
         .into_iter()
-        .map(|sub| {
-            (
-                sub.stock_id,
-                web_push::SubscriptionInfo {
-                    endpoint: sub.endpoint,
-                    keys: SubscriptionKeys {
-                        p256dh: sub.p256dh,
-                        auth: sub.auth,
-                    },
+        .map(|sub| (
+            sub.stock_id,
+            web_push::SubscriptionInfo {
+                endpoint: sub.endpoint,
+                keys: SubscriptionKeys {
+                    p256dh: sub.p256dh,
+                    auth: sub.auth,
                 },
-            )
-        })
-        .filter_map(|sub| crate::push_notification::generate_push_message(sub.1).ok())
-        .map(|msg| client.send(msg))
-        .collect();
+            },
+        ))
+        .filter_map(|sub|
+                        crate::push_notification::generate_push_message(sub.1).ok() //TODO: use ticker info in messages!
+        )
+        .map(|msg| client.send(msg));
+
     //send it!
     let send_results = futures::future::join_all(messages_to_send).await;
-    let send_errors: Vec<_> = send_results
-        .iter()
-        .filter(|elem| elem.is_err())
-        .collect();
-    match send_errors.len() {
-        0 => info!(
-            "Successfully sent all {} push notifications",
-            send_results.len()
-        ),
-        _ => warn!(
-            "background_send_push_notifications() failed to send {} push notifications",
-            send_errors.len()
-        ),
-    };
+    let (_, errs): (Vec<_>, Vec<_>) = itertools::Itertools::partition_map(send_results.into_iter(), |r| match r {
+        Ok(v) => itertools::Either::Left(v),
+        Err(v) => itertools::Either::Right(v),
+    });
+    errs.iter().for_each(|x| log::error!("Failed to send push message: {}", x));
     Ok(())
 }
 
@@ -106,7 +97,7 @@ pub async fn background_fetch_tickers(
             price.latest_volume.unwrap_or_default(),
             chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32),
         )
-        .await;
+            .await;
         match query_result {
             Ok(_) => info!("Inserted intraday update for ticker: {}", ticker),
             Err(e) => error!(
@@ -181,7 +172,11 @@ impl Actor for MyActor {
             let conn = this.pool.to_owned();
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
-                background_send_push_notifications(&conn).await;
+                log::trace!("Sending background push notifications!");
+                match background_send_push_notifications(&conn).await {
+                    Ok(_) => log::info!("Completed sending background push notifications"),
+                    Err(e) => log::error!("Error sending background push: {}", e)
+                }
             }));
         });
     }

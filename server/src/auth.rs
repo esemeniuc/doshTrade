@@ -11,6 +11,7 @@ struct Claims {
     nonce: String,
 }
 
+#[allow(dead_code)]
 pub fn generate_bearer_token_now(user_id: i32) -> String {
     generate_bearer_token(user_id, chrono::Local::now().naive_utc())
 }
@@ -33,7 +34,7 @@ pub fn generate_bearer_token(user_id: i32, created_at: chrono::NaiveDateTime) ->
         &my_claims,                     //body
         &EncodingKey::from_rsa_pem(PRIV_KEY.as_bytes()).expect("Requires valid PEM"), //secret
     )
-    .expect("JWT encode error")
+        .expect("JWT encode error")
 }
 
 /// Validates if a token is not expired, and is signed with decloak private key
@@ -57,6 +58,7 @@ pub fn is_valid_token(jwt: &str) -> bool {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_user_id(jwt: &str) -> jsonwebtoken::errors::Result<i32> {
     // Adding some leeway (in seconds) for exp and nbf checks
     let validation = Validation {
@@ -113,4 +115,11 @@ QwIDAQAB
 #[test]
 fn test_is_valid_token() {
     assert!(is_valid_token(generate_bearer_token_now(1).as_str()))
+}
+
+#[test]
+fn test_generate_bearer_token() {
+    use chrono::{TimeZone};
+    let dt = chrono::Utc.ymd(2020, 7, 8).and_hms(9, 10, 11); // `2020-07-08T09:10:11Z`
+    assert!(is_valid_token(generate_bearer_token(1, dt.naive_local()).as_str()))
 }

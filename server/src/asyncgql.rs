@@ -41,11 +41,21 @@ impl QueryRoot {
     ) -> bool {
         log::trace!("Sending push subscription!: {:?}", push_subscription);
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
-        let message = crate::push_notification::generate_push_message(subscription_info)
-            .expect("failed to generate push message");
+        let message = match crate::push_notification::generate_push_message(subscription_info) {
+            Ok(v) => v,
+            Err(e) => {
+                log::error!("failed to generate push message: {}", e);
+                return false;
+            }
+        };
 
-        crate::push_notification::send_demo(message).await;
-        true
+        match crate::push_notification::send_demo(message).await {
+            Ok(_) => true,
+            Err(e) => {
+                log::error!("failed to send push message: {}", e);
+                return false;
+            }
+        }
     }
 }
 
@@ -91,7 +101,7 @@ impl MutationRoot {
             .into_iter()
             .zip(valid_stocks)
             .partition_map(|r| match r.0 {
-                Ok(v) => itertools::Either::Left(r.1.ticker),
+                Ok(_) => itertools::Either::Left(r.1.ticker),
                 Err(v) => itertools::Either::Right(v),
             });
         errs.iter().for_each(|x| log::error!("Failed to insert client subscription for ticker: {}", x));

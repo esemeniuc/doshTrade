@@ -43,10 +43,11 @@ fn generate_vapid_signature(
 ) -> Result<VapidSignature, WebPushError> {
     let file = std::fs::File::open("private.pem").unwrap();
 
-    let mut sig_builder = VapidSignatureBuilder::from_pem(file, &subscription_info).unwrap();
-    sig_builder.add_claim("sub", "mailto:test@example.com");
-    sig_builder.add_claim("foo", "bar");
-    sig_builder.add_claim("omg", 123);
+    let sig_builder = VapidSignatureBuilder::from_pem(file, &subscription_info)
+        .expect("Failed to generate vapid signature from pem file");
+    // sig_builder.add_claim("sub", "mailto:test@example.com");
+    // sig_builder.add_claim("foo", "bar");
+    // sig_builder.add_claim("omg", 123);
     sig_builder.build()
 }
 
@@ -60,11 +61,8 @@ pub fn generate_push_message(
     builder.build()
 }
 
-pub async fn send_demo(message: WebPushMessage) {
+pub async fn send_demo(message: WebPushMessage) -> Result<(), WebPushError> {
     let client = WebPushClient::new();
     let response = client.send(message).await;
-    //TODO use something other map
     response
-        .map_err(|e| println!("got error in sendit(), {} ", e))
-        .map(|result| println!("Got response: {:?}", result));
 }

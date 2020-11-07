@@ -133,8 +133,8 @@ impl IntradayPrice {
                 (f64::from(1) + (average_up / average_down)))
     }
 
-    fn mean(list: &[i32]) -> f64 {
-        let sum: i32 = Iterator::sum(list.iter());
-        f64::from(sum) / (list.len() as f64)
-    }
+    // fn mean(list: &[i32]) -> f64 {
+    //     let sum: i32 = Iterator::sum(list.iter());
+    //     f64::from(sum) / (list.len() as f64)
+    // }
 }
