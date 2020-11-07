@@ -2,7 +2,6 @@ use std::time::{Duration, SystemTime};
 
 use actix::prelude::*;
 use actix_web::Result;
-use clap::{App as ClapApp, Arg};
 use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use web_push::SubscriptionKeys;
@@ -13,8 +12,8 @@ use crate::models::IntradayPrice;
 #[serde(rename_all = "camelCase")]
 struct IEXPrice {
     latest_price: f64,
+    //volume can be null before trading starts
     latest_volume: Option<i64>,
-    //can be null before trading starts
     latest_update: i64,
 }
 
