@@ -20,7 +20,6 @@ async fn main() -> std::io::Result<()> {
     // std::env::set_var("RUST_LOG", "actix_web=info");
     log::info!("Starting yolotrader with args: {:?}", std::env::args());
 
-
     let matches = clap::App::new("yolotrader server")
         .version("1.0")
         .author("Eric Semeniuc <eric.semeniuc@gmail.com>")

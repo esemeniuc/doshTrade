@@ -29,8 +29,8 @@ pub async fn background_send_push_notifications(
         auth: String,
     }
     let client_subs = sqlx::query_as::<_, ClientSubscription>(
-        "SELECT stock_id, endpoint, p256dh, auth FROM client_subscriptions\
-    JOIN clients ON clients.id = client_subscriptions.client_id", //need the client info for notification
+        "SELECT stock_id, endpoint, p256dh, auth FROM client_subscriptions
+        JOIN clients ON clients.id = client_subscriptions.client_id", //need the client info for notification
     )
         .fetch_all(conn)
         .await?;

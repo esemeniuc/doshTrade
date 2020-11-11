@@ -9,7 +9,6 @@ pub struct IntradayPrice {
     pub volume: i64,
     pub timestamp: chrono::NaiveDateTime,
     pub ticker: String,
-    pub rsi: f64,
 }
 
 impl IntradayPrice {
@@ -22,10 +21,12 @@ impl IntradayPrice {
             .iter()
             .map(|ticker| IntradayPrice::get_latest_by_ticker(conn, ticker));
         let query_results = futures::future::join_all(price_queries).await;
-        let (oks, errs): (Vec<_>, Vec<_>) = query_results.into_iter().partition_map(|r| match r {
-            Ok(v) => itertools::Either::Left(v),
-            Err(v) => itertools::Either::Right(v),
-        });
+        let (oks, errs): (Vec<_>, Vec<_>) = query_results
+            .into_iter()
+            .partition_map(|r| match r {
+                Ok(v) => itertools::Either::Left(v),
+                Err(v) => itertools::Either::Right(v),
+            });
         errs.iter().for_each(|x| log::error!("Failed to find ticker: {}", x));
         oks
     }
@@ -34,7 +35,7 @@ impl IntradayPrice {
         conn: &crate::db::DbPoolConn,
         ticker: &str,
     ) -> sqlx::Result<IntradayPrice> {
-        let a = sqlx::query_as::<_, IntradayPrice>(
+        sqlx::query_as::<_, IntradayPrice>(
             "SELECT intraday_prices.id,
              intraday_prices.stock_id,
              ROUND(intraday_prices.price,2) as price,
@@ -48,19 +49,7 @@ impl IntradayPrice {
          LIMIT 1",
         )
             .bind(ticker)
-            .fetch_one(conn)
-            .await;
-
-        let rsi = IntradayPrice::get_rsi(conn, 1).await?; // FIXME
-        a.map(|intraday_price| IntradayPrice {
-            id: intraday_price.id,
-            stock_id: intraday_price.stock_id,
-            price: intraday_price.price,
-            volume: intraday_price.volume,
-            timestamp: intraday_price.timestamp,
-            ticker: intraday_price.ticker,
-            rsi: rsi,
-        })
+            .fetch_one(conn).await
     }
 
     pub async fn insert(
@@ -79,13 +68,28 @@ impl IntradayPrice {
             .await
     }
 
-    pub async fn get_rsi(
+    pub async fn get_rsi_by_tickers(
         conn: &crate::db::DbPoolConn,
-        other_stock_id: i32, ) -> sqlx::Result<f64> { //TODO: replace it with ticker
-        let rsi_interval = 14;
-        // psuedo sql
-        // GET Price in intraday_prices table limit 15, order by timestamp
+        tickers: &Vec<String>,
+    ) -> Vec<f64> {
+        let price_queries = tickers
+            .iter()
+            .map(|ticker| IntradayPrice::get_rsi_by_ticker(conn, ticker));
+        let query_results = futures::future::join_all(price_queries).await;
+        let (oks, errs): (Vec<_>, Vec<_>) = query_results
+            .into_iter()
+            .partition_map(|r| match r {
+                Ok(v) => itertools::Either::Left(v),
+                Err(v) => itertools::Either::Right(v),
+            });
+        errs.iter().for_each(|x| log::error!("Failed to find ticker: {}", x));
+        oks
+    }
 
+    pub async fn get_rsi_by_ticker(
+        conn: &crate::db::DbPoolConn,
+        ticker: &str) -> sqlx::Result<f64> {
+        let rsi_interval = 14;
 
         #[derive(sqlx::FromRow, Debug)]
         pub struct Price(f64);
@@ -93,11 +97,11 @@ impl IntradayPrice {
         let price_structs = sqlx::query_as::<_, Price>(
             "SELECT price
          FROM intraday_prices
-         WHERE stock_id = ?
+         JOIN stocks ON stocks.id = intraday_prices.stock_id AND stocks.ticker = ?
          ORDER BY timestamp DESC
          LIMIT 15",
         )
-            .bind(other_stock_id)
+            .bind(ticker)
             .fetch_all(conn)
             .await?;
 

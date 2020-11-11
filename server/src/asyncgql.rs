@@ -137,15 +137,18 @@ impl Subscription {
             .map(move |_| (Arc::clone(&conn_owned), Arc::clone(&tickers_owned)))
             .then(|vars| {
                 async move {
-                    IntradayPrice::get_latest_by_tickers(&vars.0, &vars.1)
-                        .await
-                        .iter()
-                        .map(|intraday_price| Stock {
-                            ticker: intraday_price.ticker.to_string(),
-                            price: intraday_price.price.to_string(),
-                            rsi: intraday_price.rsi,            //TODO: calculate this
-                            percent_change: 0.2, //TODO: calculate this
-                            timestamp: intraday_price.timestamp.to_string(),
+                    let prices = IntradayPrice::get_latest_by_tickers(&vars.0, &vars.1).await;
+                    let rsis = IntradayPrice::get_rsi_by_tickers(&vars.0, &vars.1).await;
+                    prices.iter().zip(rsis)
+                        .map(|x| {
+                            let (intraday_price, rsi) = x;
+                            Stock {
+                                ticker: intraday_price.ticker.clone(),
+                                price: intraday_price.price.to_string(), //TODO: format this
+                                rsi,
+                                percent_change: 0.2, //TODO: calculate this
+                                timestamp: intraday_price.timestamp.to_string(),
+                            }
                         })
                         .collect::<Vec<_>>()
                 }
