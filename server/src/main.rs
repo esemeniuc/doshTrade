@@ -55,6 +55,7 @@ async fn main() -> std::io::Result<()> {
 
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
         .max_connections(5)
+        // .connect_with(sqlx::sqlite::SqliteConnectOptions::default())
         .connect(database_url)
         .await
         .expect("Unable to connect to database pool");

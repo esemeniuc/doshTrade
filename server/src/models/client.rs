@@ -12,10 +12,11 @@ impl Client {
         conn: &crate::db::DbPoolConn,
         client: &crate::push_notification::PushSubscription,
     ) -> sqlx::Result<i32> {
-        let query = sqlx::query("INSERT INTO clients VALUES (null, ?,?,?) ON CONFLICT DO NOTHING")
+        let query = sqlx::query("INSERT INTO clients VALUES (null,?,?,?,?) ON CONFLICT DO NOTHING")
             .bind(client.endpoint.to_owned())
             .bind(client.keys.p256dh.to_owned())
             .bind(client.keys.auth.to_owned())
+            .bind(chrono::Local::now().naive_utc())
             .execute(conn)
             .await?;
         Ok(query.last_insert_rowid() as i32)

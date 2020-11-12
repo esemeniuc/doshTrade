@@ -27,7 +27,7 @@ impl IntradayPrice {
                 Ok(v) => itertools::Either::Left(v),
                 Err(v) => itertools::Either::Right(v),
             });
-        errs.iter().for_each(|x| log::error!("Failed to find ticker: {}", x));
+        errs.iter().for_each(|x| log::error!("get_latest_by_tickers(): Failed to find ticker: {}", x));
         oks
     }
 
@@ -82,7 +82,7 @@ impl IntradayPrice {
                 Ok(v) => itertools::Either::Left(v),
                 Err(v) => itertools::Either::Right(v),
             });
-        errs.iter().for_each(|x| log::error!("Failed to find ticker: {}", x));
+        errs.iter().for_each(|x| log::error!("get_rsi_by_tickers(): Failed to find ticker: {}", x));
         oks
     }
 

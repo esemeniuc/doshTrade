@@ -100,7 +100,7 @@ pub async fn background_fetch_tickers(
         match query_result {
             Ok(_) => info!("Inserted intraday update for ticker: {}", ticker),
             Err(e) => error!(
-                "Failed to fetch intraday update for ticker: {} with error: {}",
+                "Failed to fetch intraday update for ticker: {} with error: {:?}",
                 ticker, e
             ),
         }
@@ -161,7 +161,7 @@ impl Actor for MyActor {
 
                 match background_fetch_tickers(&conn, tickers).await {
                     Ok(_) => info!("Fetched all tickers"),
-                    Err(e) => warn!("Failed to get data from IEX, {}", e),
+                    Err(e) => warn!("Failed to get data from IEX, {:?}", e),
                 }
             }));
         });

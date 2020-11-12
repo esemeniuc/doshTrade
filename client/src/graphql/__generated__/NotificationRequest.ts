@@ -10,10 +10,10 @@ import { PushSubscription } from "./../../../__generated__/globalTypes";
 // ====================================================
 
 export interface NotificationRequest {
-  notificationRequest: boolean;
+  notificationRequest: string[];
 }
 
 export interface NotificationRequestVariables {
   tickerSymbols: string[];
-  subscription: PushSubscription;
+  pushSubscription: PushSubscription;
 }

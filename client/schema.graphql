@@ -1,17 +1,19 @@
 schema {
   query: QueryRoot
   mutation: MutationRoot
-  subscription: SubscriptionRoot
+  subscription: Subscription
 }
 
 # Directs the executor to query only when the field exists.
 directive @ifdef on FIELD
 
 type MutationRoot {
+  # Returns a list of successfully added tickers.
+  # Invalid (not found) tickers will not be returned.
   notificationRequest(
     tickerSymbols: [String!]!
     pushSubscription: PushSubscription!
-  ): Boolean!
+  ): [String!]!
 }
 
 input PushSubscription {
@@ -26,6 +28,7 @@ input PushSubscriptionKeys {
 }
 
 type QueryRoot {
+  # sends demo notification to client browser to verify notifications work as intended
   sendDemoNotification(pushSubscription: PushSubscription!): Boolean!
 }
 
@@ -33,8 +36,6 @@ type QueryRoot {
 type Stock {
   ticker: String!
   price: String!
-
-  # TODO: figure out RSI
   rsi: Float!
 
   # % Change from the start of day
@@ -42,6 +43,6 @@ type Stock {
   timestamp: String!
 }
 
-type SubscriptionRoot {
+type Subscription {
   yoloHandCuratedStocks(tickerSymbols: [String!]!): [Stock!]!
 }

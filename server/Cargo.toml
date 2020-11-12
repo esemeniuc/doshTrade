@@ -7,12 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#anyhow = "1.0.33"
-#sqlx = { version = "0.4.0-beta.1", features = ["macros", "sqlite", "chrono", "migrate"] }
 #sqlx = { version = "0.4.0-beta.1", default-features = false, features = [ "sqlite", "runtime-tokio", "macros" ] }
-#tokio = { version = "0.2", features = ["full"] }
-#sqlx = { git="https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-tokio", "macros", "sqlite", "chrono", "migrate"] }
-sqlx = { git="https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-actix","macros", "sqlite", "chrono", "migrate"] }
+#sqlx = { git = "https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-actix", "macros", "postgres", "chrono", "migrate"] }
+
+sqlx = { git = "https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-actix", "macros", "sqlite", "chrono", "migrate"] }
 rust-embed = "5.6.0"
 log = "0.4.11"
 env_logger = "0.8.1"

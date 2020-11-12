@@ -44,12 +44,12 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
         return;
       }
       createNotificationSubscription()
-        .then(function (subscription) {
-          setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, subscription);
+        .then(function (pushSubscription) {
+          setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, pushSubscription);
           addPushSubscription({
-            variables: { tickerSymbols: [], subscription }, //reset server state if server has old subscription
+            variables: { tickerSymbols: [], subscription: pushSubscription }, //reset server state if server has old subscription
           });
-          console.log("Fresh subscription! \n", JSON.stringify(subscription));
+          console.log("Fresh subscription! \n", JSON.stringify(pushSubscription));
         })
         .catch((err) => {
           console.error(
@@ -76,14 +76,14 @@ const useStockSubscriptionEffects = (
   const [addPushSubscription] = useMutation(PUSH_NOTIFICATION_SUBSCRIPTION);
   useEffect(() => {
     setLocalItem(StockSubscriptionActionType.TICKER_ADD, state.tickers);
-    const subscription = getLocalItem<PushSubscription>(
+    const pushSubscription = getLocalItem<PushSubscription>(
       kPushSubscriptionStorageKey
     );
-    if (!subscription) {
+    if (!pushSubscription) {
       console.log("Ticker added without a subscription!!");
       return;
     }
-    addPushSubscription({ variables: { tickerSymbols: state.tickers, subscription } });
+    addPushSubscription({ variables: { tickerSymbols: state.tickers, pushSubscription } });
   }, [state.tickers]);
 };
 
