@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use sqlx::sqlite::SqliteDone;
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct IntradayPrice {
@@ -14,7 +13,7 @@ pub struct IntradayPrice {
 impl IntradayPrice {
     //returns successfully found tickers
     pub async fn get_latest_by_tickers(
-        conn: &crate::db::DbPoolConn,
+        conn: &crate::db::DbPool,
         tickers: &Vec<String>,
     ) -> Vec<IntradayPrice> {
         let price_queries = tickers
@@ -32,7 +31,7 @@ impl IntradayPrice {
     }
 
     pub async fn get_latest_by_ticker(
-        conn: &crate::db::DbPoolConn,
+        conn: &crate::db::DbPool,
         ticker: &str,
     ) -> sqlx::Result<IntradayPrice> {
         sqlx::query_as::<_, IntradayPrice>(
@@ -53,13 +52,13 @@ impl IntradayPrice {
     }
 
     pub async fn insert(
-        conn: &crate::db::DbPoolConn,
+        conn: &crate::db::DbPool,
         other_stock_ticker: &str,
         other_price: f64,
         other_volume: i64,
         other_timestamp: chrono::NaiveDateTime,
-    ) -> sqlx::Result<SqliteDone> {
-        sqlx::query("INSERT INTO intraday_prices VALUES (null, (SELECT id from stocks where ticker = ?), ?, ?, ?)")
+    ) -> sqlx::Result<sqlx::postgres::PgDone> {
+        sqlx::query("INSERT INTO intraday_prices VALUES (DEFAULT, (SELECT id from stocks where ticker = ?), ?, ?, ?)")
             .bind(other_stock_ticker)
             .bind(other_price)
             .bind(other_volume)
@@ -69,7 +68,7 @@ impl IntradayPrice {
     }
 
     pub async fn get_rsi_by_tickers(
-        conn: &crate::db::DbPoolConn,
+        conn: &crate::db::DbPool,
         tickers: &Vec<String>,
     ) -> Vec<f64> {
         let price_queries = tickers
@@ -87,7 +86,7 @@ impl IntradayPrice {
     }
 
     pub async fn get_rsi_by_ticker(
-        conn: &crate::db::DbPoolConn,
+        conn: &crate::db::DbPool,
         ticker: &str) -> sqlx::Result<f64> {
         let rsi_interval = 14;
 

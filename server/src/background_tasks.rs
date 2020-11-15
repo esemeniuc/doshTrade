@@ -18,7 +18,7 @@ struct IEXPrice {
 }
 
 pub async fn background_send_push_notifications(
-    conn: &crate::db::DbPoolConn,
+    conn: &crate::db::DbPool,
 ) -> Result<(), sqlx::Error> {
     let client = web_push::WebPushClient::new();
     #[derive(sqlx::FromRow)]
@@ -63,7 +63,7 @@ pub async fn background_send_push_notifications(
 }
 
 pub async fn background_fetch_tickers(
-    conn: &crate::db::DbPoolConn,
+    conn: &crate::db::DbPool,
     tickers: Vec<String>,
 ) -> Result<(), actix_web::Error> {
     info!("Getting updates from IEX for {:#?}", tickers);
@@ -116,7 +116,7 @@ pub async fn background_fetch_tickers(
 }
 
 pub(crate) struct MyActor {
-    pub(crate) pool: sqlx::SqlitePool,
+    pub(crate) pool: crate::db::DbPool,
 }
 
 impl Actor for MyActor {

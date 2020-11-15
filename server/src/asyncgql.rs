@@ -130,7 +130,7 @@ impl Subscription {
         ticker_symbols: Vec<String>,
     ) -> impl Stream<Item=Vec<Stock>> {
         use std::sync::Arc;
-        let conn_owned = Arc::new(ctx.data_unchecked::<sqlx::SqlitePool>().to_owned());
+        let conn_owned = Arc::new(ctx.data_unchecked::<sqlx::PgPool>().to_owned());
         let tickers_owned = Arc::new(ticker_symbols);
 
         actix_web::rt::time::interval(Duration::from_secs(5))

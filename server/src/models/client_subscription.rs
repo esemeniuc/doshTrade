@@ -9,11 +9,11 @@ pub struct ClientSubscription {
 
 impl ClientSubscription {
     pub async fn insert(
-        conn: &crate::db::DbPoolConn,
+        conn: &crate::db::DbPool,
         client_id: i32,
         stock_id: i32,
-    ) -> sqlx::Result<sqlx::sqlite::SqliteDone> {
-        sqlx::query("INSERT INTO client_subscriptions VALUES (null, ?, ?, ?)")
+    ) -> sqlx::Result<sqlx::postgres::PgDone> {
+        sqlx::query("INSERT INTO client_subscriptions VALUES (DEFAULT, ?, ?, ?)")
             .bind(client_id)
             .bind(stock_id)
             .bind(chrono::Local::now().naive_utc())
@@ -22,9 +22,9 @@ impl ClientSubscription {
     }
 
     pub async fn delete_all(
-        conn: &crate::db::DbPoolConn,
+        conn: &crate::db::DbPool,
         client_id: i32,
-    ) -> sqlx::Result<sqlx::sqlite::SqliteDone> {
+    ) -> sqlx::Result<sqlx::postgres::PgDone> {
         sqlx::query("DELETE FROM client_subscriptions WHERE client_id = ?")
             .bind(client_id)
             .execute(conn)

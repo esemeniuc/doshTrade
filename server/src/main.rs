@@ -47,21 +47,25 @@ async fn main() -> std::io::Result<()> {
 
     let database_url = matches
         .value_of("database_url")
-        .unwrap_or("sqlite://db.sqlite?mode=rwc");
+        .unwrap_or("postgresql://postgres:mysecretpassword@localhost");
     let ip = matches.value_of("ip").unwrap_or("0.0.0.0");
     let port = matches.value_of("port").unwrap_or("8080");
     let ip_port = format!("{}:{}", ip, port);
     log::info!("Playground available at: http://{}/graphiql", ip_port);
 
-    let pool = sqlx::sqlite::SqlitePoolOptions::new()
+    let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
-        // .connect_with(sqlx::sqlite::SqliteConnectOptions::default())
         .connect(database_url)
         .await
         .expect("Unable to connect to database pool");
-    // let pool = sqlx::sqlite::SqlitePool::connect(database_url)
-    //     .await
-    //     .expect("Unable to connect to database pool");
+    // use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode};
+    // use std::str::FromStr;
+    // let pool = //sqlx::sqlite::SqlitePool::connect(database_url)
+    //     sqlx::sqlite::SqlitePool::connect_with(SqliteConnectOptions::from_str(database_url).unwrap()
+    //         .busy_timeout(std::time::Duration::new(5, 0))
+    //         .create_if_missing(true))
+    //         .await
+    //         .expect("Unable to connect to database pool");
     db::seed(&pool).await.expect("Error seeding the database");
 
     background_tasks::MyActor { pool: pool.clone() }.start();
@@ -98,7 +102,7 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(handler::index))
             .route("/{_:.*}", web::get().to(handler::dist))
     })
-    .bind(ip_port)?
-    .run()
-    .await
+        .bind(ip_port)?
+        .run()
+        .await
 }
