@@ -37,13 +37,12 @@ impl IntradayPrice {
         sqlx::query_as::<_, IntradayPrice>(
             "SELECT intraday_prices.id,
              intraday_prices.stock_id,
-             ROUND(intraday_prices.price,2) as price,
+             ROUND(intraday_prices.price::NUMERIC,2)::DOUBLE PRECISION as price,
              intraday_prices.volume,
              intraday_prices.timestamp,
-             stocks.ticker,
-             0.0
+             stocks.ticker
          FROM intraday_prices
-         JOIN stocks ON stocks.id = intraday_prices.stock_id AND stocks.ticker = ?
+         JOIN stocks ON stocks.id = intraday_prices.stock_id AND stocks.ticker = $1
          ORDER BY intraday_prices.timestamp DESC
          LIMIT 1",
         )
@@ -58,7 +57,8 @@ impl IntradayPrice {
         other_volume: i64,
         other_timestamp: chrono::NaiveDateTime,
     ) -> sqlx::Result<sqlx::postgres::PgDone> {
-        sqlx::query("INSERT INTO intraday_prices VALUES (DEFAULT, (SELECT id from stocks where ticker = ?), ?, ?, ?)")
+        sqlx::query("INSERT INTO intraday_prices VALUES
+        (DEFAULT, (SELECT id FROM stocks WHERE ticker = $1 LIMIT 1), $2, $3, $4)")
             .bind(other_stock_ticker)
             .bind(other_price)
             .bind(other_volume)
@@ -96,7 +96,7 @@ impl IntradayPrice {
         let price_structs = sqlx::query_as::<_, Price>(
             "SELECT price
          FROM intraday_prices
-         JOIN stocks ON stocks.id = intraday_prices.stock_id AND stocks.ticker = ?
+         JOIN stocks ON stocks.id = intraday_prices.stock_id AND stocks.ticker = $1
          ORDER BY timestamp DESC
          LIMIT 15",
         )

@@ -6,7 +6,6 @@ pub async fn seed(conn: &DbPool) -> sqlx::Result<sqlx::postgres::PgDone> {
     // m.run(conn).await?;
     sqlx::migrate!("./migrations").run(conn).await?;
 
-    //TODO don't insert every time on startup
     let stocks_list = vec![
         ("AAPL", "Apple"),
         ("GOOG", "Google"),
@@ -15,7 +14,7 @@ pub async fn seed(conn: &DbPool) -> sqlx::Result<sqlx::postgres::PgDone> {
     ];
 
     let inserts = stocks_list.into_iter().map(|stock| {
-        sqlx::query("INSERT INTO stocks VALUES (DEFAULT, $1, $2)")
+        sqlx::query("INSERT INTO stocks VALUES (DEFAULT, $1, $2) ON CONFLICT DO NOTHING")
             .bind(stock.0)
             .bind(stock.1)
             .execute(conn)
