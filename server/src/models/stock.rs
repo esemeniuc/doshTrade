@@ -8,7 +8,7 @@ pub struct Stock {
 impl Stock {
     #[allow(dead_code)]
     pub async fn find(conn: &crate::db::DbPool, ticker_symbol: String) -> sqlx::Result<Stock> {
-        sqlx::query_as::<_, Stock>("SELECT * FROM stocks WHERE ticker = ?")
+        sqlx::query_as::<_, Stock>("SELECT * FROM stocks WHERE ticker = $1")
             .bind(ticker_symbol)
             .fetch_one(conn)
             .await
@@ -16,7 +16,7 @@ impl Stock {
 
     pub async fn tickers_to_stocks(conn: &crate::db::DbPool, tickers: &Vec<String>) -> Vec<Stock> {
         let queries = tickers.iter().map(|ticker|
-            sqlx::query_as::<_, Stock>("SELECT * FROM stocks WHERE ticker = ?")
+            sqlx::query_as::<_, Stock>("SELECT * FROM stocks WHERE ticker = $1")
                 .bind(ticker)
                 .fetch_one(conn)
         );
