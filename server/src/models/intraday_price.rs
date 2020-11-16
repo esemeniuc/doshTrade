@@ -26,7 +26,7 @@ impl IntradayPrice {
                 Ok(v) => itertools::Either::Left(v),
                 Err(v) => itertools::Either::Right(v),
             });
-        errs.iter().for_each(|x| log::error!("get_latest_by_tickers(): Failed to find ticker: {}", x));
+        errs.iter().for_each(|x| log::warn!("get_latest_by_tickers(): Failed to find ticker: {}", x));
         oks
     }
 
@@ -70,10 +70,11 @@ impl IntradayPrice {
     pub async fn get_rsi_by_tickers(
         conn: &crate::db::DbPool,
         tickers: &Vec<String>,
+        rsi_interval: u32,
     ) -> Vec<f64> {
         let price_queries = tickers
             .iter()
-            .map(|ticker| IntradayPrice::get_rsi_by_ticker(conn, ticker));
+            .map(|ticker| IntradayPrice::get_rsi_by_ticker(conn, ticker, rsi_interval));
         let query_results = futures::future::join_all(price_queries).await;
         let (oks, errs): (Vec<_>, Vec<_>) = query_results
             .into_iter()
@@ -87,38 +88,31 @@ impl IntradayPrice {
 
     pub async fn get_rsi_by_ticker(
         conn: &crate::db::DbPool,
-        ticker: &str) -> sqlx::Result<f64> {
-        let rsi_interval = 14;
-
-        #[derive(sqlx::FromRow, Debug)]
-        pub struct Price(f64);
-
-        let price_structs = sqlx::query_as::<_, Price>(
+        ticker: &str,
+        rsi_interval: u32) -> sqlx::Result<f64> {
+        let latest_n: Vec<f64> = sqlx::query_scalar(
             "SELECT price
          FROM intraday_prices
          JOIN stocks ON stocks.id = intraday_prices.stock_id AND stocks.ticker = $1
          ORDER BY timestamp DESC
-         LIMIT 15",
+         LIMIT $2",
         )
             .bind(ticker)
+            .bind(rsi_interval)
             .fetch_all(conn)
             .await?;
 
-        let latest_15 = price_structs
-            .iter()
-            .map(|p| p.0)
-            .collect::<Vec<f64>>();
-        //
+        if latest_n.len() < 2 {
+            return Ok(0.0);
+        }
+
         let mut up_price_bars: Vec<f64> = vec!();
         let mut down_price_bars: Vec<f64> = vec!();
 
-        for (i, p) in latest_15.iter().enumerate() {
-            if i == rsi_interval as usize {
-                break;
-            }
-            let curr = p;
-            let next = latest_15[i + 1];
-            let price_bar = next - curr;
+        for i in 1..latest_n.len() {
+            let prev = latest_n[i - 1];
+            let curr = latest_n[i];
+            let price_bar = curr - prev;
             if price_bar < 0.0 {
                 down_price_bars.push(price_bar);
             } else {
@@ -126,30 +120,23 @@ impl IntradayPrice {
             }
         }
         // In the case that price does not go up or down, return middle value,
-        if (down_price_bars.len() + up_price_bars.len() == 0) {
+        if down_price_bars.len() + up_price_bars.len() == 0 {
             return Ok(0.5);
         }
         // In the case that price does not go down at all, return maximal value,
-        if (down_price_bars.len() == 0) {
+        if down_price_bars.len() == 0 {
             return Ok(1.0);
         }
         // In the case that price does not go up at all, return minimal value,
-        if (up_price_bars.len() == 0) {
+        if up_price_bars.len() == 0 {
             return Ok(0.0);
         }
         let down_sum: f64 = Iterator::sum(down_price_bars.iter());
-        let average_down = f64::abs(down_sum / (down_price_bars.len() as f64));
+        let average_down = f64::abs(down_sum / down_price_bars.len() as f64);
 
         let up_sum: f64 = Iterator::sum(up_price_bars.iter());
         let average_up = f64::abs(up_sum / (up_price_bars.len() as f64));
 
-        Ok(f64::from(1) -
-            f64::from(1) /
-                (f64::from(1) + (average_up / average_down)))
+        Ok(1.0 - (1.0 / (1.0 + (average_up / average_down))))
     }
-
-    // fn mean(list: &[i32]) -> f64 {
-    //     let sum: i32 = Iterator::sum(list.iter());
-    //     f64::from(sum) / (list.len() as f64)
-    // }
 }

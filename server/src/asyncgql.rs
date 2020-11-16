@@ -137,9 +137,10 @@ impl Subscription {
             .map(move |_| (Arc::clone(&conn_owned), Arc::clone(&tickers_owned)))
             .then(|vars| {
                 async move {
+                    let rsi_interval = 14;
                     let prices = IntradayPrice::get_latest_by_tickers(&vars.0, &vars.1).await;
-                    let rsis = IntradayPrice::get_rsi_by_tickers(&vars.0, &vars.1).await;
-                    prices.iter().zip(rsis)
+                    let rsi_vals = IntradayPrice::get_rsi_by_tickers(&vars.0, &vars.1, rsi_interval).await;
+                    prices.iter().zip(rsi_vals)
                         .map(|x| {
                             let (intraday_price, rsi) = x;
                             Stock {
