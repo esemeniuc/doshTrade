@@ -125,6 +125,18 @@ impl IntradayPrice {
                 up_price_bars.push(price_bar);
             }
         }
+        // In the case that price does not go up or down, return middle value,
+        if (down_price_bars.len() + up_price_bars.len() == 0) {
+            return Ok(0.5);
+        }
+        // In the case that price does not go down at all, return maximal value,
+        if (down_price_bars.len() == 0) {
+            return Ok(1.0);
+        }
+        // In the case that price does not go up at all, return minimal value,
+        if (up_price_bars.len() == 0) {
+            return Ok(0.0);
+        }
         let down_sum: f64 = Iterator::sum(down_price_bars.iter());
         let average_down = f64::abs(down_sum / (down_price_bars.len() as f64));
 
