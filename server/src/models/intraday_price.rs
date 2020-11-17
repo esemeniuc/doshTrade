@@ -86,6 +86,24 @@ impl IntradayPrice {
         oks
     }
 
+    pub async fn get_rsi_by_stock_id(
+        conn: &crate::db::DbPool,
+        stock_id: i32,
+        rsi_interval: u32) -> sqlx::Result<f64> {
+        let latest_n: Vec<f64> = sqlx::query_scalar(
+            "SELECT price
+         FROM intraday_prices
+         WHERE stock_id = $1
+         ORDER BY timestamp DESC
+         LIMIT $2",
+        )
+            .bind(stock_id)
+            .bind(rsi_interval)
+            .fetch_all(conn)
+            .await?;
+        Ok(IntradayPrice::calc_rsi(latest_n))
+    }
+
     pub async fn get_rsi_by_ticker(
         conn: &crate::db::DbPool,
         ticker: &str,
@@ -102,16 +120,20 @@ impl IntradayPrice {
             .fetch_all(conn)
             .await?;
 
-        if latest_n.len() < 2 {
-            return Ok(0.0);
+        Ok(IntradayPrice::calc_rsi(latest_n))
+    }
+
+    pub fn calc_rsi(latest_n_prices: Vec<f64>) -> f64 {
+        if latest_n_prices.len() < 2 {
+            return 0.0;
         }
 
         let mut up_price_bars: Vec<f64> = vec!();
         let mut down_price_bars: Vec<f64> = vec!();
 
-        for i in 1..latest_n.len() {
-            let prev = latest_n[i - 1];
-            let curr = latest_n[i];
+        for i in 1..latest_n_prices.len() {
+            let prev = latest_n_prices[i - 1];
+            let curr = latest_n_prices[i];
             let price_bar = curr - prev;
             if price_bar < 0.0 {
                 down_price_bars.push(price_bar);
@@ -121,15 +143,15 @@ impl IntradayPrice {
         }
         // In the case that price does not go up or down, return middle value,
         if down_price_bars.len() + up_price_bars.len() == 0 {
-            return Ok(0.5);
+            return 0.5;
         }
         // In the case that price does not go down at all, return maximal value,
         if down_price_bars.len() == 0 {
-            return Ok(1.0);
+            return 1.0;
         }
         // In the case that price does not go up at all, return minimal value,
         if up_price_bars.len() == 0 {
-            return Ok(0.0);
+            return 0.0;
         }
         let down_sum: f64 = Iterator::sum(down_price_bars.iter());
         let average_down = f64::abs(down_sum / down_price_bars.len() as f64);
@@ -137,6 +159,6 @@ impl IntradayPrice {
         let up_sum: f64 = Iterator::sum(up_price_bars.iter());
         let average_up = f64::abs(up_sum / (up_price_bars.len() as f64));
 
-        Ok(1.0 - (1.0 / (1.0 + (average_up / average_down))))
+        1.0 - (1.0 / (1.0 + (average_up / average_down)))
     }
 }

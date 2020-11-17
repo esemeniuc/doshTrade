@@ -35,31 +35,47 @@ pub async fn background_send_push_notifications(
         .fetch_all(conn)
         .await?;
 
-    let messages_to_send = client_subs
-        .into_iter()
-        .map(|sub| (
-            sub.stock_id,
-            web_push::SubscriptionInfo {
-                endpoint: sub.endpoint,
-                keys: SubscriptionKeys {
-                    p256dh: sub.p256dh,
-                    auth: sub.auth,
-                },
+    let first_client = client_subs.first().unwrap(); //FIXME
+    let rsi_val = crate::models::IntradayPrice::get_rsi_by_stock_id(conn, first_client.stock_id, 14).await.unwrap();
+    if rsi_val <= 0.15 || rsi_val >= 0.85 {
+        let sub = web_push::SubscriptionInfo {
+            endpoint: first_client.endpoint.to_owned(),
+            keys: SubscriptionKeys {
+                p256dh: first_client.p256dh.to_owned(),
+                auth: first_client.auth.to_owned(),
             },
-        ))
-        .filter_map(|sub|
-                        crate::push_notification::generate_push_message(sub.1).ok() //TODO: use ticker info in messages!
-        )
-        .map(|msg| client.send(msg));
+        };
+        let msg = crate::push_notification::generate_push_message(sub).unwrap();
+        client.send(msg).await;
+    }
 
-    //send it!
-    let send_results = futures::future::join_all(messages_to_send).await;
-    let (_, errs): (Vec<_>, Vec<_>) = itertools::Itertools::partition_map(send_results.into_iter(), |r| match r {
-        Ok(v) => itertools::Either::Left(v),
-        Err(v) => itertools::Either::Right(v),
-    });
-    errs.iter().for_each(|x| log::error!("Failed to send push message: {}", x));
     Ok(())
+
+    // let messages_to_send = client_subs
+    //     .into_iter()
+    //     .map(|sub| (
+    //         sub.stock_id,
+    //         web_push::SubscriptionInfo {
+    //             endpoint: sub.endpoint,
+    //             keys: SubscriptionKeys {
+    //                 p256dh: sub.p256dh,
+    //                 auth: sub.auth,
+    //             },
+    //         },
+    //     ))
+    //     .filter_map(|sub|
+    //                     crate::push_notification::generate_push_message(sub.1).ok() //TODO: use ticker info in messages!
+    //     )
+    //     .map(|msg| client.send(msg));
+    //
+    // //send it!
+    // let send_results = futures::future::join_all(messages_to_send).await;
+    // let (_, errs): (Vec<_>, Vec<_>) = itertools::Itertools::partition_map(send_results.into_iter(), |r| match r {
+    //     Ok(v) => itertools::Either::Left(v),
+    //     Err(v) => itertools::Either::Right(v),
+    // });
+    // errs.iter().for_each(|x| log::error!("Failed to send push message: {}", x));
+    // Ok(())
 }
 
 pub async fn background_fetch_tickers(
