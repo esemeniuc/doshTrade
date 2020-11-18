@@ -41,7 +41,8 @@ impl QueryRoot {
     ) -> bool {
         log::trace!("Sending push subscription!: {:?}", push_subscription);
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
-        let message = match crate::push_notification::generate_push_message(subscription_info) {
+
+        let message = match crate::push_notification::generate_push_message(subscription_info, "this is a demo message") {
             Ok(v) => v,
             Err(e) => {
                 log::error!("failed to generate push message: {}", e);

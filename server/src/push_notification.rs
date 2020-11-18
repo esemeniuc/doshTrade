@@ -53,9 +53,10 @@ fn generate_vapid_signature(
 
 pub fn generate_push_message(
     subscription_info: SubscriptionInfo,
+    message: &str,
 ) -> Result<WebPushMessage, web_push::WebPushError> {
     let mut builder = WebPushMessageBuilder::new(&subscription_info)?;
-    let content = "Encrypted payload to be sent in the notification".as_bytes();
+    let content = message.as_bytes();
     builder.set_vapid_signature(generate_vapid_signature(&subscription_info)?);
     builder.set_payload(ContentEncoding::AesGcm, content);
     builder.build()
