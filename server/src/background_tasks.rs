@@ -62,8 +62,10 @@ pub async fn background_send_push_notifications(
             let (stock_id, sub_info, rsi_val) = x;
             let notifcation_body = if rsi_val <= 0.15 {
                 format!("id {} is oversold", stock_id)
-            } else {
+            } else if rsi_val >= 0.51 {
                 format!("id {} is overbought", stock_id)
+            } else {
+                return None;
             };
 
             crate::push_notification::generate_push_message(sub_info, &notifcation_body).ok()
