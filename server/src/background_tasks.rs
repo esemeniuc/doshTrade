@@ -30,55 +30,52 @@ pub async fn background_send_push_notifications(
     }
     let client_subs = sqlx::query_as::<_, ClientSubscription>(
         "SELECT stock_id, endpoint, p256dh, auth FROM client_subscriptions
-        JOIN clients ON clients.id = client_subscriptions.client_id", //need the client info for notification
-    )
+        JOIN clients ON clients.id = client_subscriptions.client_id") //need the client info for notification
         .fetch_all(conn)
         .await?;
 
     let client_subs_fut = client_subs
         .into_iter()
-        .map(|sub| (
-            sub.stock_id,
-            web_push::SubscriptionInfo {
+        .map(|sub| async {
+            (crate::models::IntradayPrice::get_rsi_by_stock_id(conn, sub.stock_id, 14).await, sub)
+        });
+
+    let messages_to_send = futures::future::join_all(client_subs_fut)
+        .await
+        .into_iter()
+        .filter_map(|x| match x.0 {
+            Ok(val) => Some((val, x.1)),
+            Err(_) => None
+        })
+        .filter_map(|x| {
+            let (rsi_val, sub) = x;
+            let notification_msg = if rsi_val <= 0.15 {
+                format!("id {} is oversold", sub.stock_id)
+            } else if rsi_val >= 0.51 {
+                format!("id {} is overbought", sub.stock_id)
+            } else {
+                return None;
+            };
+
+            let sub_info = web_push::SubscriptionInfo {
                 endpoint: sub.endpoint,
                 keys: SubscriptionKeys {
                     p256dh: sub.p256dh,
                     auth: sub.auth,
                 },
-            },
-        )).map(|sub| async {
-        (sub.0,
-         sub.1,
-         crate::models::IntradayPrice::get_rsi_by_stock_id(conn, sub.0, 14).await)
-    });
-
-    let messages_to_send = futures::future::join_all(client_subs_fut)
-        .await.into_iter()
-        .filter_map(|x| match x.2 {
-            Ok(val) => Some((x.0, x.1, val)),
-            Err(_) => None
-        })
-        .filter_map(|x| {
-            let (stock_id, sub_info, rsi_val) = x;
-            let notifcation_body = if rsi_val <= 0.15 {
-                format!("id {} is oversold", stock_id)
-            } else if rsi_val >= 0.51 {
-                format!("id {} is overbought", stock_id)
-            } else {
-                return None;
             };
-
-            crate::push_notification::generate_push_message(sub_info, &notifcation_body).ok()
-        }
-        )
+            crate::push_notification::generate_push_message(sub_info, &notification_msg).ok()
+        })
         .map(|msg| client.send(msg));
 
     //send it!
     let send_results = futures::future::join_all(messages_to_send).await;
-    let (_, errs): (Vec<_>, Vec<_>) = itertools::Itertools::partition_map(send_results.into_iter(), |r| match r {
-        Ok(v) => itertools::Either::Left(v),
-        Err(v) => itertools::Either::Right(v),
-    });
+    let (_, errs): (Vec<_>, Vec<_>) = itertools::Itertools::partition_map(
+        send_results.into_iter(),
+        |r| match r {
+            Ok(v) => itertools::Either::Left(v),
+            Err(v) => itertools::Either::Right(v),
+        });
     errs.iter().for_each(|x| log::error!("Failed to send push message: {}", x));
     Ok(())
 }
