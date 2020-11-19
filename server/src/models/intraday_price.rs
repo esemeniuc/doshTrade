@@ -104,6 +104,44 @@ impl IntradayPrice {
         Ok(IntradayPrice::calc_rsi(latest_n))
     }
 
+    pub async fn get_open_prices_by_stock_ids(
+        conn: &crate::db::DbPool,
+        stock_info: &Vec<(i32, chrono::NaiveDateTime)>,
+    ) -> Vec<f64> {
+        let open_price_queries = stock_info
+            .iter()
+            .map(|stock_info| IntradayPrice::get_open_price_by_stock_id(conn, stock_info.0, stock_info.1));
+        let query_results = futures::future::join_all(open_price_queries).await;
+        let (oks, errs): (Vec<_>, Vec<_>) = query_results
+            .into_iter()
+            .partition_map(|r| match r {
+                Ok(v) => itertools::Either::Left(v),
+                Err(v) => itertools::Either::Right(v),
+            });
+        errs.iter().for_each(|x| log::error!("get_open_prices_by_stock_ids(): Failed to find: {}", x));
+        oks
+    }
+
+    pub async fn get_open_price_by_stock_id(
+        conn: &crate::db::DbPool,
+        stock_id: i32,
+        latest_timestamp: chrono::NaiveDateTime) -> sqlx::Result<f64> {
+        sqlx::query_scalar(
+            "WITH day_prices AS (SELECT *
+                       FROM intraday_prices
+                       WHERE stock_id = $1
+                         AND timestamp >= date($2)
+                         AND timestamp < date($2) + 1)
+SELECT price
+FROM day_prices
+WHERE timestamp = (SELECT min(timestamp) FROM day_prices)",
+        )
+            .bind(stock_id)
+            .bind(latest_timestamp)
+            .fetch_one(conn)
+            .await
+    }
+
     pub async fn get_rsi_by_ticker(
         conn: &crate::db::DbPool,
         ticker: &str,

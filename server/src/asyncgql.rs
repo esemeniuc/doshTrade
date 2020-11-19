@@ -141,14 +141,16 @@ impl Subscription {
                     let rsi_interval = 14;
                     let prices = IntradayPrice::get_latest_by_tickers(&vars.0, &vars.1).await;
                     let rsi_vals = IntradayPrice::get_rsi_by_tickers(&vars.0, &vars.1, rsi_interval).await;
-                    prices.iter().zip(rsi_vals)
+                    let open_prices = IntradayPrice::get_open_prices_by_stock_ids(&vars.0,
+                                                                                  &prices.iter().map(|x| (x.stock_id, x.timestamp)).collect::<Vec<_>>()).await;
+                    prices.iter().zip(rsi_vals).zip(open_prices)
                         .map(|x| {
-                            let (intraday_price, rsi) = x;
+                            let ((intraday_price, rsi), open_price) = x;
                             Stock {
                                 ticker: intraday_price.ticker.clone(),
-                                price: intraday_price.price.to_string(), //TODO: format this
+                                price: format!("{:.2}", intraday_price.price),
                                 rsi,
-                                percent_change: 0.2, //TODO: calculate this
+                                percent_change: 100.0 * ((intraday_price.price / open_price) - 1.0),
                                 timestamp: intraday_price.timestamp.to_string(),
                             }
                         })
