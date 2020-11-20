@@ -147,14 +147,18 @@ impl Actor for MyActor {
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
                 //TODO: find out which tickers are needed to fetch
-                let tickers = vec![
-                    "AAPL".to_string(),
-                    "GE".to_string(),
-                    "GOOG".to_string(),
-                    "NFLX".to_string(),
-                ];
-
-
+                let tickers = vec!["AAPL".to_string(),
+                                   "FB".to_string(),
+                                   "GLD".to_string(),
+                                   "GOOG".to_string(),
+                                   "LIT".to_string(),
+                                   "NFLX".to_string(),
+                                   "SLV".to_string(),
+                                   "SQ".to_string(),
+                                   "TSLA".to_string(),
+                                   "TSM".to_string(),
+                                   "UVXY".to_string(),
+                                   "ZM".to_string()];
                 //example
                 // userA, [A,B,C] -> 3 rows in db
                 // userB, [B,C] -> 2 rows in db

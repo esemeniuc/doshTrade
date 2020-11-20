@@ -8,9 +8,17 @@ pub async fn seed(conn: &DbPool) -> sqlx::Result<sqlx::postgres::PgDone> {
 
     let stocks_list = vec![
         ("AAPL", "Apple"),
+        ("FB", "Facebook"),
+        ("GLD", "Gold"),
         ("GOOG", "Google"),
-        ("GE", "General Electric"),
+        ("LIT", "Lithium"),
         ("NFLX", "Netflix"),
+        ("SLV", "Silver"),
+        ("SQ", "Square"),
+        ("TSLA", "Tesla"),
+        ("TSM", "Taiwan Semiconductor"),
+        ("UVXY", " Ultra Volatility Index"),
+        ("ZM", "Zoom"),
     ];
 
     let inserts = stocks_list.into_iter().map(|stock| {

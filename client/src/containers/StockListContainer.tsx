@@ -14,7 +14,8 @@ const STOCK_PRICES_SUBSCRIPTION = loader(
 );
 
 function StockListContainer() {
-  const tickerSymbols = ["AAPL", "NFLX"];
+  //  TODO, support hand curation in the future
+  const tickerSymbols = ["AAPL", "FB", "GLD", "GOOG", "LIT", "NFLX", "SLV", "SQ", "TSLA", "TSM", "UVXY", "ZM"];
   const { data, loading, error } = useSubscription<yoloHandCurated>(STOCK_PRICES_SUBSCRIPTION, { variables: { tickerSymbols } });
   const {
     state: { pushState },
@@ -44,16 +45,16 @@ function StockListContainer() {
       <Typography variant="caption">
         <Box textAlign="center">Since close yesterday</Box>
       </Typography>
-      <Typography variant="caption">
-        <Box textAlign="center">{JSON.stringify(data)}</Box>
-      </Typography>
+      {/*<Typography variant="caption">*/}
+      {/*  <Box textAlign="center">{JSON.stringify(data)}</Box>*/}
+      {/*</Typography>*/}
       <TransitionsModal
         open={pushState.isAsking}
         title="Push Access"
         description="You will be notified when your favorite stocks dip"
       />
       {data && <StockTableView stockData={data.stock} />}
-      <DebugButton />
+      {/*<DebugButton />*/}
     </Container>
   );
 }
