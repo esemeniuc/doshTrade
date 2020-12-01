@@ -16,10 +16,7 @@ IP_PORT=0.0.0.0:80 ./target/debug/yolotrader_server
 ## Setup
 
 ```bash
-cargo install diesel_cli --no-default-features --features "sqlite"
-
-export PATH=$PATH:~/.cargo/bin
-diesel migration run
+docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword postgres:alpine postgres -c log_statement=all
 ```
 
 ## Deployment
