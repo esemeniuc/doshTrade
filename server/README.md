@@ -1,20 +1,21 @@
-# replace.sh server
+# doshtrade server
 A graphql backend that stores and serves created find-replaces. Built with Rust and sqlite. Automatically integrates client html code as part of the binary.
 
 ## Requirements
 
-- Rust 1.42+
-- Sqlite3
+- Rust 1.48+
+- Postgres
 
 ## Debug
 
 ```bash
 cargo build -j $(nproc)
-IP_PORT=0.0.0.0:80 ./target/debug/yolotrader_server
+IP_PORT=0.0.0.0:80 ./target/debug/doshtrade_server
 ```
 
 ## Setup
 
+Start postgres
 ```bash
 docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword postgres:alpine postgres -c log_statement=all
 ```
@@ -24,7 +25,7 @@ docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword postgres:alpi
 #### Build and test locally
 ```bash
 cargo build --release -j $(nproc)
-IP_PORT=0.0.0.0:80 ./target/release/replace_sh
+IP_PORT=0.0.0.0:80 ./target/release/doshtrade_server
 ```
 
 #### Build client, build server, deploy
@@ -33,16 +34,15 @@ IP_PORT=0.0.0.0:80 ./target/release/replace_sh
 (cd ../client && yarn build)
 
 #build server
-docker run --rm -v "$PWD":/replace.sh/server -v "$PWD/../client":/replace.sh/client -w /replace.sh/server rust:slim sh -c "apt update && apt install -y libsqlite3-dev && cargo build --release -j $(nproc)"
+docker run --rm -v "$PWD":/doshtrade/server -v "$PWD/../client":/doshtrade/client -w /doshtrade/server rust:slim sh -c "apt update && apt install -y libsqlite3-dev && cargo build --release -j $(nproc)"
 
 # copy files
-scp -C target/release/replace_sh root@direct.replace.sh:~/replace_sh.swp
-scp .env root@direct.replace.sh:~/
+scp -C target/release/doshtrade_server root@direct.doshtrade.com:~/doshtrade_server.swp
+scp .env root@direct.doshtrade.com:~/
 
 # restart service in new tmux
-ssh root@direct.replace.sh "cd /root && \
-if [[ -f replace_sh.swp ]]; then mv replace_sh.swp replace_sh; fi && \
+ssh root@direct.dostrade.com "cd /root && \
+if [[ -f doshtrade_server.swp ]]; then mv doshtrade_server.swp doshtrade_server; fi && \
 tmux kill-server; \
-tmux new-session -d sh -i -c 'IP_PORT=0.0.0.0:80 /root/replace_sh'"
+tmux new-session -d sh -i -c 'IP_PORT=0.0.0.0:80 /root/doshtrade_server'"
 ```
-Note: this creates a file `db.sqlite` wherever it is run from

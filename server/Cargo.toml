@@ -1,5 +1,5 @@
 [package]
-name = "yolotrader_server"
+name = "doshtrade_server"
 version = "1.0.0"
 authors = ["Eric Semeniuc <3838856+esemeniuc@users.noreply.github.com>"]
 edition = "2018"
@@ -7,29 +7,24 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#sqlx = { version = "0.4.0-beta.1", default-features = false, features = [ "sqlite", "runtime-tokio", "macros" ] }
-#sqlx = { git = "https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-actix", "macros", "postgres", "chrono", "migrate"] }
-
-sqlx = { git = "https://github.com/launchbadge/sqlx.git", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "chrono", "migrate"] }
+sqlx = { version = "0.4.1", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "chrono", "migrate"] }
 rust-embed = "5.6.0"
 log = "0.4.11"
-env_logger = "0.8.1"
+env_logger = "0.8.2"
 itertools = "0.9.0"
 
-async-graphql = "2.1.2"
-async-graphql-actix-web = "2.1.2"
-actix-web = { version = "3.2.0", features = ["rustls"] }
+async-graphql = "2.1.6"
+async-graphql-actix-web = "2.1.6"
+actix = "0.10.0"
+actix-cors = "0.5.3"
+actix-web = { version = "3.3.2", features = ["rustls"] }
 actix-web-actors = "3.0.0"
 futures = "0.3.8"
-
-actix = "0.10.0"
-actix-cors = "0.5.1"
-#async-stream = "0.3.0"
 mime_guess = "2.0.3"
 chrono = { version = "0.4.19", features = ["serde"] }
 jsonwebtoken = "7.2.0"
 serde = { version = "1.0.117", features = ["derive"] }
-serde_json = "1.0.59"
+serde_json = "1.0.60"
 rand = "0.7.3"
 clap = "2.33.3"
 web-push = "0.7.2"
