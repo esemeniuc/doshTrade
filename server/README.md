@@ -34,7 +34,7 @@ IP_PORT=0.0.0.0:80 ./target/release/doshtrade_server
 (cd ../client && yarn build)
 
 #build server
-docker run --rm -v "$PWD":/doshtrade/server -v "$PWD/../client":/doshtrade/client -w /doshtrade/server rust:slim sh -c "apt update && apt install -y libsqlite3-dev && cargo build --release -j $(nproc)"
+docker run --rm -v "$PWD":/doshtrade/server -v "$PWD/../client":/doshtrade/client -w /doshtrade/server rust:slim sh -c "apt update && apt install -y pkg-config libssl-dev && cargo build --release -j $(nproc)"
 
 # copy files
 scp -C target/release/doshtrade_server root@direct.doshtrade.com:~/doshtrade_server.swp
