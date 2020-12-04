@@ -78,7 +78,13 @@ async fn main() -> std::io::Result<()> {
         let cors_rules = if cfg!(debug_assertions) {
             Cors::permissive()
         } else {
-            Cors::default().allowed_methods(vec!["GET", "POST"])
+            Cors::default()
+                .allowed_methods(vec!["GET", "POST"])
+                .allowed_origin("https://doshtrade.com")
+                .allowed_origin("http://doshtrade.com")
+                .allowed_origin("wss://doshtrade.com")
+                .allowed_origin("ws://doshtrade.com")
+                .allow_any_header()
         };
         App::new()
             .wrap(cors_rules)

@@ -16,17 +16,21 @@ const theme = createMuiTheme({
     },
 });
 
+export const BACKEND_ROOT_URL = process.env.NODE_ENV === 'production' ? "https://doshtrade.com" : "http://localhost:8080";
+export const WS_BACKEND_ROOT_URL = process.env.NODE_ENV === 'production' ? "wss://doshtrade.com" : "ws://localhost:8080";
+
 const httpLink = new HttpLink({
-    uri: 'http://localhost:8080/graphql',
+    uri: `${BACKEND_ROOT_URL}/graphql`,
     // uri: 'http://192.168.1.95:8001/graphql',
 });
 
 const wsLink = new WebSocketLink({
-    uri: `ws://localhost:8080/graphql`,
+    uri: `${WS_BACKEND_ROOT_URL}/graphql`,
     options: {
         reconnect: true
     }
 });
+
 
 const splitLink = split(
     ({ query }) => {

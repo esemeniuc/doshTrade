@@ -34,14 +34,13 @@ IP_PORT=0.0.0.0:80 ./target/release/doshtrade_server
 (cd ../client && yarn build)
 
 #build server
-docker run --rm -v "$PWD":/doshtrade/server -v "$PWD/../client":/doshtrade/client -w /doshtrade/server rust:slim sh -c "apt update && apt install -y pkg-config libssl-dev && cargo build --release -j $(nproc)"
+docker run --rm -v "$PWD":/doshtrade/server -v "$PWD/../client":/doshtrade/client -w /doshtrade/server rust:slim sh -c "apt-get update && apt-get install -y pkg-config libssl-dev && cargo build --release"
 
 # copy files
-scp -C target/release/doshtrade_server root@direct.doshtrade.com:~/doshtrade_server.swp
-scp .env root@direct.doshtrade.com:~/
+scp -C target/release/doshtrade_server ubuntu@direct.doshtrade.com:~/doshtrade_server.swp
 
 # restart service in new tmux
-ssh root@direct.dostrade.com "cd /root && \
+ssh ubuntu@direct.dostrade.com "cd /root && \
 if [[ -f doshtrade_server.swp ]]; then mv doshtrade_server.swp doshtrade_server; fi && \
 tmux kill-server; \
 tmux new-session -d sh -i -c 'IP_PORT=0.0.0.0:80 /root/doshtrade_server'"
