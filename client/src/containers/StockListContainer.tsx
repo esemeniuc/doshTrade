@@ -6,7 +6,7 @@ import { loader } from "graphql.macro";
 import StockTableView from "../components/StockTableView";
 import TransitionsModal from "./TransitionsModal";
 import { AppContext } from "../redux/context";
-import { yoloHandCurated_stock, yoloHandCurated } from "../graphql/__generated__/yoloHandCurated";
+import { yoloHandCurated } from "../graphql/__generated__/yoloHandCurated";
 import DebugButton from "../components/DebugButton";
 
 const STOCK_PRICES_SUBSCRIPTION = loader(

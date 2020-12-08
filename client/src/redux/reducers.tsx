@@ -39,7 +39,7 @@ const pushReducer = (state: IPushState, action: PushAction): IPushState => {
         userConsent: action.payload.userConsent,
         isAsking: false,
       };
-    case PushActionTypes.REGISTRATION_REQUESTED:
+    case PushActionTypes.REGISTRATION_REFRESHED:
       return {
         ...state,
         subscription: action.payload.subscription,

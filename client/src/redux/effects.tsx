@@ -11,8 +11,8 @@ import {
   StockSubscriptionActionType,
   kPushSubscriptionStorageKey,
 } from "./types";
-import { createNotificationSubscription } from "../push/push-notifications";
-import { pushPermissionDenied, pushPermissionGranted } from "./actions";
+import { createNotificationSubscription, getUserSubscription } from "../push/push-notifications";
+import { pushPermissionDenied, pushPermissionGranted, pushPermissionRefreshed } from "./actions";
 import { setLocalItem, getLocalItem } from "../util/localStorage";
 
 const PUSH_NOTIFICATION_SUBSCRIPTION = loader(
@@ -23,7 +23,6 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
   const [addPushSubscription] = useMutation(PUSH_NOTIFICATION_SUBSCRIPTION);
   useEffect(() => {
     if (state.isAsking) {
-      setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, null);
       Notification.requestPermission().then((consent) => {
         if (consent !== "granted") {
           dispatch(pushPermissionDenied());
@@ -35,37 +34,44 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
   }, [state.isAsking]);
 
   useEffect(() => {
-    if (state.userConsent === "granted") {
-      const existingSubscription = getLocalItem<PushSubscription>(
-        kPushSubscriptionStorageKey
-      );
-      if (existingSubscription) {
-        console.log(JSON.stringify(existingSubscription));
-        return;
-      }
-      createNotificationSubscription()
-        .then(function (pushSubscription) {
-          setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, pushSubscription);
-          addPushSubscription({
-            variables: { tickerSymbols: [], subscription: pushSubscription }, //reset server state if server has old subscription
-          });
-          console.log("Fresh subscription! \n", JSON.stringify(pushSubscription));
-        })
-        .catch((err) => {
-          console.error(
-            "Couldn't create the notification subscription",
-            err,
-            "name:",
-            err.name,
-            "message:",
-            err.message,
-            "code:",
-            err.code
-          );
-        });
-    } else if (state.userConsent === "denied") {
-      // TODO:
+    if (state.subscription) {
+      setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, state.subscription);
+    } else {
+      setLocalItem<PushSubscription>(kPushSubscriptionStorageKey, null);
     }
+  }, [state.subscription])
+
+  useEffect(() => {
+    if (state.userConsent !== "granted") {
+      console.log("userConsent not granted! state: ", state.userConsent)
+      return
+    }
+    // A granted status could either mean that they recently granted it or from a previous session
+    // so check for existing subscription before creating a new one.
+    getUserSubscription().then((pushSubscription) => {
+      if (pushSubscription) {
+        dispatch(pushPermissionRefreshed(pushSubscription))
+      } else {
+        createNotificationSubscription()
+          .then(function (pushSubscription) {
+            if (pushSubscription != null) {
+              addPushSubscription({
+                variables: { tickerSymbols: [], pushSubscription }, //reset server state if server has old subscription
+              });
+              console.log("Fresh subscription! \n", JSON.stringify(pushSubscription));
+              dispatch(pushPermissionRefreshed(pushSubscription))
+            }
+          })
+          .catch((err) => {
+            console.error(
+              "Couldn't create the notification subscription", err,
+              "name:", err.name,
+              "message:", err.message,
+              "code:", err.code
+            )
+          })
+      }
+    })
   }, [state.userConsent]);
 };
 

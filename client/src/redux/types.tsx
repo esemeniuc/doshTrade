@@ -2,8 +2,8 @@ import { getLocalItem } from "../util/localStorage";
 
 export type ActionMap<M extends { [index: string]: any }> = {
   [Key in keyof M]: M[Key] extends undefined
-    ? { type: Key }
-    : { type: Key; payload: M[Key] };
+  ? { type: Key }
+  : { type: Key; payload: M[Key] };
 };
 
 export type AppAction = PushAction | StockSubscriptionAction;
@@ -18,7 +18,7 @@ export enum PushActionTypes {
   PERMISSION_REQUESTED = "PERMISSION_REQUESTED",
   PERMISSION_GRANTED = "PERMISSION_GRANTED",
   PERMISSION_DENIED = "PERMISSION_DENIED",
-  REGISTRATION_REQUESTED = "REGISTRATION_REQUESTED",
+  REGISTRATION_REFRESHED = "REGISTRATION_REFRESHED",
 }
 
 export type IPushState = {
@@ -47,7 +47,7 @@ export type PushPayload = {
     isAsking: boolean;
     userConsent: NotificationPermission;
   };
-  [PushActionTypes.REGISTRATION_REQUESTED]: {
+  [PushActionTypes.REGISTRATION_REFRESHED]: {
     subscription: PushSubscription;
   };
 };

@@ -21,10 +21,8 @@ export const pushPermissionDenied = (): PushAction => ({
   payload: { userConsent: Notification.permission, isAsking: false },
 });
 
-export const subscriptionRegistration = (
-  subscription: PushSubscription
-): PushAction => ({
-  type: PushActionTypes.REGISTRATION_REQUESTED,
+export const pushPermissionRefreshed = (subscription: PushSubscription): PushAction => ({
+  type: PushActionTypes.REGISTRATION_REFRESHED,
   payload: { subscription },
 });
 
