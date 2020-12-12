@@ -10,6 +10,8 @@ pub struct IntradayPrice {
     pub ticker: String,
 }
 
+// use ta_lib_wrapper::{TA_Integer, TA_Real, TA_RSI, TA_RetCode};
+
 impl IntradayPrice {
     //returns successfully found tickers
     pub async fn get_latest_by_tickers(
@@ -161,11 +163,73 @@ WHERE timestamp = (SELECT min(timestamp) FROM day_prices)",
         Ok(IntradayPrice::calc_rsi(latest_n))
     }
 
-    pub fn calc_rsi(latest_n_prices: Vec<f64>) -> f64 {
+
+    // fn rsi(period: u32, close_prices: &Vec<TA_Real>) -> (Vec<TA_Real>, TA_Integer) {
+    //     let mut out: Vec<TA_Real> = Vec::with_capacity(close_prices.len());
+    //     let mut out_begin: TA_Integer = 0;
+    //     let mut out_size: TA_Integer = 0;
+    //
+    //     unsafe {
+    //         let ret_code = TA_RSI(
+    //             0,                              // index of the first close to use
+    //             close_prices.len() as i32 - 1,  // index of the last close to use
+    //             close_prices.as_ptr(),          // pointer to the first element of the vector
+    //             period as i32,                  // period of the rsi
+    //             &mut out_begin,                 // set to index of the first close to have an rsi value
+    //             &mut out_size,                  // set to number of sma values computed
+    //             out.as_mut_ptr(),                // pointer to the first element of the output vector
+    //         );
+    //         match ret_code {
+    //             // Indicator was computed correctly, since the vector was filled by TA-lib C library,
+    //             // Rust doesn't know what is the new length of the vector, so we set it manually
+    //             // to the number of values returned by the TA_RSI call
+    //             TA_RetCode::TA_SUCCESS => out.set_len(out_size as usize),
+    //             // An error occured
+    //             _ => panic!("Could not compute indicator, err: {:?}", ret_code)
+    //         }
+    //     }
+    //
+    //     (out, out_begin)
+    // }
+
+    // pub fn calc_rsi_rsi_rs(latest_n_prices: Vec<f64>) -> f64 {
+    //     use rsi_rs::RSI;
+    //     use ta_common::traits::Indicator;
+    //     if latest_n_prices.is_empty() {
+    //         return 0.0;
+    //     }
+    //     let mut latest_n_prices = latest_n_prices.clone();
+    //     latest_n_prices.reverse();
+    //     println!("len = {}", latest_n_prices.len());
+    //     let mut rsi = RSI::new(14);
+    //     let mut out = None;
+    //     for price in latest_n_prices {
+    //         out = rsi.next(price);
+    //     }
+    //     println!("RSI is {}", out.unwrap());
+    //     out.unwrap()
+    // }
+
+    // pub fn calc_rsi_ta_lib(latest_n_prices: Vec<f64>) -> f64 {
+    //     if latest_n_prices.len() < 14 {
+    //         return 0.0;
+    //     }
+    //     let mut latest_n_prices = latest_n_prices.clone();
+    //     latest_n_prices.reverse();
+    //     let (rsi_values, begin) = IntradayPrice::rsi(14, &latest_n_prices);
+    //     for (index, value) in rsi_values.iter().enumerate() {
+    //         println!("Close index {} = {}", begin + index as i32 + 1, value);
+    //     }
+    //     // return rsi_values;
+    //     0.0
+    // }
+
+    pub fn calc_rsi_june(latest_n_prices: Vec<f64>) -> f64 {
         if latest_n_prices.len() < 2 {
             return 0.0;
         }
-
+        let mut latest_n_prices = latest_n_prices.clone();
+        latest_n_prices.reverse();
         let mut up_price_bars: Vec<f64> = vec!();
         let mut down_price_bars: Vec<f64> = vec!();
 
@@ -198,5 +262,29 @@ WHERE timestamp = (SELECT min(timestamp) FROM day_prices)",
         let average_up = f64::abs(up_sum / (up_price_bars.len() as f64));
 
         1.0 - (1.0 / (1.0 + (average_up / average_down)))
+    }
+
+    pub fn calc_rsi(latest_n_prices: Vec<f64>) -> f64 {
+        use ta::indicators::RelativeStrengthIndex;
+        use ta::Next;
+        // let mut latest_n_prices = latest_n_prices.clone();
+        // latest_n_prices.reverse();
+
+        if latest_n_prices.is_empty() {
+            return 0.0;
+        }
+        // latest_n_prices.remove(0);
+        println!("len = {}", latest_n_prices.len());
+        let mut rsi = RelativeStrengthIndex::new(14).unwrap();
+        // let out = latest_n_prices.iter().fold((rsi, 0.0),
+        //                                       |mut rsi_acc, price| rsi_acc.next(price));
+
+        let mut out = 0.0;
+        for price in latest_n_prices {
+            out = rsi.next(price);
+            println!("RSI is {}", out);
+        }
+        println!("RSI is {}", out);
+        out
     }
 }

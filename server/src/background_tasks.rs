@@ -97,7 +97,7 @@ pub async fn background_fetch_tickers(
     // Create request builder and send request
     for ticker in tickers {
         info!("Fetching ticker: {}", ticker);
-        let url = format!("https://sandbox.iexapis.com/stable/stock/{}/quote?filter=latestPrice,latestVolume,latestUpdate&token=Tsk_2311e67e08f1404498c7a7fb91685839", ticker);
+        let url = format!("https://cloud.iexapis.com/stable/stock/{}/quote?filter=latestPrice,latestVolume,latestUpdate&token=sk_23b151020a29436c973bcbff6bd23fd1", ticker);
         info!("Using url: {}", url);
         let mut response = client.get(url).send().await?;
         let body = response.body().await?;
@@ -142,7 +142,7 @@ impl Actor for MyActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         //background fetch
-        ctx.run_interval(Duration::from_secs(10), move |this, ctx| {
+        ctx.run_interval(Duration::from_secs(600), move |this, ctx| {
             let conn = this.pool.to_owned();
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request

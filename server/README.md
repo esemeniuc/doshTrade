@@ -17,7 +17,7 @@ IP_PORT=0.0.0.0:80 ./target/debug/doshtrade_server
 
 Start postgres
 ```bash
-docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword postgres:alpine postgres -c log_statement=all
+docker run --rm -p 5432:5432 -v $(pwd)/postgres:/var/lib/postgresql/data -e POSTGRES_PASSWORD=mysecretpassword postgres:alpine postgres -c log_statement=all
 ```
 
 ## Deployment

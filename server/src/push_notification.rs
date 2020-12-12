@@ -41,6 +41,10 @@ impl From<crate::models::Client> for SubscriptionInfo {
 fn generate_vapid_signature(
     subscription_info: &web_push::SubscriptionInfo,
 ) -> Result<VapidSignature, WebPushError> {
+    #[derive(RustEmbed)]
+    #[folder = "."]
+    struct Asset;
+
     let file = std::fs::File::open("private.pem").unwrap();
 
     let sig_builder = VapidSignatureBuilder::from_pem(file, &subscription_info)
