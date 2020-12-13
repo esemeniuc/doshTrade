@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use crate::background_tasks::StockQuote;
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct IntradayPrice {
@@ -52,19 +53,46 @@ impl IntradayPrice {
             .fetch_one(conn).await
     }
 
+    pub async fn insert_many(
+        conn: &crate::db::DbPool,
+        quotes: Vec<StockQuote>,
+    ) {
+        let inserts = quotes
+            .iter()
+            .map(|quote| {
+                //NOTE: this should have the time of the last executed trade (not the time of quote). This may change in the future
+                let secs = quote.trade_time_in_long / 1000; //time comes in as milliseconds, convert to sec
+                let remaining_nanos = (quote.trade_time_in_long % 1000) * 1_000_000;
+                IntradayPrice::insert(conn,
+                                      &quote.symbol,
+                                      quote.last_price,
+                                      quote.total_volume,
+                                      chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32))
+            });
+        let query_results = futures::future::join_all(inserts).await;
+        let (oks, errs): (Vec<_>, Vec<_>) = query_results
+            .into_iter()
+            .partition_map(|r| match r {
+                Ok(v) => itertools::Either::Left(v),
+                Err(v) => itertools::Either::Right(v),
+            });
+        errs.iter().for_each(|x| log::error!("insert_many(): Failed to insert quotes for: {}", x));
+        // oks
+    }
+
     pub async fn insert(
         conn: &crate::db::DbPool,
-        other_stock_ticker: &str,
-        other_price: f64,
-        other_volume: i64,
-        other_timestamp: chrono::NaiveDateTime,
+        stock_ticker: &str,
+        price: f64,
+        volume: i64,
+        timestamp: chrono::NaiveDateTime,
     ) -> sqlx::Result<sqlx::postgres::PgDone> {
         sqlx::query("INSERT INTO intraday_prices VALUES
         (DEFAULT, (SELECT id FROM stocks WHERE ticker = $1 LIMIT 1), $2, $3, $4)")
-            .bind(other_stock_ticker)
-            .bind(other_price)
-            .bind(other_volume)
-            .bind(other_timestamp)
+            .bind(stock_ticker)
+            .bind(price)
+            .bind(volume)
+            .bind(timestamp)
             .execute(conn)
             .await
     }

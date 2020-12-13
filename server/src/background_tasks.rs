@@ -3,18 +3,63 @@ use std::time::{Duration, SystemTime};
 use actix::prelude::*;
 use actix_web::Result;
 use log::{error, info, trace, warn};
-use serde::{Deserialize, Serialize};
 use web_push::SubscriptionKeys;
 
 use crate::models::IntradayPrice;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct IEXPrice {
-    latest_price: f64,
-    //volume can be null before trading starts
-    latest_volume: Option<i64>,
-    latest_update: i64,
+pub struct StockQuote {
+    pub asset_type: String,
+    pub asset_main_type: String,
+    pub cusip: String,
+    pub symbol: String,
+    pub description: String,
+    pub bid_price: f64,
+    pub bid_size: i64,
+    pub bid_id: String,
+    pub ask_price: f64,
+    pub ask_size: i64,
+    pub ask_id: String,
+    pub last_price: f64,
+    pub last_size: i64,
+    pub last_id: String,
+    pub open_price: f64,
+    pub high_price: f64,
+    pub low_price: f64,
+    pub bid_tick: String,
+    pub close_price: f64,
+    pub net_change: f64,
+    pub total_volume: i64,
+    pub quote_time_in_long: i64,
+    pub trade_time_in_long: i64,
+    pub mark: f64,
+    pub exchange: String,
+    pub exchange_name: String,
+    pub marginable: bool,
+    pub shortable: bool,
+    pub volatility: f64,
+    pub digits: i64,
+    #[serde(rename = "52WkHigh")]
+    pub n52_wk_high: f64,
+    #[serde(rename = "52WkLow")]
+    pub n52_wk_low: f64,
+    #[serde(rename = "nAV")]
+    pub n_av: f64,
+    pub pe_ratio: f64,
+    pub div_amount: f64,
+    pub div_yield: f64,
+    pub div_date: String,
+    pub security_status: String,
+    pub regular_market_last_price: f64,
+    pub regular_market_last_size: i64,
+    pub regular_market_net_change: f64,
+    pub regular_market_trade_time_in_long: i64,
+    pub net_percent_change_in_double: f64,
+    pub mark_change_in_double: f64,
+    pub mark_percent_change_in_double: f64,
+    pub regular_market_percent_change_in_double: f64,
+    pub delayed: bool,
 }
 
 pub async fn background_send_push_notifications(
@@ -84,7 +129,7 @@ pub async fn background_fetch_tickers(
     conn: &crate::db::DbPool,
     tickers: Vec<String>,
 ) -> Result<(), actix_web::Error> {
-    info!("Getting updates from IEX for {:#?}", tickers);
+    info!("Getting updates from TD for {:#?}", tickers);
     trace!(
         "Started at {}",
         SystemTime::now()
@@ -95,34 +140,20 @@ pub async fn background_fetch_tickers(
 
     let client = actix_web::client::Client::default();
     // Create request builder and send request
-    for ticker in tickers {
-        info!("Fetching ticker: {}", ticker);
-        let url = format!("https://cloud.iexapis.com/stable/stock/{}/quote?filter=latestPrice,latestVolume,latestUpdate&token=sk_23b151020a29436c973bcbff6bd23fd1", ticker);
-        info!("Using url: {}", url);
-        let mut response = client.get(url).send().await?;
-        let body = response.body().await?;
-        let price: IEXPrice = serde_json::from_slice(body.as_ref())?;
-        info!("Downloaded: {:#?} ", price);
+    info!("Fetching tickers: {:?}", tickers);
+    let tickers_str = tickers.join(",");
+    let url = format!("https://api.tdameritrade.com/v1/marketdata/quotes?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", tickers_str);
+    info!("Using url: {}", url);
+    let mut response = client.get(url).send().await?;
+    let body = response.body().await?;
+    let quotes: std::collections::HashMap<String, StockQuote> = serde_json::from_slice(body.as_ref())?;
+    let quotes2 = quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>();
+    let query_result = IntradayPrice::insert_many(conn, quotes2).await;
+    // match query_result {
+    //     Ok(_) => info!("Inserted intraday update for tickers: {}", tickers),
+    //     Err(e) => error!("Failed to fetch intraday update with error: {:?}", e),
+    // }
 
-        let secs = price.latest_update / 1000; //time comes in as milliseconds, convert to sec
-        let remaining_nanos = (price.latest_update % 1000) * 1_000_000;
-
-        let query_result = IntradayPrice::insert(
-            conn,
-            &ticker,
-            price.latest_price,
-            price.latest_volume.unwrap_or_default(),
-            chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32),
-        )
-            .await;
-        match query_result {
-            Ok(_) => info!("Inserted intraday update for ticker: {}", ticker),
-            Err(e) => error!(
-                "Failed to fetch intraday update for ticker: {} with error: {:?}",
-                ticker, e
-            ),
-        }
-    }
     trace!(
         "Ended at {}",
         SystemTime::now()
@@ -142,7 +173,7 @@ impl Actor for MyActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         //background fetch
-        ctx.run_interval(Duration::from_secs(600), move |this, ctx| {
+        ctx.run_interval(Duration::from_secs(10), move |this, ctx| {
             let conn = this.pool.to_owned();
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
@@ -183,7 +214,7 @@ impl Actor for MyActor {
 
                 match background_fetch_tickers(&conn, tickers).await {
                     Ok(_) => info!("Fetched all tickers"),
-                    Err(e) => warn!("Failed to get data from IEX, {:?}", e),
+                    Err(e) => warn!("Failed to get data from TD, {:?}", e),
                 }
             }));
         });
