@@ -127,7 +127,7 @@ pub async fn background_send_push_notifications(
 }
 
 
-pub async fn option_decode() -> Result<(), actix_web::Error> {
+pub async fn background_fetch_options(ticker: &str) -> Result<(), actix_web::Error> {
     #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct OptionChain {
@@ -200,14 +200,13 @@ pub async fn option_decode() -> Result<(), actix_web::Error> {
     }
 
     let client = actix_web::client::Client::default();
-    let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", "DBV");
-    info!("Using url: {}", url);
+    let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", ticker);
     let mut response = client.get(url).send().await?;
     let body = response.body().await?;
     let option_quotes: OptionChain = serde_json::from_slice(body.as_ref())?;
     // let quotes2 = quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>();
-    dbg!(option_quotes);
     Ok(())
+    // TODO insert in DB
 }
 
 pub async fn background_fetch_tickers(
@@ -231,13 +230,12 @@ pub async fn background_fetch_tickers(
     info!("Using url: {}", url);
     let mut response = client.get(url).send().await?;
     let body = response.body().await?;
-    let quotes: std::collections::HashMap<String, StockQuote> = serde_json::from_slice(body.as_ref())?;
-    let quotes2 = quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>();
-    let query_result = IntradayPrice::insert_many(conn, quotes2).await;
-    // match query_result {
-    //     Ok(_) => info!("Inserted intraday update for tickers: {}", tickers),
-    //     Err(e) => error!("Failed to fetch intraday update with error: {:?}", e),
-    // }
+    let ticker_to_quotes: std::collections::HashMap<String, StockQuote> = serde_json::from_slice(body.as_ref())?;
+    let quotes = ticker_to_quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>();
+    let query_result = IntradayPrice::insert_many(conn, quotes).await;
+    if query_result.len() != tickers.len() {
+        error!("Failed to fetch intraday update")
+    }
 
     trace!(
         "Ended at {}",
@@ -282,7 +280,7 @@ impl Actor for MyActor {
                 //select distinct(stockticker) from subscriptions
                 //returns [A,B,C]
 
-                //call iex with this
+                //call td with this
                 //insert price data into intraday_prices table
 
                 //periodically scan subscriptions table

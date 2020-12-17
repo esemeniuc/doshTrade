@@ -56,7 +56,7 @@ impl IntradayPrice {
     pub async fn insert_many(
         conn: &crate::db::DbPool,
         quotes: Vec<StockQuote>,
-    ) {
+    ) -> Vec<sqlx::postgres::PgDone>{
         let inserts = quotes
             .iter()
             .map(|quote| {
@@ -77,7 +77,7 @@ impl IntradayPrice {
                 Err(v) => itertools::Either::Right(v),
             });
         errs.iter().for_each(|x| log::error!("insert_many(): Failed to insert quotes for: {}", x));
-        // oks
+        oks
     }
 
     pub async fn insert(
