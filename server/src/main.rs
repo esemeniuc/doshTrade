@@ -16,7 +16,7 @@ mod push_notification;
 mod mock_option;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    background_tasks::option_decode().expect("Failure!!!!!!");
+    background_tasks::option_decode().await.expect("Failure!!!!!!");
     env_logger::init();
     // std::env::set_var("RUST_LOG", "actix_web=info");
     log::info!("Starting yolotrader with args: {:?}", std::env::args());
