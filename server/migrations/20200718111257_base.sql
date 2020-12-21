@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS stocks
 CREATE TABLE IF NOT EXISTS intraday_prices
 (
     id        SERIAL PRIMARY KEY,
-    stock_id  INTEGER   NOT NULL,
-    price     DOUBLE PRECISION    NOT NULL, --TODO: change to integer
-    volume    BIGINT    NOT NULL,
-    timestamp TIMESTAMP NOT NULL,
+    stock_id  INTEGER          NOT NULL,
+    price     DOUBLE PRECISION NOT NULL, --TODO: change to integer
+    volume    BIGINT           NOT NULL,
+    timestamp TIMESTAMP        NOT NULL,
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );
 
@@ -49,3 +49,26 @@ CREATE TABLE IF NOT EXISTS client_subscriptions
 );
 CREATE INDEX index_client_subscriptions_on_client_id ON client_subscriptions (client_id);
 CREATE INDEX index_client_subscriptions_on_stock_id ON client_subscriptions (stock_id);
+
+CREATE TYPE OPTION_TYPE AS ENUM ('call','put');
+CREATE TABLE IF NOT EXISTS option_quotes
+(
+    id          SERIAL PRIMARY KEY,
+    stock_id    INTEGER          NOT NULL,
+    option_type OPTION_TYPE      NOT NULL,
+    strike      DOUBLE PRECISION NOT NULL,
+    expiration  TIMESTAMP        NOT NULL,
+    bid         DOUBLE PRECISION NOT NULL,
+    ask         DOUBLE PRECISION NOT NULL,
+    last        DOUBLE PRECISION NOT NULL,
+    delta       DOUBLE PRECISION,
+    gamma       DOUBLE PRECISION,
+    theta       DOUBLE PRECISION,
+    vega        DOUBLE PRECISION,
+    rho         DOUBLE PRECISION,
+    volatility  DOUBLE PRECISION,
+    time_value  DOUBLE PRECISION,
+    created_at  TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (stock_id) REFERENCES stocks (id)
+);
+CREATE INDEX index_option_quotes_on_expiration ON option_quotes (expiration);

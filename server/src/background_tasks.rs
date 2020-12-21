@@ -127,7 +127,7 @@ pub async fn background_send_push_notifications(
 }
 
 
-pub async fn background_fetch_options(ticker: &str) -> Result<(), actix_web::Error> {
+pub async fn background_fetch_options(conn: &crate::db::DbPool, ticker: &str) -> Result<(), actix_web::Error> {
     #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct OptionChain {
@@ -175,7 +175,7 @@ pub async fn background_fetch_options(ticker: &str) -> Result<(), actix_web::Err
         pub delta: ::serde_json::Value,
         pub gamma: ::serde_json::Value,
         pub theta: ::serde_json::Value,
-        pub vega: f64,
+        pub vega: ::serde_json::Value,
         pub rho: ::serde_json::Value,
         pub open_interest: i64,
         pub time_value: f64,
@@ -198,15 +198,65 @@ pub async fn background_fetch_options(ticker: &str) -> Result<(), actix_web::Err
         pub non_standard: bool,
         pub mini: bool,
     }
+    #[derive(sqlx::Type)]
+    #[sqlx(rename = "OPTION_TYPE", rename_all = "lowercase")]
+    enum OptionType { Call, Put }
 
     let client = actix_web::client::Client::default();
-    let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", ticker);
+    let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&strikeCount=5000&symbol={}", ticker); //FIXME: remove strike count limit
     let mut response = client.get(url).send().await?;
-    let body = response.body().await?;
-    let option_quotes: OptionChain = serde_json::from_slice(body.as_ref())?;
-    // let quotes2 = quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>();
+    let body = response.body().limit(50 * (1 << 20)).await?; //50MB limit
+    let option_chain: OptionChain = serde_json::from_slice(&body)?;
+
+    for (expiry_date, strike_map) in option_chain.call_exp_date_map {
+        for (strike, option_quotes) in strike_map {
+            for option_quote in option_quotes {
+                let secs = option_quote.expiration_date / 1000; //time comes in as milliseconds, convert to sec
+                let remaining_nanos = (option_quote.expiration_date % 1000) * 1_000_000;
+                println!("{}", strike);
+                // STS option_quotes
+                //     (
+                //         id          SERIAL PRIMARY KEY,
+                // stock_id    INTEGER          NOT NULL,
+                // option_type OPTION_TYPE      NOT NULL,
+                // strike      DOUBLE PRECISION NOT NULL,
+                // expiration  TIMESTAMP        NOT NULL,
+                // bid         DOUBLE PRECISION NOT NULL,
+                // ask         DOUBLE PRECISION NOT NULL,
+                // last        DOUBLE PRECISION NOT NULL,
+                // delta       DOUBLE PRECISION,
+                // gamma       DOUBLE PRECISION,
+                // theta       DOUBLE PRECISION,
+                // vega        DOUBLE PRECISION,
+                // rho         DOUBLE PRECISION,
+                // volatility  DOUBLE PRECISION,
+                // time_value  DOUBLE PRECISION,
+                // created_at  TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                // FOREIGN KEY (stock_id) REFERENCES stocks (id)
+                // );
+                sqlx::query("INSERT INTO option_quotes VALUES
+        (DEFAULT, (SELECT id FROM stocks WHERE ticker = $1 LIMIT 1), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)")
+                    .bind(&option_chain.symbol)
+                    .bind(OptionType::Call)
+                    .bind(option_quote.strike_price)
+                    .bind(chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32))
+                    .bind(option_quote.bid)
+                    .bind(option_quote.ask)
+                    .bind(option_quote.last)
+                    .bind(option_quote.delta.as_f64())
+                    .bind(option_quote.gamma.as_f64())
+                    .bind(option_quote.theta.as_f64())
+                    .bind(option_quote.vega.as_f64())
+                    .bind(option_quote.rho.as_f64())
+                    .bind(option_quote.volatility.as_f64())
+                    .bind(option_quote.time_value)
+                    .execute(conn)
+                    .await;
+            }
+        }
+    }
+
     Ok(())
-    // TODO insert in DB
 }
 
 pub async fn background_fetch_tickers(
@@ -297,7 +347,13 @@ impl Actor for MyActor {
 
                 match background_fetch_tickers(&conn, tickers).await {
                     Ok(_) => info!("Fetched all tickers"),
-                    Err(e) => warn!("Failed to get data from TD, {:?}", e),
+                    Err(e) => warn!("Failed to fetch tickers from TD, {:?}", e),
+                }
+
+
+                match background_fetch_options(&conn, "AAPL").await {
+                    Ok(_) => info!("Fetched all options quotes"),
+                    Err(e) => warn!("Failed to fetch option quotes from TD, {:?}", e),
                 }
             }));
         });
