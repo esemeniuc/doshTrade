@@ -126,8 +126,8 @@ pub async fn background_send_push_notifications(
     Ok(())
 }
 
-
-pub async fn background_fetch_options(conn: &crate::db::DbPool, ticker: &str) -> Result<(), actix_web::Error> {
+pub async fn background_fetch_options(conn: &crate::db::DbPool,
+                                      tickers: &[&str]) -> Result<(), actix_web::Error> {
     #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct OptionChain {
@@ -203,48 +203,49 @@ pub async fn background_fetch_options(conn: &crate::db::DbPool, ticker: &str) ->
     enum OptionType { Call, Put }
 
     let client = actix_web::client::Client::default();
-    let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&strikeCount=5000&symbol={}", ticker); //FIXME: remove strike count limit
-    let mut response = client.get(url).send().await?;
-    let body = response.body().limit(50 * (1 << 20)).await?; //50MB limit
-    let option_chain: OptionChain = serde_json::from_slice(&body)?;
+    for ticker in tickers {
+        let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", ticker);
+        let mut response = client.get(url).send().await?;
+        let body = response.body().limit(50 * (1 << 20)).await?; //50MB limit
+        let option_chain: OptionChain = serde_json::from_slice(&body)?;
 
-    for option_iter in vec![
-        (option_chain.call_exp_date_map, OptionType::Call),
-        (option_chain.put_exp_date_map, OptionType::Put)] {
-        for (_expiry_date, strike_map) in option_iter.0 {
-            for (_strike, option_quotes) in strike_map {
-                for option_quote in option_quotes {
-                    let secs = option_quote.expiration_date / 1000; //time comes in as milliseconds, convert to sec
-                    let remaining_nanos = (option_quote.expiration_date % 1000) * 1_000_000;
-                    sqlx::query("INSERT INTO option_quotes VALUES
+        for option_iter in vec![
+            (option_chain.call_exp_date_map, OptionType::Call),
+            (option_chain.put_exp_date_map, OptionType::Put)] {
+            for (_expiry_date, strike_map) in option_iter.0 {
+                for (_strike, option_quotes) in strike_map {
+                    for option_quote in option_quotes {
+                        let secs = option_quote.expiration_date / 1000; //time comes in as milliseconds, convert to sec
+                        let remaining_nanos = (option_quote.expiration_date % 1000) * 1_000_000;
+                        sqlx::query("INSERT INTO option_quotes VALUES
         (DEFAULT, (SELECT id FROM stocks WHERE ticker = $1 LIMIT 1), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)")
-                        .bind(&option_chain.symbol)
-                        .bind(&option_iter.1)
-                        .bind(option_quote.strike_price)
-                        .bind(chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32))
-                        .bind(option_quote.bid)
-                        .bind(option_quote.ask)
-                        .bind(option_quote.last)
-                        .bind(option_quote.delta.as_f64())
-                        .bind(option_quote.gamma.as_f64())
-                        .bind(option_quote.theta.as_f64())
-                        .bind(option_quote.vega.as_f64())
-                        .bind(option_quote.rho.as_f64())
-                        .bind(option_quote.volatility.as_f64())
-                        .bind(option_quote.time_value)
-                        .execute(conn)
-                        .await;
+                            .bind(&option_chain.symbol)
+                            .bind(&option_iter.1)
+                            .bind(option_quote.strike_price)
+                            .bind(chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32))
+                            .bind(option_quote.bid)
+                            .bind(option_quote.ask)
+                            .bind(option_quote.last)
+                            .bind(option_quote.delta.as_f64())
+                            .bind(option_quote.gamma.as_f64())
+                            .bind(option_quote.theta.as_f64())
+                            .bind(option_quote.vega.as_f64())
+                            .bind(option_quote.rho.as_f64())
+                            .bind(option_quote.volatility.as_f64())
+                            .bind(option_quote.time_value)
+                            .execute(conn)
+                            .await;
+                    }
                 }
             }
         }
     }
-
     Ok(())
 }
 
 pub async fn background_fetch_tickers(
     conn: &crate::db::DbPool,
-    tickers: Vec<String>,
+    tickers: &[&str],
 ) -> Result<(), actix_web::Error> {
     info!("Getting updates from TD for {:#?}", tickers);
     trace!(
@@ -289,23 +290,11 @@ impl Actor for MyActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         //background fetch
-        ctx.run_interval(Duration::from_secs(10), move |this, ctx| {
+        ctx.run_interval(Duration::from_secs(60), move |this, ctx| {
             let conn = this.pool.to_owned();
             ctx.spawn(actix::fut::wrap_future(async move {
                 //spawns a separate task since we don't want to block based on prev request
-                //TODO: find out which tickers are needed to fetch
-                let tickers = vec!["AAPL".to_string(),
-                                   "FB".to_string(),
-                                   "GLD".to_string(),
-                                   "GOOG".to_string(),
-                                   "LIT".to_string(),
-                                   "NFLX".to_string(),
-                                   "SLV".to_string(),
-                                   "SQ".to_string(),
-                                   "TSLA".to_string(),
-                                   "TSM".to_string(),
-                                   "UVXY".to_string(),
-                                   "ZM".to_string()];
+
                 //example
                 // userA, [A,B,C] -> 3 rows in db
                 // userB, [B,C] -> 2 rows in db
@@ -328,13 +317,14 @@ impl Actor for MyActor {
                 // ORDER by timestamp DESC
                 // LIMIT 5 (whatever is actually necessary for calc)
 
-                match background_fetch_tickers(&conn, tickers).await {
+                let tickers = crate::config::STOCKS_LIST.iter().map(|x| x.0).collect::<Vec<_>>();
+                match background_fetch_tickers(&conn, tickers.as_slice()).await {
                     Ok(_) => info!("Fetched all tickers"),
                     Err(e) => warn!("Failed to fetch tickers from TD, {:?}", e),
                 }
 
 
-                match background_fetch_options(&conn, "AAPL").await {
+                match background_fetch_options(&conn, tickers.as_slice()).await {
                     Ok(_) => info!("Fetched all options quotes"),
                     Err(e) => warn!("Failed to fetch option quotes from TD, {:?}", e),
                 }

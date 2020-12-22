@@ -14,6 +14,8 @@ mod handler;
 mod models;
 mod push_notification;
 mod mock_option;
+mod config;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
