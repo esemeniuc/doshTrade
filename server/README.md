@@ -24,8 +24,8 @@ docker run --rm -p 5432:5432 -v $(pwd)/postgres:/var/lib/postgresql/data -e POST
 
 #### Build and test locally
 ```bash
-cargo build --release -j $(nproc)
-IP_PORT=0.0.0.0:80 ./target/release/doshtrade_server
+cargo build
+./target/release/doshtrade_server
 ```
 
 #### Build client, build server, deploy
@@ -43,5 +43,5 @@ scp -C target/release/doshtrade_server ubuntu@direct.doshtrade.com:~/doshtrade_s
 ssh ubuntu@direct.dostrade.com "cd /root && \
 if [[ -f doshtrade_server.swp ]]; then mv doshtrade_server.swp doshtrade_server; fi && \
 tmux kill-server; \
-tmux new-session -d sh -i -c 'IP_PORT=0.0.0.0:80 /root/doshtrade_server'"
+tmux new-session -d sh -i -c 'sudo /root/doshtrade_server --port 80'"
 ```
