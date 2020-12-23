@@ -32,6 +32,23 @@ impl Book {
 
 pub struct QueryRoot;
 
+#[derive(async_graphql::SimpleObject, Clone)]
+struct OptionQuote {
+    option_type: crate::models::option::OptionType,
+    strike: Option<f64>,
+    expiration: String,
+    bid: Option<f64>,
+    ask: Option<f64>,
+    last: Option<f64>,
+    delta: f64,
+    gamma: f64,
+    theta: f64,
+    vega: f64,
+    rho: f64,
+    volatility: f64,
+    time_value: f64,
+}
+
 #[async_graphql::Object]
 impl QueryRoot {
     ///sends demo notification to client browser to verify notifications work as intended
@@ -57,6 +74,28 @@ impl QueryRoot {
                 return false;
             }
         }
+    }
+
+    ///sends option chain for selected ticker
+    async fn get_option_chain(
+        &self,
+        ticker: String,
+    ) -> Vec<OptionQuote> {
+        vec![OptionQuote {
+            option_type: crate::models::option::OptionType::Call,
+            strike: None,
+            expiration: "".to_string(),
+            bid: None,
+            ask: None,
+            last: None,
+            delta: 0.0,
+            gamma: 0.0,
+            theta: 0.0,
+            vega: 0.0,
+            rho: 0.0,
+            volatility: 0.0,
+            time_value: 0.0,
+        }]
     }
 }
 

@@ -8,3 +8,4 @@ mod client;
 mod client_subscription;
 mod intraday_price;
 mod stock;
+pub(crate) mod option;

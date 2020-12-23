@@ -40,8 +40,8 @@ docker run --rm -v "$PWD":/doshtrade/server -v "$PWD/../client":/doshtrade/clien
 scp -C target/release/doshtrade_server ubuntu@direct.doshtrade.com:~/doshtrade_server.swp
 
 # restart service in new tmux
-ssh ubuntu@direct.dostrade.com "cd /root && \
+ssh ubuntu@direct.dostrade.com "cd /home/ubuntu && \
 if [[ -f doshtrade_server.swp ]]; then mv doshtrade_server.swp doshtrade_server; fi && \
 tmux kill-server; \
-tmux new-session -d sh -i -c 'sudo /root/doshtrade_server --port 80'"
+tmux new-session -d sh -i -c 'sudo /home/ubuntu/doshtrade_server --port 80'"
 ```
