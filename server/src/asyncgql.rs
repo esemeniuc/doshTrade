@@ -4,7 +4,7 @@ use async_graphql::{Context, Schema, ID};
 use futures::{Stream, StreamExt};
 use itertools::Itertools;
 
-use crate::models::{Client, ClientSubscription, IntradayPrice, Stock as DbStock};
+use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock};
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
@@ -31,23 +31,6 @@ impl Book {
 }
 
 pub struct QueryRoot;
-
-#[derive(async_graphql::SimpleObject, Clone)]
-struct OptionQuote {
-    option_type: crate::models::option::OptionType,
-    strike: Option<f64>,
-    expiration: String,
-    bid: Option<f64>,
-    ask: Option<f64>,
-    last: Option<f64>,
-    delta: f64,
-    gamma: f64,
-    theta: f64,
-    vega: f64,
-    rho: f64,
-    volatility: f64,
-    time_value: f64,
-}
 
 #[async_graphql::Object]
 impl QueryRoot {
@@ -79,23 +62,18 @@ impl QueryRoot {
     ///sends option chain for selected ticker
     async fn get_option_chain(
         &self,
+        ctx: &Context<'_>,
         ticker: String,
     ) -> Vec<OptionQuote> {
-        vec![OptionQuote {
-            option_type: crate::models::option::OptionType::Call,
-            strike: None,
-            expiration: "".to_string(),
-            bid: None,
-            ask: None,
-            last: None,
-            delta: 0.0,
-            gamma: 0.0,
-            theta: 0.0,
-            vega: 0.0,
-            rho: 0.0,
-            volatility: 0.0,
-            time_value: 0.0,
-        }]
+        let pool = ctx.data_unchecked::<crate::db::DbPool>();
+
+        match OptionQuote::get_latest_by_ticker(pool, ticker).await {
+            Ok(quotes) => quotes,
+            Err(e) => {
+                log::warn!("get_option_chain() failed with error: {}", e);
+                return vec![];
+            }
+        }
     }
 }
 

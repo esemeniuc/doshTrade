@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OptionChain {
+pub struct TDOptionChain {
     pub symbol: String,
     pub status: String,
     pub underlying: ::serde_json::Value,
@@ -15,13 +15,13 @@ pub struct OptionChain {
     pub volatility: f64,
     pub days_to_expiration: f64,
     pub number_of_contracts: i64,
-    pub put_exp_date_map: HashMap<String, HashMap<String, Vec<OptionQuote>>>,
-    pub call_exp_date_map: HashMap<String, HashMap<String, Vec<OptionQuote>>>,
+    pub put_exp_date_map: HashMap<String, HashMap<String, Vec<TDOptionQuote>>>,
+    pub call_exp_date_map: HashMap<String, HashMap<String, Vec<TDOptionQuote>>>,
 }
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OptionQuote {
+pub struct TDOptionQuote {
     pub put_call: String,
     pub symbol: String,
     pub description: String,
@@ -71,6 +71,53 @@ pub struct OptionQuote {
     pub mini: bool,
 }
 
-#[derive(sqlx::Type, async_graphql::Enum,Copy, Clone, Eq, PartialEq)]
+#[derive(sqlx::Type, async_graphql::Enum, Copy, Clone, Eq, PartialEq)]
 #[sqlx(rename = "OPTION_TYPE", rename_all = "lowercase")]
 pub enum OptionType { Call, Put }
+
+#[derive(async_graphql::SimpleObject, sqlx::FromRow, Clone)]
+pub struct OptionQuote {
+    pub option_type: OptionType,
+    pub strike: Option<f64>,
+    pub expiration: String,
+    pub bid: Option<f64>,
+    pub ask: Option<f64>,
+    pub last: Option<f64>,
+    pub delta: f64,
+    pub gamma: f64,
+    pub theta: f64,
+    pub vega: f64,
+    pub rho: f64,
+    pub volatility: f64,
+    pub time_value: f64,
+}
+
+impl OptionQuote {
+    pub async fn get_latest_by_ticker(
+        conn: &crate::db::DbPool,
+        ticker: String,
+    ) -> sqlx::Result<Vec<OptionQuote>> {
+        sqlx::query_as::<_, OptionQuote>(
+            "SELECT
+     option_type,
+     strike,
+     CAST(expiration AS VARCHAR),
+     bid,
+     ask,
+     last,
+     delta,
+     gamma,
+     theta,
+     vega,
+     rho,
+     volatility,
+     time_value
+
+         FROM option_quotes
+         JOIN stocks ON stocks.id = option_quotes.stock_id AND stocks.ticker = $1
+         ORDER BY expiration, strike ASC",
+        )
+            .bind(ticker)
+            .fetch_all(conn).await
+    }
+}

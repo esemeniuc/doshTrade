@@ -127,13 +127,13 @@ pub async fn background_send_push_notifications(
 
 pub async fn background_fetch_options(conn: &crate::db::DbPool,
                                       tickers: &[&str]) -> Result<(), actix_web::Error> {
-    use crate::models::option::{OptionChain, OptionType};
+    use crate::models::{TDOptionChain, OptionType};
     let client = actix_web::client::Client::default();
     for ticker in tickers {
         let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", ticker);
         let mut response = client.get(url).send().await?;
         let body = response.body().limit(50 * (1 << 20)).await?; //50MB limit
-        let option_chain: OptionChain = serde_json::from_slice(&body)?;
+        let option_chain: TDOptionChain = serde_json::from_slice(&body)?;
 
         for option_iter in vec![
             (option_chain.call_exp_date_map, OptionType::Call),
