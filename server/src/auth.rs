@@ -17,16 +17,16 @@ pub fn generate_bearer_token_now(user_id: i32) -> String {
 }
 
 pub fn generate_bearer_token(user_id: i32, created_at: chrono::NaiveDateTime) -> String {
-    let mut rng = thread_rng();
-    let chars: String = std::iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
+    let rand_string: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .map(char::from)
         .take(7)
         .collect();
 
     let my_claims = Claims {
         sub: user_id,
         exp: (created_at + chrono::Duration::weeks(2)).timestamp(),
-        nonce: chars,
+        nonce: rand_string,
     };
 
     encode(
