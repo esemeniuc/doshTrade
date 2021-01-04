@@ -69,13 +69,15 @@ pub async fn background_send_push_notifications(
     #[derive(sqlx::FromRow)]
     struct ClientSubscription {
         stock_id: i32,
+        ticker: String,
         endpoint: String,
         p256dh: String,
         auth: String,
     }
     let client_subs = sqlx::query_as::<_, ClientSubscription>(
-        "SELECT stock_id, endpoint, p256dh, auth FROM client_subscriptions
-        JOIN clients ON clients.id = client_subscriptions.client_id") //need the client info for notification
+        "SELECT stock_id, ticker, endpoint, p256dh, auth FROM client_subscriptions
+        JOIN clients ON clients.id = client_subscriptions.client_id
+        JOIN stocks ON stocks.id = client_subscriptions.stock_id")
         .fetch_all(conn)
         .await?;
 
@@ -95,9 +97,9 @@ pub async fn background_send_push_notifications(
         .filter_map(|x| {
             let (rsi_val, sub) = x;
             let notification_msg = if rsi_val <= 0.15 {
-                format!("id {} is oversold", sub.stock_id)
+                format!("{} is oversold", sub.ticker)
             } else if rsi_val >= 0.51 {
-                format!("id {} is overbought", sub.stock_id)
+                format!("{} is overbought", sub.ticker)
             } else {
                 return None;
             };
