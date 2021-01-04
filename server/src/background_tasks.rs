@@ -77,7 +77,7 @@ pub async fn background_send_push_notifications(
     let client_subs = sqlx::query_as::<_, ClientSubscription>(
         "SELECT stock_id, ticker, endpoint, p256dh, auth FROM client_subscriptions
         JOIN clients ON clients.id = client_subscriptions.client_id
-        JOIN stocks ON stocks.id = client_subscriptions.stock_id")
+        JOIN stocks ON stocks.id = client_subscriptions.stock_id") //TODO: filter to keep client subscriptions last (seen > 1hr) or (NULL)
         .fetch_all(conn)
         .await?;
 
