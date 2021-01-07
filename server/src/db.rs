@@ -25,7 +25,14 @@ pub async fn seed(conn: &DbPool) -> sqlx::Result<sqlx::postgres::PgDone> {
         },
     );
 
-    return  Ok(sqlx::postgres::PgDone::default());
+
+    // sqlx::query("insert into clients VALUES(DEFAULT, 'endpoint', 'p256', 'auth', CURRENT_TIMESTAMP)").execute(conn).await;
+    // sqlx::query("insert into client_subscriptions VALUES(DEFAULT, 1,1,CURRENT_TIMESTAMP - interval '1 month')").execute(conn).await;
+    // sqlx::query("UPDATE client_subscriptions SET last_sent = CURRENT_TIMESTAMP WHERE id IN (SELECT unnest($1))")
+    //     .bind(vec![1, 2, 3])
+    //     .execute(conn).await;
+
+    return Ok(sqlx::postgres::PgDone::default());
     /*
 
     c1 = {}

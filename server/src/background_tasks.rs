@@ -68,6 +68,7 @@ pub async fn background_send_push_notifications(
     let client = web_push::WebPushClient::new();
     #[derive(sqlx::FromRow)]
     struct ClientSubscription {
+        id: i32,
         stock_id: i32,
         ticker: String,
         endpoint: String,
@@ -75,9 +76,10 @@ pub async fn background_send_push_notifications(
         auth: String,
     }
     let client_subs = sqlx::query_as::<_, ClientSubscription>(
-        "SELECT stock_id, ticker, endpoint, p256dh, auth FROM client_subscriptions
+        "SELECT client_subscriptions.id, stock_id, ticker, endpoint, p256dh, auth FROM client_subscriptions
         JOIN clients ON clients.id = client_subscriptions.client_id
-        JOIN stocks ON stocks.id = client_subscriptions.stock_id") //TODO: filter to keep client subscriptions last (seen > 1hr) or (NULL)
+        JOIN stocks ON stocks.id = client_subscriptions.stock_id
+        WHERE last_sent IS NULL OR last_sent < CURRENT_TIMESTAMP - interval '1 hour'")
         .fetch_all(conn)
         .await?;
 
@@ -87,7 +89,7 @@ pub async fn background_send_push_notifications(
             (crate::models::IntradayPrice::get_rsi_by_stock_id(conn, sub.stock_id, 14).await, sub)
         });
 
-    let messages_to_send = futures::future::join_all(client_subs_fut)
+    let filtered_client_subs = futures::future::join_all(client_subs_fut)
         .await
         .into_iter()
         .filter_map(|x| match x.0 {
@@ -96,14 +98,25 @@ pub async fn background_send_push_notifications(
         })
         .filter_map(|x| {
             let (rsi_val, sub) = x;
-            let notification_msg = if rsi_val <= 0.15 {
-                format!("{} is oversold", sub.ticker)
+            if rsi_val <= 0.15 {
+                Some((format!("{} is oversold", sub.ticker), sub))
             } else if rsi_val >= 0.51 {
-                format!("{} is overbought", sub.ticker)
+                Some((format!("{} is overbought", sub.ticker), sub))
             } else {
                 return None;
-            };
+            }
+        })
+        .collect::<Vec<_>>();
 
+    let ids_to_update = filtered_client_subs.iter().map(|x| x.1.id).collect::<Vec<i32>>();
+    sqlx::query("UPDATE client_subscriptions SET last_sent = CURRENT_TIMESTAMP WHERE id IN (SELECT unnest($1))")
+        .bind(ids_to_update)
+        .execute(conn).await;
+
+
+    let messages_to_send = filtered_client_subs.into_iter()
+        .filter_map(|x| {
+            let (notification_msg, sub) = x;
             let sub_info = web_push::SubscriptionInfo {
                 endpoint: sub.endpoint,
                 keys: SubscriptionKeys {
