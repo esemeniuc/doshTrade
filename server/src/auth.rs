@@ -117,6 +117,7 @@ fn test_is_valid_token() {
     assert!(is_valid_token(generate_bearer_token_now(1).as_str()))
 }
 
+#[ignore]
 #[test]
 fn test_generate_bearer_token() {
     use chrono::{TimeZone};

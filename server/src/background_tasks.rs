@@ -2,6 +2,7 @@ use std::time::{Duration, SystemTime};
 
 use actix::prelude::*;
 use actix_web::Result;
+use chrono::{Datelike, Weekday};
 use log::{error, info, trace, warn};
 use web_push::SubscriptionKeys;
 
@@ -108,11 +109,12 @@ pub async fn background_send_push_notifications(
         })
         .collect::<Vec<_>>();
 
-    let ids_to_update = filtered_client_subs.iter().map(|x| x.1.id).collect::<Vec<i32>>();
-    sqlx::query("UPDATE client_subscriptions SET last_sent = CURRENT_TIMESTAMP WHERE id IN (SELECT unnest($1))")
-        .bind(ids_to_update)
-        .execute(conn).await;
-
+    let ids_to_update = filtered_client_subs.iter().map(|x| x.1.id).collect::<Vec<_>>();
+    sqlx::query("UPDATE client_subscriptions
+    SET last_sent = CURRENT_TIMESTAMP
+    WHERE id IN (SELECT unnest($1::integer[]))")
+        .bind(&ids_to_update)
+        .execute(conn).await?;
 
     let messages_to_send = filtered_client_subs.into_iter()
         .filter_map(|x| {
@@ -158,7 +160,7 @@ pub async fn background_fetch_options(conn: &crate::db::DbPool,
                     for option_quote in option_quotes {
                         let secs = option_quote.expiration_date / 1000; //time comes in as milliseconds, convert to sec
                         let remaining_nanos = (option_quote.expiration_date % 1000) * 1_000_000;
-                        sqlx::query("INSERT INTO option_quotes VALUES
+                        let res = sqlx::query("INSERT INTO option_quotes VALUES
         (DEFAULT, (SELECT id FROM stocks WHERE ticker = $1 LIMIT 1), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)")
                             .bind(&option_chain.symbol)
                             .bind(&option_iter.1)
@@ -176,6 +178,10 @@ pub async fn background_fetch_options(conn: &crate::db::DbPool,
                             .bind(option_quote.time_value)
                             .execute(conn)
                             .await;
+                        match res {
+                            Err(e) => log::error!("failed to insert option data: {}", e),
+                            _ => ()
+                        }
                     }
                 }
             }
@@ -258,6 +264,10 @@ impl Actor for MyActor {
                 // ORDER by timestamp DESC
                 // LIMIT 5 (whatever is actually necessary for calc)
 
+                if !is_open_market_hours(chrono::Utc::now()) {
+                    return;
+                }
+
                 let tickers = crate::config::STOCKS_LIST.iter().map(|x| x.0).collect::<Vec<_>>();
                 match background_fetch_tickers(&conn, tickers.as_slice()).await {
                     Ok(_) => info!("Fetched all tickers"),
@@ -286,3 +296,29 @@ impl Actor for MyActor {
         });
     }
 }
+
+pub fn is_open_market_hours(dt: chrono::DateTime<chrono::Utc>) -> bool {
+    let is_weekday = match dt.weekday() {
+        Weekday::Sat | Weekday::Sun => false,
+        _ => true
+    };
+
+    let mkt_open = chrono::NaiveTime::from_hms(14, 30, 0); //2:30pm UTC == 9:30am EST (UTC-5)
+    let mkt_close = chrono::NaiveTime::from_hms(21, 00, 0); //9:00pm UTC == 4:00pm EST
+    return is_weekday && dt.time() >= mkt_open && dt.time() <= mkt_close;
+}
+
+
+#[test]
+fn open_market_hours() {
+    use chrono::{DateTime, TimeZone};
+    //using local PST where market is open 06:30 to 13:00
+    assert!(is_open_market_hours(DateTime::from(chrono::Local.ymd(2021, 1, 8).and_hms(6, 30, 0)))); //friday at open
+    assert!(is_open_market_hours(DateTime::from(chrono::Local.ymd(2021, 1, 8).and_hms(13, 00, 0)))); //friday at close
+    assert!(is_open_market_hours(DateTime::from(chrono::Local.ymd(2021, 1, 4).and_hms(10, 00, 0)))); //monday midday
+    assert!(!is_open_market_hours(DateTime::from(chrono::Local.ymd(2021, 1, 4).and_hms(15, 00, 0)))); //monday after hours
+    assert!(!is_open_market_hours(DateTime::from(chrono::Local.ymd(2021, 1, 8).and_hms(13, 01, 0)))); //friday after close
+    assert!(!is_open_market_hours(DateTime::from(chrono::Local.ymd(2021, 1, 9).and_hms(6, 30, 0)))); //saturday
+}
+
+

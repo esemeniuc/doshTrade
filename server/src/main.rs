@@ -1,6 +1,6 @@
 use actix::prelude::*;
 use actix_cors::Cors;
-use actix_web::{guard, web, App, HttpServer};
+use actix_web::{App, guard, HttpServer, web};
 use async_graphql::Schema;
 use clap::Arg;
 
@@ -19,6 +19,7 @@ mod config;
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     // std::env::set_var("RUST_LOG", "actix_web=info");
+    // std::env::set_var("DATABASE_URL", "postgresql://postgres:mysecretpassword@localhost"); //for sqlx::query! macro
     log::info!("Starting yolotrader with args: {:?}", std::env::args());
 
     let matches = clap::App::new("yolotrader server")

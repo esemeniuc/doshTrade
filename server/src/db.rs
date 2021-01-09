@@ -14,7 +14,7 @@ pub async fn seed(conn: &DbPool) -> sqlx::Result<sqlx::postgres::PgDone> {
             .execute(conn)
     });
 
-    futures::future::join_all(inserts).await.into_iter().fold(
+    return futures::future::join_all(inserts).await.into_iter().fold(
         sqlx::Result::Ok(sqlx::postgres::PgDone::default()),
         |acc, curr| {
             if Result::is_ok(&curr) {

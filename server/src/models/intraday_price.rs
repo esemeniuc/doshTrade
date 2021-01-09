@@ -252,45 +252,45 @@ WHERE timestamp = (SELECT min(timestamp) FROM day_prices)",
     //     0.0
     // }
 
-    pub fn calc_rsi_june(latest_n_prices: Vec<f64>) -> f64 {
-        if latest_n_prices.len() < 2 {
-            return 0.0;
-        }
-        let mut latest_n_prices = latest_n_prices.clone();
-        latest_n_prices.reverse();
-        let mut up_price_bars: Vec<f64> = vec!();
-        let mut down_price_bars: Vec<f64> = vec!();
-
-        for i in 1..latest_n_prices.len() {
-            let prev = latest_n_prices[i - 1];
-            let curr = latest_n_prices[i];
-            let price_bar = curr - prev;
-            if price_bar < 0.0 {
-                down_price_bars.push(price_bar);
-            } else {
-                up_price_bars.push(price_bar);
-            }
-        }
-        // In the case that price does not go up or down, return middle value,
-        if down_price_bars.len() + up_price_bars.len() == 0 {
-            return 0.5;
-        }
-        // In the case that price does not go down at all, return maximal value,
-        if down_price_bars.len() == 0 {
-            return 1.0;
-        }
-        // In the case that price does not go up at all, return minimal value,
-        if up_price_bars.len() == 0 {
-            return 0.0;
-        }
-        let down_sum: f64 = Iterator::sum(down_price_bars.iter());
-        let average_down = f64::abs(down_sum / down_price_bars.len() as f64);
-
-        let up_sum: f64 = Iterator::sum(up_price_bars.iter());
-        let average_up = f64::abs(up_sum / (up_price_bars.len() as f64));
-
-        1.0 - (1.0 / (1.0 + (average_up / average_down)))
-    }
+    // pub fn calc_rsi_june(latest_n_prices: Vec<f64>) -> f64 {
+    //     if latest_n_prices.len() < 2 {
+    //         return 0.0;
+    //     }
+    //     let mut latest_n_prices = latest_n_prices.clone();
+    //     latest_n_prices.reverse();
+    //     let mut up_price_bars: Vec<f64> = vec!();
+    //     let mut down_price_bars: Vec<f64> = vec!();
+    //
+    //     for i in 1..latest_n_prices.len() {
+    //         let prev = latest_n_prices[i - 1];
+    //         let curr = latest_n_prices[i];
+    //         let price_bar = curr - prev;
+    //         if price_bar < 0.0 {
+    //             down_price_bars.push(price_bar);
+    //         } else {
+    //             up_price_bars.push(price_bar);
+    //         }
+    //     }
+    //     // In the case that price does not go up or down, return middle value,
+    //     if down_price_bars.len() + up_price_bars.len() == 0 {
+    //         return 0.5;
+    //     }
+    //     // In the case that price does not go down at all, return maximal value,
+    //     if down_price_bars.len() == 0 {
+    //         return 1.0;
+    //     }
+    //     // In the case that price does not go up at all, return minimal value,
+    //     if up_price_bars.len() == 0 {
+    //         return 0.0;
+    //     }
+    //     let down_sum: f64 = Iterator::sum(down_price_bars.iter());
+    //     let average_down = f64::abs(down_sum / down_price_bars.len() as f64);
+    //
+    //     let up_sum: f64 = Iterator::sum(up_price_bars.iter());
+    //     let average_up = f64::abs(up_sum / (up_price_bars.len() as f64));
+    //
+    //     1.0 - (1.0 / (1.0 + (average_up / average_down)))
+    // }
 
     pub fn calc_rsi(latest_n_prices: Vec<f64>) -> f64 {
         use ta::indicators::RelativeStrengthIndex;

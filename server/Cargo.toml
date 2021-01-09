@@ -8,24 +8,24 @@ edition = "2018"
 
 [dependencies]
 sqlx = { version = "0.4.2", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "chrono", "migrate"] }
-rust-embed = "5.7.0"
+rust-embed = "5.8.0"
 log = "0.4.11"
 env_logger = "0.8.2"
 itertools = "0.10.0"
 
-async-graphql = "2.4.3"
-async-graphql-actix-web = "2.4.3"
+async-graphql = "2.4.5"
+async-graphql-actix-web = "2.4.5"
 actix = "0.10.0"
-actix-cors = "0.5.3"
+actix-cors = "0.5.4"
 actix-web = { version = "3.3.2", features = ["rustls"] }
 actix-web-actors = "3.0.0"
-futures = "0.3.8"
+futures = "0.3.9"
 mime_guess = "2.0.3"
 chrono = { version = "0.4.19", features = ["serde"] }
 jsonwebtoken = "7.2.0"
 serde = { version = "1.0.118", features = ["derive"] }
 serde_json = "1.0.61"
-rand = "0.8.0"
+rand = "0.8.1"
 clap = "2.33.3"
 web-push = "0.7.2"
 base64 = "0.13.0"
