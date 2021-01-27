@@ -8,6 +8,7 @@ import { WebSocketLink } from '@apollo/link-ws';
 import StockListContainer from "./containers/StockListContainer";
 import * as registerServiceWorker from './push/registerServiceWorker';
 import { ContextProvider } from './redux/context';
+import EntryView from './containers/EntryView'
 
 const theme = createMuiTheme({
     palette: {
@@ -61,7 +62,7 @@ function App() {
                 <ContextProvider>
                     <CssBaseline />
                     <Router>
-                        <StockListContainer />
+                        <EntryView />
                     </Router>
                 </ContextProvider>
             </ThemeProvider>
