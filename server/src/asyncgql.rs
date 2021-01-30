@@ -8,28 +8,6 @@ use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stoc
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
-#[derive(Clone)]
-pub struct Book {
-    id: ID,
-    name: String,
-    author: String,
-}
-
-#[async_graphql::Object]
-impl Book {
-    async fn id(&self) -> &str {
-        &self.id
-    }
-
-    async fn name(&self) -> &str {
-        &self.name
-    }
-
-    async fn author(&self) -> &str {
-        &self.author
-    }
-}
-
 pub struct QueryRoot;
 
 #[async_graphql::Object]
