@@ -77,6 +77,7 @@ pub enum OptionType { Call, Put }
 
 #[derive(async_graphql::SimpleObject, sqlx::FromRow, Clone)]
 pub struct OptionQuote {
+    // TODO make optionID and also add identifier on Postgres and POP
     pub option_type: OptionType,
     pub strike: Option<f64>,
     pub expiration: String,

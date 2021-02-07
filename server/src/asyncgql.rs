@@ -8,29 +8,14 @@ use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stoc
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
-#[derive(Clone)]
-pub struct Book {
-    id: ID,
-    name: String,
-    author: String,
-}
-
-#[async_graphql::Object]
-impl Book {
-    async fn id(&self) -> &str {
-        &self.id
-    }
-
-    async fn name(&self) -> &str {
-        &self.name
-    }
-
-    async fn author(&self) -> &str {
-        &self.author
-    }
-}
-
 pub struct QueryRoot;
+
+#[derive(async_graphql::SimpleObject, Clone)]
+struct OptionRiskSummary {
+    max_risk: String,
+    max_profit: String,
+    breakeven_at_expiration: String,
+}
 
 #[async_graphql::Object]
 impl QueryRoot {
@@ -64,6 +49,8 @@ impl QueryRoot {
         &self,
         ctx: &Context<'_>,
         ticker: String,
+        expiration: String,
+        strategy: String, //TODO change enum
     ) -> Vec<OptionQuote> {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
 
@@ -74,6 +61,33 @@ impl QueryRoot {
                 return vec![];
             }
         }
+    }
+
+    ///sends computed risk values for a give option
+    async fn get_risk_summary(
+        &self,
+        ctx: &Context<'_>,
+        option_id: async_graphql::ID,
+        strategy: String, //TODO change enum
+    ) -> OptionRiskSummary {
+        OptionRiskSummary{
+            max_risk: "".to_string(),
+            max_profit: "".to_string(),
+            breakeven_at_expiration: "".to_string()
+        }
+    }
+
+
+    async fn get_current_price(&self,
+                               ctx: &Context<'_>,
+                               ticker: String, ) -> String {
+        String::from("$0.00")
+    }
+
+    async fn get_expiration(&self,
+                            ctx: &Context<'_>,
+                            ticker: String, ) -> String {
+        String::from("2021-01-30T01:32:53Z")
     }
 }
 
