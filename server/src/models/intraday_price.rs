@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use crate::background_tasks::StockQuote;
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct IntradayPrice {
@@ -55,7 +54,7 @@ impl IntradayPrice {
 
     pub async fn insert_many(
         conn: &crate::db::DbPool,
-        quotes: Vec<StockQuote>,
+        quotes: Vec<crate::background_tasks::fetch_tickers::StockQuote>,
     ) -> Vec<sqlx::postgres::PgDone>{
         let inserts = quotes
             .iter()

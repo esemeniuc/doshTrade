@@ -70,7 +70,9 @@ async fn main() -> std::io::Result<()> {
     //         .expect("Unable to connect to database pool");
     db::seed(&pool).await.expect("Error seeding the database");
 
-    background_tasks::MyActor { pool: pool.clone() }.start();
+    background_tasks::fetch_tickers::StockActor{ pool: pool.clone() }.start();
+    background_tasks::fetch_options::OptionsActor{ pool: pool.clone() }.start();
+    background_tasks::send_push_notifications::PushActor { pool: pool.clone() }.start();
 
     let schema = Schema::build(QueryRoot, MutationRoot, Subscription)
         .data(pool)

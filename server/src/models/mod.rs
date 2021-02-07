@@ -7,6 +7,6 @@ pub use option::{TDOptionQuote, TDOptionChain, OptionQuote, OptionType};
 
 mod client;
 mod client_subscription;
-mod intraday_price;
+pub(crate) mod intraday_price;
 mod stock;
 mod option;
