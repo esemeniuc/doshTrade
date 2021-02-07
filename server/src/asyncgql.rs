@@ -16,6 +16,13 @@ struct OptionRiskSummary {
     max_profit: String,
     breakeven_at_expiration: String,
 }
+#[derive(async_graphql::Enum, Copy, Clone, Eq, PartialEq)]
+enum OptionStrategy {
+    BuyCall,
+    BuyPut,
+    SellCall,
+    SellPut,
+}
 
 #[async_graphql::Object]
 impl QueryRoot {
@@ -50,7 +57,7 @@ impl QueryRoot {
         ctx: &Context<'_>,
         ticker: String,
         expiration: String,
-        strategy: String, //TODO change enum
+        strategy: OptionStrategy,
     ) -> Vec<OptionQuote> {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
 
@@ -68,7 +75,7 @@ impl QueryRoot {
         &self,
         ctx: &Context<'_>,
         option_id: async_graphql::ID,
-        strategy: String, //TODO change enum
+        strategy: OptionStrategy,
     ) -> OptionRiskSummary {
         OptionRiskSummary{
             max_risk: "".to_string(),
