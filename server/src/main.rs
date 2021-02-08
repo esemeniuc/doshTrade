@@ -56,7 +56,7 @@ async fn main() -> std::io::Result<()> {
     log::info!("Playground available at: http://{}/graphiql", ip_port);
 
     let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(20)
         .connect(database_url)
         .await
         .expect("Unable to connect to database pool");
@@ -70,13 +70,17 @@ async fn main() -> std::io::Result<()> {
     //         .expect("Unable to connect to database pool");
     db::seed(&pool).await.expect("Error seeding the database");
 
-    background_tasks::fetch_tickers::StockActor{ pool: pool.clone() }.start();
-    background_tasks::fetch_options::OptionsActor{ pool: pool.clone() }.start();
-    background_tasks::send_push_notifications::PushActor { pool: pool.clone() }.start();
 
     let schema = Schema::build(QueryRoot, MutationRoot, Subscription)
-        .data(pool)
+        .data(pool.clone())
         .finish();
+
+    let pool_clone = pool.clone();
+    background_tasks::fetch_tickers::StockActor::start_in_arbiter(&Arbiter::new(), move |ctx| background_tasks::fetch_tickers::StockActor { pool: pool_clone });
+    let pool_clone = pool.clone();
+    background_tasks::fetch_options::OptionsActor::start_in_arbiter(&Arbiter::new(), move |ctx| background_tasks::fetch_options::OptionsActor { pool: pool_clone });
+    let pool_clone = pool.clone();
+    background_tasks::send_push_notifications::PushActor::start_in_arbiter(&Arbiter::new(), move |ctx| background_tasks::send_push_notifications::PushActor { pool: pool_clone });
 
     HttpServer::new(move || {
         let cors_rules = if cfg!(debug_assertions) {

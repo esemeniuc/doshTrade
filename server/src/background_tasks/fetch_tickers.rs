@@ -14,6 +14,7 @@ impl Actor for StockActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         let conn = self.pool.to_owned();
+
         async move {
             let mut interval = actix_web::rt::time::interval(std::time::Duration::from_nanos(1));
             loop {
