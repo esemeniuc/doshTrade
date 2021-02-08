@@ -16,7 +16,7 @@ impl IntradayPrice {
     //returns successfully found tickers
     pub async fn get_latest_by_tickers(
         conn: &crate::db::DbPool,
-        tickers: &Vec<String>,
+        tickers: &[String],
     ) -> Vec<IntradayPrice> {
         let price_queries = tickers
             .iter()
@@ -135,7 +135,7 @@ impl IntradayPrice {
 
     pub async fn get_open_prices_by_stock_ids(
         conn: &crate::db::DbPool,
-        stock_info: &Vec<(i32, chrono::NaiveDateTime)>,
+        stock_info: &[(i32, chrono::NaiveDateTime)],
     ) -> Vec<f64> {
         let open_price_queries = stock_info
             .iter()

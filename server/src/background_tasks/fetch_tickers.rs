@@ -16,7 +16,7 @@ impl Actor for StockActor {
         let conn = self.pool.to_owned();
 
         async move {
-            let mut interval = actix_web::rt::time::interval(std::time::Duration::from_nanos(1));
+            let mut interval = actix_web::rt::time::interval(std::time::Duration::from_secs(30));
             loop {
                 //example
                 // userA, [A,B,C] -> 3 rows in db

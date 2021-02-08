@@ -56,7 +56,7 @@ async fn main() -> std::io::Result<()> {
     log::info!("Playground available at: http://{}/graphiql", ip_port);
 
     let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(20)
+        .max_connections(50)
         .connect(database_url)
         .await
         .expect("Unable to connect to database pool");

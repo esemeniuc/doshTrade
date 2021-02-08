@@ -11,7 +11,7 @@ impl Actor for PushActor {
         let conn = self.pool.to_owned();
 
         async move {
-            let mut interval = actix_web::rt::time::interval(std::time::Duration::from_nanos(1));
+            let mut interval = actix_web::rt::time::interval(std::time::Duration::from_secs(10));
             loop {
                 log::trace!("Sending background push notifications!");
                 match send_push_notifications(&conn).await {

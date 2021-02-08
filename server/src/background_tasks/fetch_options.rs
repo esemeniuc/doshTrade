@@ -13,7 +13,7 @@ impl Actor for OptionsActor {
         let tickers = crate::config::STOCKS_LIST.iter().map(|x| x.0).collect::<Vec<_>>();
 
         async move {
-            let mut interval = actix_web::rt::time::interval(std::time::Duration::from_nanos(1));
+            let mut interval = actix_web::rt::time::interval(std::time::Duration::from_secs(60));
             loop {
                 if super::is_open_market_hours(chrono::Utc::now()) {
                     match fetch_options(&conn, tickers.as_slice()).await {
