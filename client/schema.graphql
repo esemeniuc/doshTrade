@@ -16,6 +16,40 @@ type MutationRoot {
   ): [String!]!
 }
 
+type OptionQuote {
+  optionType: OptionType!
+  strike: Float
+  expiration: String!
+  bid: Float
+  ask: Float
+  last: Float
+  delta: Float!
+  gamma: Float!
+  theta: Float!
+  vega: Float!
+  rho: Float!
+  volatility: Float!
+  timeValue: Float!
+}
+
+type OptionRiskSummary {
+  maxRisk: String!
+  maxProfit: String!
+  breakevenAtExpiration: String!
+}
+
+enum OptionStrategy {
+  BUY_CALL
+  BUY_PUT
+  SELL_CALL
+  SELL_PUT
+}
+
+enum OptionType {
+  CALL
+  PUT
+}
+
 input PushSubscription {
   endpoint: String!
   expirationTime: String
@@ -30,6 +64,18 @@ input PushSubscriptionKeys {
 type QueryRoot {
   # sends demo notification to client browser to verify notifications work as intended
   sendDemoNotification(pushSubscription: PushSubscription!): Boolean!
+
+  # sends option chain for selected ticker
+  getOptionChain(
+    ticker: String!
+    expiration: String!
+    strategy: OptionStrategy!
+  ): [OptionQuote!]!
+
+  # sends computed risk values for a give option
+  getRiskSummary(optionId: ID!, strategy: OptionStrategy!): OptionRiskSummary!
+  getCurrentPrice(ticker: String!): String!
+  getExpiration(ticker: String!): String!
 }
 
 # Represents a stock's status

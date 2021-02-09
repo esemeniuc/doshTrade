@@ -105,6 +105,11 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::resource("/graphql")
                     .guard(guard::Get())
+                    .to(handler::graphql),
+            )
+            .service(
+                web::resource("/graphql")
+                    .guard(guard::Get())
                     .guard(guard::Header("upgrade", "websocket"))
                     .to(handler::index_ws),
             )
