@@ -6,7 +6,7 @@ A graphql backend that stores stock and option info. Built with Rust and postgre
 - Rust 1.48+
 - Postgres
 
-## Debug
+## Local Development
 Runs on http://localhost:8080
 ```bash
 cargo build
@@ -20,7 +20,7 @@ Start postgres
 docker run --rm -p 5432:5432 -v $(pwd)/postgres:/var/lib/postgresql/data -e POSTGRES_PASSWORD=mysecretpassword postgres:alpine postgres -c log_statement=all
 ```
 
-## Deployment
+## Production
 
 #### Build and test locally
 ```bash
