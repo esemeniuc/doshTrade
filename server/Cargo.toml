@@ -30,7 +30,7 @@ clap = "2.33.3"
 web-push = "0.7.2"
 base64 = "0.13.0"
 ta = "0.4.0"
-reqwest = "0.11.0"
+reqwest = { version = "0.11", features = ["json"] }
 anyhow = "1.0"
 #rsi-rs = "0.1.0"
 #ta-common = "0.1.3"
