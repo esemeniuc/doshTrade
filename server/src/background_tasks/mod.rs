@@ -1,8 +1,8 @@
 use chrono::{Datelike, Weekday};
 
-pub (crate) mod fetch_tickers;
-pub (crate) mod fetch_options;
-pub (crate) mod send_push_notifications;
+pub (crate) mod stock_actor;
+pub (crate) mod options_actor;
+pub (crate) mod push_notifications_actor;
 
 pub fn is_open_market_hours(dt: chrono::DateTime<chrono::Utc>) -> bool {
     let is_weekday = match dt.weekday() {

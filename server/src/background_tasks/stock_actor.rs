@@ -42,7 +42,7 @@ impl Actor for StockActor {
                 let tickers = crate::config::STOCKS_LIST.iter().map(|x| x.0).collect::<Vec<_>>();
 
                 if super::is_open_market_hours(chrono::Utc::now()) {
-                    match fetch_tickers(&conn, tickers.as_slice()).await {
+                    match fetch_and_insert(&conn, tickers.as_slice()).await {
                         Ok(_) => info!("Fetched all tickers"),
                         Err(e) => warn!("Failed to fetch tickers from TD, {:?}", e),
                     }
@@ -110,10 +110,11 @@ pub struct StockQuote {
     pub delayed: bool,
 }
 
-pub async fn fetch_tickers(
+
+pub async fn fetch_and_insert(
     conn: &crate::db::DbPool,
     tickers: &[&str],
-) -> actix_web::Result<(), actix_web::Error> {
+) -> anyhow::Result<()> {
     info!("Getting updates from TD for {:#?}", tickers);
     trace!(
         "Started at {}",
@@ -123,16 +124,7 @@ pub async fn fetch_tickers(
             .as_secs()
     );
 
-    let client = actix_web::client::Client::default();
-    // Create request builder and send request
-    info!("Fetching tickers: {:?}", tickers);
-    let tickers_str = tickers.join(",");
-    let url = format!("https://api.tdameritrade.com/v1/marketdata/quotes?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", tickers_str);
-    info!("Using url: {}", url);
-    let mut response = client.get(url).send().await?;
-    let body = response.body().await?;
-    let ticker_to_quotes: std::collections::HashMap<String, StockQuote> = serde_json::from_slice(body.as_ref())?;
-    let quotes = ticker_to_quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>();
+    let quotes = fetch_quotes(tickers).await?;
     let query_result = IntradayPrice::insert_many(conn, quotes).await;
     if query_result.len() != tickers.len() {
         error!("Failed to fetch intraday update")
@@ -146,4 +138,13 @@ pub async fn fetch_tickers(
             .as_secs()
     );
     Ok(())
+}
+
+pub async fn fetch_quotes(tickers: &[&str]) -> anyhow::Result<Vec<StockQuote>> {
+    info!("Fetching tickers: {:?}", tickers);
+    let tickers_str = tickers.join(",");
+    let url = format!("https://api.tdameritrade.com/v1/marketdata/quotes?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", tickers_str);
+    info!("Using url: {}", url);
+    let ticker_to_quotes: std::collections::HashMap<String, StockQuote> = reqwest::get(&url).await?.json().await?;
+    Ok(ticker_to_quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>())
 }
