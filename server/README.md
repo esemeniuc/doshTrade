@@ -1,5 +1,5 @@
 # doshtrade server
-A graphql backend that stores and serves created find-replaces. Built with Rust and sqlite. Automatically integrates client html code as part of the binary.
+A graphql backend that stores stock and option info. Built with Rust and postgres. Automatically integrates client html code as part of the binary.
 
 ## Requirements
 
