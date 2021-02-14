@@ -7,7 +7,7 @@ A graphql backend that stores and serves created find-replaces. Built with Rust 
 - Postgres
 
 ## Debug
-Runs on localhost:8080
+Runs on http://localhost:8080
 ```bash
 cargo build
 RUST_LOG=INFO ./target/debug/doshtrade_server
