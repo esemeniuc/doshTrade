@@ -1,10 +1,10 @@
 use actix::prelude::*;
 
-pub(crate) struct PushActor {
+pub(crate) struct PushNotificationsActor {
     pub(crate) pool: crate::db::DbPool,
 }
 
-impl Actor for PushActor {
+impl Actor for PushNotificationsActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {

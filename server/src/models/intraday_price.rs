@@ -54,7 +54,7 @@ impl IntradayPrice {
 
     pub async fn insert_many(
         conn: &crate::db::DbPool,
-        quotes: Vec<crate::background_tasks::fetch_tickers::StockQuote>,
+        quotes: Vec<crate::background_tasks::stock_actor::StockQuote>,
     ) -> Vec<sqlx::postgres::PgDone>{
         let inserts = quotes
             .iter()

@@ -16,6 +16,7 @@ struct OptionRiskSummary {
     max_profit: String,
     breakeven_at_expiration: String,
 }
+
 #[derive(async_graphql::Enum, Copy, Clone, Eq, PartialEq)]
 enum OptionStrategy {
     BuyCall,
@@ -77,18 +78,30 @@ impl QueryRoot {
         option_id: async_graphql::ID,
         strategy: OptionStrategy,
     ) -> OptionRiskSummary {
-        OptionRiskSummary{
+        OptionRiskSummary {
             max_risk: "".to_string(),
             max_profit: "".to_string(),
-            breakeven_at_expiration: "".to_string()
+            breakeven_at_expiration: "".to_string(),
         }
     }
 
-
     async fn get_current_price(&self,
                                ctx: &Context<'_>,
-                               ticker: String, ) -> String {
-        String::from("$0.00")
+                               ticker: String, ) -> async_graphql::Result<String> {
+        let pool = ctx.data_unchecked::<crate::db::DbPool>();
+        match IntradayPrice::get_latest_by_ticker(&pool, &ticker).await {
+            Ok(id) => Ok(format!("${}", id.price)),
+            Err(e) => {
+                let fetched_quotes =
+                    crate::background_tasks::stock_actor::fetch_quotes(&[&ticker])
+                        .await
+                        .map(|quote| quote.first().unwrap().to_owned())
+                        .map(|quote| String::from(format!("${}", quote.last_price)))
+                        .map_err(|e| async_graphql::Error::new("Failed to fetch ticker"));
+                                return fetched_quotes;
+                // return  Ok(String::from("2021-01-30T01:32:53Z"));
+            }
+        }
     }
 
     async fn get_expiration(&self,
