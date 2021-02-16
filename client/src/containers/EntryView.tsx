@@ -7,6 +7,8 @@ import GeneratedResults from '../components/GeneratedResults';
 import { loader } from "graphql.macro";
 import { getCurrentPrice } from "../graphql/__generated__/getCurrentPrice";
 import { useDebounce } from "react-use";
+import EntryViewStateSpec from "./EntryViewStateSpec"
+import { useStateMachine } from '../components/useStateMachine';
 
 const GET_CURRENT_PRICE_QUERY = loader(
     "../graphql/getCurrentPrice.gql"
@@ -107,6 +109,7 @@ const GeneratedResultsFrame = styled.div`
 function EntryView() {
     const [submitted, setSubmitted] = useState(false)
     const [debouncedTicker, setDebouncedTicker] = useState('')
+    const [currentState, sendEvent] = useStateMachine(EntryViewStateSpec)
     const onGenerate = (formData: any) => {
         console.log("onGenerate called")
         setSubmitted(true)
@@ -121,7 +124,16 @@ function EntryView() {
     const ticker = watch(["ticker"]).ticker
     const { data, loading, error } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
     const priceString = data ? data.price : "$"
-
+    if (currentState === 'blank' && ticker) {
+        sendEvent("ENTER_TICKER")
+    }
+    if (currentState === 'enteringTicker' && data && !error) {
+        sendEvent("TICKER_FETCH_SUCCESS")
+    }
+    if (currentState === 'selectingExpirationAndStrategy' && !ticker) {
+        sendEvent("ERASE_TICKER")
+    }
+    console.log(currentState)
     useDebounce(
         () => {
             ticker && setDebouncedTicker(ticker)
@@ -130,6 +142,9 @@ function EntryView() {
         350,
         [ticker]
     );
+
+    const isExpirationAndStrategySelectable =
+        currentState == "selectingExpirationAndStrategy" || currentState == "presentingGeneratedTrade"
 
     return (
         <Container component="main" maxWidth="sm" style={{
@@ -149,12 +164,12 @@ function EntryView() {
                 <PriceLabel>
                     Current price: {priceString}
                 </PriceLabel>
-                <DoshSelect name="expiration" defaultValue="Expiration Date" ref={register} >
+                <DoshSelect disabled={!isExpirationAndStrategySelectable} name="expiration" defaultValue="Expiration Date" ref={register} >
                     <option disabled> Expiration Date </option>
                     <option>Apples</option>
                     <option>Pears</option>
                 </DoshSelect>
-                <DoshSelect name="strategy" defaultValue="Strategy" ref={register} >
+                <DoshSelect disabled={!isExpirationAndStrategySelectable} name="strategy" defaultValue="Strategy" ref={register} >
                     <option disabled > Strategy </option>
                     <option>Buy Call</option>
                     <option>Sell Call</option>
