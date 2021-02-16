@@ -1,3 +1,3 @@
 query getCurrentPrice($ticker:String!) {
-  price: getCurrentPrice(ticker: $ticker) 
+  price: getCurrentPrice(ticker: $ticker)
 }
