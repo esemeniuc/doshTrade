@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Container from "@material-ui/core/Container";
 import styled from 'styled-components'
+import { useQuery } from "@apollo/client";
 import { useForm } from "react-hook-form";
 import GeneratedResults from '../components/GeneratedResults';
+import { loader } from "graphql.macro";
+import { getCurrentPrice } from "../graphql/__generated__/getCurrentPrice";
+import { useDebounce } from "react-use";
+
+const GET_CURRENT_PRICE_QUERY = loader(
+    "../graphql/getCurrentPrice.gql"
+);
 
 const Title = styled.h2`
   font-size: 2.5em;
@@ -28,7 +36,10 @@ const DoshInput = styled.input`
     border-radius: 7px;
 `;
 const TickerSearchInput = styled(DoshInput)`
-    
+    text-transform: uppercase;
+    &::placeholder {
+        text-transform: none;
+    }
 `;
 
 const DoshSelect = styled.select`
@@ -49,10 +60,6 @@ const DoshSelect = styled.select`
 	background-repeat: no-repeat, repeat;
 	background-position: right .7em top 50%, 0 0;
     background-size: .65em auto, 100%;
-`;
-
-const StrategySelector = styled(DoshInput)`
-
 `;
 
 const ActionButton = styled.input`
@@ -98,7 +105,8 @@ const GeneratedResultsFrame = styled.div`
 `
 
 function EntryView() {
-    const [submitted, setSubmitted] = React.useState(false)
+    const [submitted, setSubmitted] = useState(false)
+    const [debouncedTicker, setDebouncedTicker] = useState('')
     const onGenerate = (formData: any) => {
         console.log("onGenerate called")
         setSubmitted(true)
@@ -107,10 +115,21 @@ function EntryView() {
         setSubmitted(false)
     }
 
-    const { register, handleSubmit, watch, errors } = useForm();
+    const { register, handleSubmit, watch, errors, trigger } = useForm({
+        mode: "onChange"
+    });
+    const ticker = watch(["ticker"]).ticker
+    const { data, loading, error } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
+    const priceString = data ? data.price : "$"
 
-    // TODO: watch ticker and debounce search it
-    const priceString = "$3.50"
+    useDebounce(
+        () => {
+            ticker && setDebouncedTicker(ticker)
+            console.log('ticker: ', ticker)
+        },
+        350,
+        [ticker]
+    );
 
     return (
         <Container component="main" maxWidth="sm" style={{
@@ -122,7 +141,11 @@ function EntryView() {
             <Title> Option Analysis </Title>
             <GeneratorForm onSubmit={handleSubmit(onGenerate)}
                 onReset={onAfterReset}>
-                <TickerSearchInput name="ticker" placeholder="Ticker" ref={register({ required: true })} />
+                <TickerSearchInput
+                    name="ticker"
+                    placeholder="Ticker"
+                    ref={register({ required: true })}
+                />
                 <PriceLabel>
                     Current price: {priceString}
                 </PriceLabel>

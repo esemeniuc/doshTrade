@@ -88,7 +88,7 @@ impl QueryRoot {
     async fn get_current_price(&self,
                                ctx: &Context<'_>,
                                ticker: String, ) -> String {
-        String::from("$0.00")
+        String::from("$420.69")
     }
 
     async fn get_expiration(&self,

@@ -11,3 +11,5 @@ Cargo.lock
 
 .idea/
 db.sqlite
+
+postgres/*
