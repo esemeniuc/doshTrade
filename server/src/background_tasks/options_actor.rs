@@ -9,14 +9,11 @@ impl Actor for OptionsActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        let conn = self.pool.to_owned();
-        let tickers = crate::config::STOCKS_LIST.iter().map(|x| x.0).collect::<Vec<_>>();
-
         async move {
             let mut interval = actix_web::rt::time::interval(std::time::Duration::from_secs(60));
             loop {
                 if super::is_open_market_hours(chrono::Utc::now()) {
-                    match fetch_options(&conn, tickers.as_slice()).await {
+                    match fetch_options(&conn, &tickers).await {
                         Ok(_) => info!("Fetched all options quotes"),
                         Err(e) => warn!("Failed to fetch option quotes from TD, {:?}", e),
                     }

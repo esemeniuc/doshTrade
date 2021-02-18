@@ -39,10 +39,11 @@ impl Actor for StockActor {
                 // WHERE stocks.ticker = $$$TICKER
                 // ORDER by timestamp DESC
                 // LIMIT 5 (whatever is actually necessary for calc)
-                let tickers = crate::config::STOCKS_LIST.iter().map(|x| x.0).collect::<Vec<_>>();
+                // let tickers = crate::config::STOCK_LIST.read().unwrap();
+                let tickers = crate::config::STOCK_LIST; //TODO: swap me to use main.rs mutex set
 
                 if super::is_open_market_hours(chrono::Utc::now()) {
-                    match fetch_and_insert(&conn, tickers.as_slice()).await {
+                    match fetch_and_insert(&conn, &tickers).await {
                         Ok(_) => info!("Fetched all tickers"),
                         Err(e) => warn!("Failed to fetch tickers from TD, {:?}", e),
                     }

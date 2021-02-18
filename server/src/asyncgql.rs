@@ -5,6 +5,8 @@ use futures::{Stream, StreamExt};
 use itertools::Itertools;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock};
+use std::sync::RwLock;
+use std::collections::HashSet;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
@@ -88,14 +90,21 @@ impl QueryRoot {
     async fn get_current_price(&self,
                                ctx: &Context<'_>,
                                ticker: String, ) -> async_graphql::Result<String> {
+        let stock_list = ctx.data_unchecked::<RwLock<HashSet<String>>>();
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
+        println!("STOCKLIST:{:?}", stock_list);
         match IntradayPrice::get_latest_by_ticker(&pool, &ticker).await {
             Ok(id) => Ok(format!("${}", id.price)),
-            Err(e) => crate::background_tasks::stock_actor::fetch_quotes(&[&ticker])
-                .await
-                .map(|quote| quote.first().unwrap().to_owned())
-                .map(|quote| String::from(format!("${}", quote.last_price)))
-                .map_err(|e| async_graphql::Error::new("Failed to fetch ticker"))
+            Err(e) => {
+                let price = crate::background_tasks::stock_actor::fetch_quotes(&[&ticker])
+                    .await
+                    .map(|quote| quote.first().unwrap().to_owned())
+                    .map(|quote| String::from(format!("${}", quote.last_price)))
+                    .map_err(|e| async_graphql::Error::new("Failed to fetch ticker"));
+                crate::models::Stock::insert_ticker(&pool, &ticker).await;
+                stock_list.write().unwrap().insert(ticker);
+                return price;
+            }
         }
     }
 

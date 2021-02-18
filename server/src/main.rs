@@ -5,6 +5,9 @@ use async_graphql::Schema;
 use clap::Arg;
 
 use asyncgql::{MutationRoot, QueryRoot, Subscription};
+use std::sync::RwLock;
+use std::collections::HashSet;
+use anyhow::Context;
 
 mod asyncgql;
 mod auth;
@@ -16,7 +19,7 @@ mod push_notification;
 mod config;
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     env_logger::init();
     // std::env::set_var("RUST_LOG", "actix_web=info");
     // std::env::set_var("DATABASE_URL", "postgresql://postgres:mysecretpassword@localhost"); //for sqlx::query! macro
@@ -70,9 +73,15 @@ async fn main() -> std::io::Result<()> {
     //         .expect("Unable to connect to database pool");
     db::seed(&pool).await.expect("Error seeding the database");
 
+    let tickers_to_fetch = crate::models::Stock::get_unique_tickers(&pool)
+        .await?
+        .into_iter()
+        .collect::<HashSet<_>>();
+    let stock_list: RwLock<HashSet<String>> = RwLock::new(tickers_to_fetch);
 
     let schema = Schema::build(QueryRoot, MutationRoot, Subscription)
         .data(pool.clone())
+        .data(stock_list)
         .finish();
 
     let pool_clone = pool.clone();
@@ -119,4 +128,5 @@ async fn main() -> std::io::Result<()> {
         .bind(ip_port)?
         .run()
         .await
+        .with_context(|| format!("actix-web failed"))
 }
