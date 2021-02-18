@@ -9,6 +9,6 @@ pub static STOCKS_LIST: [(&str, &str); 12] = [
     ("SQ", "Square"),
     ("TSLA", "Tesla"),
     ("TSM", "Taiwan Semiconductor"),
-    ("UVXY", " Ultra Volatility Index"),
+    ("UVXY", "Ultra Volatility Index"),
     ("ZM", "Zoom"),
 ];
