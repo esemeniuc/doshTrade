@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PushSubscription } from "./../../../__generated__/globalTypes";
+import { PushSubscription } from "./../../graphql/__generated__/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SendDemoNotification

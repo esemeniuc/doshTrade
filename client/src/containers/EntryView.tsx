@@ -8,8 +8,9 @@ import { loader } from "graphql.macro";
 import { getCurrentPrice } from "../graphql/__generated__/getCurrentPrice";
 import { getExpiration } from "../graphql/__generated__/getExpiration";
 import { useDebounce } from "react-use";
-import EntryViewStateSpec from "./EntryViewStateSpec"
+import EntryViewStateSpec from "../redux/EntryViewStateSpec"
 import { useStateMachine } from '../components/useStateMachine';
+import { OptionStrategy, OptionType } from '../graphql/__generated__/globalTypes'
 
 const GET_CURRENT_PRICE_QUERY = loader(
     "../graphql/getCurrentPrice.gql"
@@ -81,7 +82,20 @@ const ActionButton = styled.button`
     color: white;
 `;
 
-const GenerateButton = styled(ActionButton)`
+const ActionInput = styled.input`
+    display: block;
+    height: 40px;
+    box-sizing: border-box;
+    padding-left: 10px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 5px;
+    border: none;
+    border-radius: 7px;
+    color: white;
+`;
+
+const GenerateButton = styled(ActionInput)`
     width: 70%;
     background-color: black;
     &:disabled {
@@ -119,9 +133,6 @@ const STRATEGY_PLACEHOLDER = "Strategy"
 function EntryView() {
     const [debouncedTicker, setDebouncedTicker] = useState('')
     const [currentState, sendEvent] = useStateMachine(EntryViewStateSpec)
-    const onGenerate = (formData: any) => {
-        // TODO
-    }
     const { register, handleSubmit, watch, reset, errors, trigger } = useForm({
         mode: "onChange"
     });
@@ -131,6 +142,11 @@ function EntryView() {
     const { data: priceData, error: priceError } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
     const { data: expirationData, error: expirationError } = useQuery<getExpiration>(GET_EXPIRATION_QUERY, { variables: { ticker: debouncedTicker } });
 
+    const onGenerate = (formData: any) => {
+        sendEvent("PRESENT_GENERATED_TRADE")
+        console.log("onGenerate")
+        console.log(formData)
+    }
     const priceString = (ticker && priceData) ? priceData.price : "$"
     const expirationString = (ticker && expirationData) ? expirationData.expiration : ""
     if (currentState === 'blank' && ticker) {
@@ -142,9 +158,9 @@ function EntryView() {
     }
     useDebounce(() => { ticker && setDebouncedTicker(ticker) }, 350, [ticker])
     const isExpirationAndStrategySelectable =
-        currentState == "selectingExpirationAndStrategy" || currentState == "presentingGeneratedTrade"
+        currentState === "selectingExpirationAndStrategy" || currentState === "presentingGeneratedTrade"
     const isSubmitButtonEnabled =
-        currentState == "selectingExpirationAndStrategy" && expiration !== EXPIRATION_PLACEHOLDER && strategy !== STRATEGY_PLACEHOLDER
+        currentState === "selectingExpirationAndStrategy" && expiration !== EXPIRATION_PLACEHOLDER && strategy !== STRATEGY_PLACEHOLDER
     return (
         <Container component="main" maxWidth="sm" style={{
             backgroundColor: 'white',
@@ -186,15 +202,22 @@ function EntryView() {
                         }
                     }}>
                     <option disabled > Strategy </option>
-                    <option>Buy Call</option>
-                    <option>Sell Call</option>
-                    <option>Buy Put</option>
-                    <option>Sell Put</option>
+                    <option>{OptionStrategy.BUY_CALL}</option>
+                    <option>{OptionStrategy.SELL_CALL}</option>
+                    <option>{OptionStrategy.BUY_PUT}</option>
+                    <option>{OptionStrategy.SELL_PUT}</option>
                 </DoshSelect>
                 <GeneratedResultsFrame>
                     {currentState === 'presentingGeneratedTrade' ?
-                        <GeneratedResults /> :
-                        <GenerateButton onClick={() => { sendEvent("PRESENT_GENERATED_TRADE") }} disabled={!isSubmitButtonEnabled} >Generate</GenerateButton>
+                        <GeneratedResults
+                            ticker={debouncedTicker}
+                            expiration={expiration}
+                            strategy={strategy}
+                        /> :
+                        <GenerateButton
+                            disabled={!isSubmitButtonEnabled}
+                            type="submit"
+                            value="Generate" />
                     }
                 </GeneratedResultsFrame>
                 {currentState === 'presentingGeneratedTrade' &&

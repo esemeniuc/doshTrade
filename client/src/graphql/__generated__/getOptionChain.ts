@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { OptionStrategy, OptionType } from "./../../../__generated__/globalTypes";
+import { OptionStrategy, OptionType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: getOptionChain
