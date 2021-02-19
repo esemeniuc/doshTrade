@@ -6,12 +6,16 @@ import { useForm } from "react-hook-form";
 import GeneratedResults from '../components/GeneratedResults';
 import { loader } from "graphql.macro";
 import { getCurrentPrice } from "../graphql/__generated__/getCurrentPrice";
+import { getExpiration } from "../graphql/__generated__/getExpiration";
 import { useDebounce } from "react-use";
 import EntryViewStateSpec from "./EntryViewStateSpec"
 import { useStateMachine } from '../components/useStateMachine';
 
 const GET_CURRENT_PRICE_QUERY = loader(
     "../graphql/getCurrentPrice.gql"
+);
+const GET_EXPIRATION_QUERY = loader(
+    "../graphql/getExpiration.gql"
 );
 
 const Title = styled.h2`
@@ -64,7 +68,7 @@ const DoshSelect = styled.select`
     background-size: .65em auto, 100%;
 `;
 
-const ActionButton = styled.input`
+const ActionButton = styled.button`
     display: block;
     height: 40px;
     box-sizing: border-box;
@@ -80,6 +84,9 @@ const ActionButton = styled.input`
 const GenerateButton = styled(ActionButton)`
     width: 70%;
     background-color: black;
+    &:disabled {
+        opacity: 0.3;
+    }
 `;
 
 const ResetButton = styled(ActionButton)`
@@ -106,46 +113,38 @@ const GeneratedResultsFrame = styled.div`
     align-items: center;
 `
 
+const EXPIRATION_PLACEHOLDER = "Expiration Date"
+const STRATEGY_PLACEHOLDER = "Strategy"
+
 function EntryView() {
-    const [submitted, setSubmitted] = useState(false)
     const [debouncedTicker, setDebouncedTicker] = useState('')
     const [currentState, sendEvent] = useStateMachine(EntryViewStateSpec)
     const onGenerate = (formData: any) => {
-        console.log("onGenerate called")
-        setSubmitted(true)
+        // TODO
     }
-    const onAfterReset = (e: any) => {
-        setSubmitted(false)
-    }
-
-    const { register, handleSubmit, watch, errors, trigger } = useForm({
+    const { register, handleSubmit, watch, reset, errors, trigger } = useForm({
         mode: "onChange"
     });
     const ticker = watch(["ticker"]).ticker
-    const { data, loading, error } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
-    const priceString = data ? data.price : "$"
+    const expiration = watch(["expiration"]).expiration
+    const strategy = watch(["strategy"]).strategy
+    const { data: priceData, error: priceError } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
+    const { data: expirationData, error: expirationError } = useQuery<getExpiration>(GET_EXPIRATION_QUERY, { variables: { ticker: debouncedTicker } });
+
+    const priceString = (ticker && priceData) ? priceData.price : "$"
+    const expirationString = (ticker && expirationData) ? expirationData.expiration : ""
     if (currentState === 'blank' && ticker) {
         sendEvent("ENTER_TICKER")
-    }
-    if (currentState === 'enteringTicker' && data && !error) {
+    } else if (currentState === 'enteringTicker' && priceData && !priceError && expirationString && !expirationError) {
         sendEvent("TICKER_FETCH_SUCCESS")
-    }
-    if (currentState === 'selectingExpirationAndStrategy' && !ticker) {
+    } else if (currentState === 'selectingExpirationAndStrategy' && !ticker) {
         sendEvent("ERASE_TICKER")
     }
-    console.log(currentState)
-    useDebounce(
-        () => {
-            ticker && setDebouncedTicker(ticker)
-            console.log('ticker: ', ticker)
-        },
-        350,
-        [ticker]
-    );
-
+    useDebounce(() => { ticker && setDebouncedTicker(ticker) }, 350, [ticker])
     const isExpirationAndStrategySelectable =
         currentState == "selectingExpirationAndStrategy" || currentState == "presentingGeneratedTrade"
-
+    const isSubmitButtonEnabled =
+        currentState == "selectingExpirationAndStrategy" && expiration !== EXPIRATION_PLACEHOLDER && strategy !== STRATEGY_PLACEHOLDER
     return (
         <Container component="main" maxWidth="sm" style={{
             backgroundColor: 'white',
@@ -155,7 +154,7 @@ function EntryView() {
         }}>
             <Title> Option Analysis </Title>
             <GeneratorForm onSubmit={handleSubmit(onGenerate)}
-                onReset={onAfterReset}>
+                onReset={() => sendEvent("RESET")}>
                 <TickerSearchInput
                     name="ticker"
                     placeholder="Ticker"
@@ -164,12 +163,28 @@ function EntryView() {
                 <PriceLabel>
                     Current price: {priceString}
                 </PriceLabel>
-                <DoshSelect disabled={!isExpirationAndStrategySelectable} name="expiration" defaultValue="Expiration Date" ref={register} >
+                <DoshSelect
+                    disabled={!isExpirationAndStrategySelectable}
+                    name="expiration"
+                    defaultValue={EXPIRATION_PLACEHOLDER} ref={register}
+                    onChange={() => {
+                        if (currentState === "presentingGeneratedTrade") {
+                            sendEvent('SELECT_EXPIRATION_AND_STRATEGY')
+                        }
+                    }} >
                     <option disabled> Expiration Date </option>
-                    <option>Apples</option>
-                    <option>Pears</option>
+                    <option>{expirationString}</option>
                 </DoshSelect>
-                <DoshSelect disabled={!isExpirationAndStrategySelectable} name="strategy" defaultValue="Strategy" ref={register} >
+                <DoshSelect
+                    disabled={!isExpirationAndStrategySelectable}
+                    name="strategy"
+                    defaultValue={STRATEGY_PLACEHOLDER}
+                    ref={register}
+                    onChange={() => {
+                        if (currentState === "presentingGeneratedTrade") {
+                            sendEvent('SELECT_EXPIRATION_AND_STRATEGY')
+                        }
+                    }}>
                     <option disabled > Strategy </option>
                     <option>Buy Call</option>
                     <option>Sell Call</option>
@@ -177,13 +192,13 @@ function EntryView() {
                     <option>Sell Put</option>
                 </DoshSelect>
                 <GeneratedResultsFrame>
-                    {submitted ?
+                    {currentState === 'presentingGeneratedTrade' ?
                         <GeneratedResults /> :
-                        <GenerateButton type="submit" value="Submit" />
+                        <GenerateButton onClick={() => { sendEvent("PRESENT_GENERATED_TRADE") }} disabled={!isSubmitButtonEnabled} >Generate</GenerateButton>
                     }
                 </GeneratedResultsFrame>
-                {submitted &&
-                    <ResetButton type="reset" value="Reset" />
+                {currentState === 'presentingGeneratedTrade' &&
+                    <ResetButton onClick={() => reset({ mode: "onChange" })} value="Reset">Reset</ResetButton>
                 }
             </GeneratorForm>
         </Container >

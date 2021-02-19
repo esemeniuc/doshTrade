@@ -9,7 +9,7 @@ const EntryViewStateSpec = {
             TICKER_FETCH_FAILURE: "enteringTicker",
         },
         selectingExpirationAndStrategy: {
-            EXPIRATION_AND_STRATEGY_SELECT_SUCCESS: "generatingTrade",
+            PRESENT_GENERATED_TRADE: "presentingGeneratedTrade",
             ENTER_TICKER: "enteringTicker",
             ERASE_TICKER: "blank",
         },

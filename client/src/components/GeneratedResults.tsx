@@ -90,7 +90,7 @@ const RiskSummary = (props: any) => {
                     <RiskColumnRight>$350</RiskColumnRight>
                 </RiskRow>
                 <RiskRow>
-                    <RiskColumnLeft>Break even at expiration</RiskColumnLeft>
+                    <RiskColumnLeft>Break even at expiry</RiskColumnLeft>
                     <RiskColumnRight>$232.35</RiskColumnRight>
                 </RiskRow>
             </tbody>
