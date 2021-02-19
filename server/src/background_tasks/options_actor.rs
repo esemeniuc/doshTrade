@@ -9,6 +9,11 @@ impl Actor for OptionsActor {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        let conn = self.pool.to_owned();
+        // let tickers = crate::config::STOCK_LIST
+        //     .read()
+        //     .unwrap();
+        let tickers = crate::config::STOCK_LIST;
         async move {
             let mut interval = actix_web::rt::time::interval(std::time::Duration::from_secs(60));
             loop {

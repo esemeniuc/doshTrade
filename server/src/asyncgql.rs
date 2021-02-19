@@ -90,6 +90,7 @@ impl QueryRoot {
     async fn get_current_price(&self,
                                ctx: &Context<'_>,
                                ticker: String, ) -> async_graphql::Result<String> {
+        let ticker = get_canonical_ticker(ticker);
         let stock_list = ctx.data_unchecked::<RwLock<HashSet<String>>>();
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
         println!("STOCKLIST:{:?}", stock_list);
@@ -113,6 +114,10 @@ impl QueryRoot {
                             ticker: String, ) -> String {
         String::from("2021-01-30T01:32:53Z")
     }
+}
+
+fn get_canonical_ticker(ticker: String) -> String {
+    ticker.trim().to_uppercase()
 }
 
 pub struct MutationRoot;
