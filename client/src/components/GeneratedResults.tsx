@@ -1,9 +1,10 @@
 import React from 'react';
 import styled from 'styled-components'
-import { getOptionChain } from '../graphql/__generated__/getOptionChain';
+import { getOptionChain, getOptionChain_optionQuote as OptionQuote } from '../graphql/__generated__/getOptionChain';
 import OptionTable from './OptionTable'
 import { useQuery } from "@apollo/client";
 import { loader } from 'graphql.macro';
+import { OptionalEventProperties } from 'react-dom/test-utils';
 
 const GET_OPTION_CHAIN = loader(
     "../graphql/getOptionChain.gql"
@@ -11,10 +12,9 @@ const GET_OPTION_CHAIN = loader(
 
 
 const GeneratedOption = styled.div`
-width: 100%;
-margin-top: 20px;
+    width: 100%;
+    margin-top: 20px;
 `
-
 const RiskSummaryTable = styled.table`
     width: 100%;
     margin-top: 20px;
@@ -32,7 +32,6 @@ const RiskColumnLeft = styled.td`
     font-weight: 600;
     font-size: 12px;
 `
-
 const RiskColumnRight = styled.td`
     padding-left: 20px;
     text-align: left;
@@ -61,12 +60,17 @@ const RiskSummary = (props: any) => {
     )
 }
 
+const handleSelectOption = (optionQuote: OptionQuote) => {
+    console.log("handleSelectOption")
+}
 
 export default function GeneratedResults({ ticker, expiration, strategy }: any) {
-    const { data: optionQuotes } = useQuery<getOptionChain>(GET_OPTION_CHAIN, { variables: { ticker, expiration, strategy } });
+    const { data } = useQuery<getOptionChain>(GET_OPTION_CHAIN, { variables: { ticker, expiration, strategy } });
+    //TODO: optionQuote should be the default option to display
+    const optionQuote = data ? data.optionQuote : []
     return (
         <GeneratedOption>
-            <OptionTable optionQuotes={optionQuotes} />
+            <OptionTable optionQuotes={optionQuote} onSelectOption={handleSelectOption} />
             <RiskSummary />
         </GeneratedOption>
     )
