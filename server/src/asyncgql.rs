@@ -5,6 +5,8 @@ use futures::{Stream, StreamExt};
 use itertools::Itertools;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock};
+use std::collections::HashSet;
+use std::sync::RwLock;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
@@ -34,7 +36,10 @@ impl QueryRoot {
         log::trace!("Sending push subscription!: {:?}", push_subscription);
         let subscription_info = web_push::SubscriptionInfo::from(push_subscription.clone());
 
-        let message = match crate::push_notification::generate_push_message(subscription_info, "this is a demo message") {
+        let message = match crate::push_notification::generate_push_message(
+            subscription_info,
+            "this is a demo message",
+        ) {
             Ok(v) => v,
             Err(e) => {
                 log::error!("failed to generate push message: {}", e);
@@ -77,25 +82,44 @@ impl QueryRoot {
         option_id: async_graphql::ID,
         strategy: OptionStrategy,
     ) -> OptionRiskSummary {
-        OptionRiskSummary{
+        OptionRiskSummary {
             max_risk: "".to_string(),
             max_profit: "".to_string(),
-            breakeven_at_expiration: "".to_string()
+            breakeven_at_expiration: "".to_string(),
         }
     }
 
-
-    async fn get_current_price(&self,
-                               ctx: &Context<'_>,
-                               ticker: String, ) -> String {
-        String::from("$420.69")
+    async fn get_current_price(
+        &self,
+        ctx: &Context<'_>,
+        ticker: String,
+    ) -> async_graphql::Result<String> {
+        let ticker = get_canonical_ticker(ticker);
+        let stock_list = ctx.data_unchecked::<RwLock<HashSet<String>>>();
+        let pool = ctx.data_unchecked::<crate::db::DbPool>();
+        println!("STOCKLIST:{:?}", stock_list);
+        match IntradayPrice::get_latest_by_ticker(&pool, &ticker).await {
+            Ok(id) => Ok(format!("${}", id.price)),
+            Err(e) => {
+                let price = crate::background_tasks::stock_actor::fetch_quotes(&[&ticker])
+                    .await
+                    .map(|quote| quote.first().unwrap().to_owned())
+                    .map(|quote| String::from(format!("${}", quote.last_price)))
+                    .map_err(|e| async_graphql::Error::new("Failed to fetch ticker"));
+                crate::models::Stock::insert_ticker(&pool, &ticker).await;
+                stock_list.write().unwrap().insert(ticker);
+                return price;
+            }
+        }
     }
 
-    async fn get_expiration(&self,
-                            ctx: &Context<'_>,
-                            ticker: String, ) -> String {
+    async fn get_expiration(&self, ctx: &Context<'_>, ticker: String) -> String {
         String::from("2021-01-30T01:32:53Z")
     }
+}
+
+fn get_canonical_ticker(ticker: String) -> String {
+    ticker.trim().to_uppercase()
 }
 
 pub struct MutationRoot;
@@ -132,7 +156,8 @@ impl MutationRoot {
         };
 
         let valid_stocks = DbStock::tickers_to_stocks(pool, &ticker_symbols).await;
-        let inserts = valid_stocks.iter()
+        let inserts = valid_stocks
+            .iter()
             .map(|stock| ClientSubscription::insert(pool, client_id, stock.id));
         let query_results = futures::future::join_all(inserts).await;
 
@@ -143,7 +168,8 @@ impl MutationRoot {
                 Ok(_) => itertools::Either::Left(r.1.ticker),
                 Err(v) => itertools::Either::Right(v),
             });
-        errs.iter().for_each(|x| log::error!("Failed to insert client subscription for ticker: {}", x));
+        errs.iter()
+            .for_each(|x| log::error!("Failed to insert client subscription for ticker: {}", x));
         oks
     }
 }
@@ -167,33 +193,41 @@ impl Subscription {
         &self,
         ctx: &Context<'_>,
         ticker_symbols: Vec<String>,
-    ) -> impl Stream<Item=Vec<Stock>> {
+    ) -> impl Stream<Item = Vec<Stock>> {
         use std::sync::Arc;
         let conn_owned = Arc::new(ctx.data_unchecked::<sqlx::PgPool>().to_owned());
         let tickers_owned = Arc::new(ticker_symbols);
 
         actix_web::rt::time::interval(Duration::from_secs(5))
             .map(move |_| (Arc::clone(&conn_owned), Arc::clone(&tickers_owned)))
-            .then(|vars| {
-                async move {
-                    let rsi_interval = 14;
-                    let prices = IntradayPrice::get_latest_by_tickers(&vars.0, &vars.1).await;
-                    let rsi_vals = IntradayPrice::get_rsi_by_tickers(&vars.0, &vars.1, rsi_interval).await;
-                    let open_prices = IntradayPrice::get_open_prices_by_stock_ids(&vars.0,
-                                                                                  &prices.iter().map(|x| (x.stock_id, x.timestamp)).collect::<Vec<_>>()).await;
-                    prices.iter().zip(rsi_vals).zip(open_prices)
-                        .map(|x| {
-                            let ((intraday_price, rsi), open_price) = x;
-                            Stock {
-                                ticker: intraday_price.ticker.clone(),
-                                price: format!("{:.2}", intraday_price.price),
-                                rsi,
-                                percent_change: 100.0 * ((intraday_price.price / open_price) - 1.0),
-                                timestamp: intraday_price.timestamp.to_string(),
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                }
+            .then(|vars| async move {
+                let rsi_interval = 14;
+                let prices = IntradayPrice::get_latest_by_tickers(&vars.0, &vars.1).await;
+                let rsi_vals =
+                    IntradayPrice::get_rsi_by_tickers(&vars.0, &vars.1, rsi_interval).await;
+                let open_prices = IntradayPrice::get_open_prices_by_stock_ids(
+                    &vars.0,
+                    &prices
+                        .iter()
+                        .map(|x| (x.stock_id, x.timestamp))
+                        .collect::<Vec<_>>(),
+                )
+                .await;
+                prices
+                    .iter()
+                    .zip(rsi_vals)
+                    .zip(open_prices)
+                    .map(|x| {
+                        let ((intraday_price, rsi), open_price) = x;
+                        Stock {
+                            ticker: intraday_price.ticker.clone(),
+                            price: format!("{:.2}", intraday_price.price),
+                            rsi,
+                            percent_change: 100.0 * ((intraday_price.price / open_price) - 1.0),
+                            timestamp: intraday_price.timestamp.to_string(),
+                        }
+                    })
+                    .collect::<Vec<_>>()
             })
 
         // actix_web::rt::time::interval(Duration::from_secs(5))
@@ -206,7 +240,6 @@ impl Subscription {
         //             timestamp: "".to_string(),
         //         }]
         //     })
-
 
         // actix_web::rt::time::interval(Duration::from_secs(5)).then(move |_| {
         //     let b = futures::stream::iter(ticker_symbols.to_owned().into_iter());

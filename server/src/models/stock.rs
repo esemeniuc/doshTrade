@@ -14,6 +14,20 @@ impl Stock {
             .await
     }
 
+    pub async fn get_unique_tickers(conn: &crate::db::DbPool) -> sqlx::Result<Vec<String>> {
+        sqlx::query_scalar("SELECT ticker FROM stocks")
+            .fetch_all(conn)
+            .await
+    }
+
+    pub async fn insert_ticker(conn: &crate::db::DbPool, ticker: &str) -> sqlx::Result<sqlx::postgres::PgDone> {
+        sqlx::query("INSERT INTO stocks VALUES (DEFAULT, $1, $2)")
+            .bind(ticker)
+            .bind("FIXME DESCRIPTION")
+            .execute(conn)
+            .await
+    }
+
     pub async fn tickers_to_stocks(conn: &crate::db::DbPool, tickers: &Vec<String>) -> Vec<Stock> {
         let queries = tickers.iter().map(|ticker|
             sqlx::query_as::<_, Stock>("SELECT * FROM stocks WHERE ticker = $1")

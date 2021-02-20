@@ -6,8 +6,22 @@ pub async fn seed(conn: &DbPool) -> sqlx::Result<sqlx::postgres::PgDone> {
     // m.run(conn).await?;
     sqlx::migrate!("./migrations").run(conn).await?;
 
+    let stocks_list = [
+        ("AAPL", "Apple"),
+        ("FB", "Facebook"),
+        ("GLD", "Gold"),
+        ("GOOG", "Google"),
+        ("LIT", "Lithium"),
+        ("NFLX", "Netflix"),
+        ("SLV", "Silver"),
+        ("SQ", "Square"),
+        ("TSLA", "Tesla"),
+        ("TSM", "Taiwan Semiconductor"),
+        ("UVXY", "Ultra Volatility Index"),
+        ("ZM", "Zoom"),
+    ];
 
-    let inserts = crate::config::STOCKS_LIST.iter().map(|stock| {
+    let inserts = stocks_list.iter().map(|stock| {
         sqlx::query("INSERT INTO stocks VALUES (DEFAULT, $1, $2) ON CONFLICT DO NOTHING")
             .bind(stock.0)
             .bind(stock.1)
