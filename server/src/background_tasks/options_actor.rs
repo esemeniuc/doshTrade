@@ -3,6 +3,7 @@ use log::{info, warn};
 
 pub(crate) struct OptionsActor {
     pub(crate) pool: crate::db::DbPool,
+    pub(crate) stock_list: crate::StockPool,
 }
 
 impl Actor for OptionsActor {
@@ -10,13 +11,13 @@ impl Actor for OptionsActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         let conn = self.pool.to_owned();
-        // let tickers = crate::config::STOCK_LIST
-        //     .read()
-        //     .unwrap();
-        let tickers = crate::config::STOCK_LIST;
         async move {
             let mut interval = actix_web::rt::time::interval(std::time::Duration::from_secs(60));
             loop {
+                let tickers = match crate::models::Stock::get_unique_tickers(&conn).await{
+                    Ok(v) =>v,
+                    Err(_) => vec![]
+                };
                 if super::is_open_market_hours(chrono::Utc::now()) {
                     match fetch_options(&conn, &tickers).await {
                         Ok(_) => info!("Fetched all options quotes"),
@@ -32,7 +33,7 @@ impl Actor for OptionsActor {
 }
 
 pub async fn fetch_options(conn: &crate::db::DbPool,
-                           tickers: &[&str]) -> actix_web::Result<(), actix_web::Error> {
+                           tickers: &[String]) -> actix_web::Result<(), actix_web::Error> {
     use crate::models::{TDOptionChain, OptionType};
     let client = actix_web::client::Client::default();
     for ticker in tickers {

@@ -5,7 +5,7 @@ use async_graphql::Schema;
 use clap::Arg;
 
 use asyncgql::{MutationRoot, QueryRoot, Subscription};
-use std::sync::RwLock;
+use std::sync::{RwLock, Arc};
 use std::collections::HashSet;
 use anyhow::Context;
 
@@ -16,7 +16,8 @@ mod db;
 mod handler;
 mod models;
 mod push_notification;
-mod config;
+
+pub type StockPool = Arc<RwLock<HashSet<String>>>;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -77,19 +78,21 @@ async fn main() -> anyhow::Result<()> {
         .await?
         .into_iter()
         .collect::<HashSet<_>>();
-    let stock_list: RwLock<HashSet<String>> = RwLock::new(tickers_to_fetch);
+    let stock_list: StockPool = Arc::new(RwLock::new(tickers_to_fetch));
 
     let schema = Schema::build(QueryRoot, MutationRoot, Subscription)
         .data(pool.clone())
-        .data(stock_list)
+        .data(stock_list.clone())
         .finish();
 
-    let pool_clone = pool.clone();
-    background_tasks::stock_actor::StockActor::start_in_arbiter(&Arbiter::new(), move |ctx| background_tasks::stock_actor::StockActor { pool: pool_clone });
-    let pool_clone = pool.clone();
-    background_tasks::options_actor::OptionsActor::start_in_arbiter(&Arbiter::new(), move |ctx| background_tasks::options_actor::OptionsActor { pool: pool_clone });
-    let pool_clone = pool.clone();
-    background_tasks::push_notifications_actor::PushNotificationsActor::start_in_arbiter(&Arbiter::new(), move |ctx| background_tasks::push_notifications_actor::PushNotificationsActor { pool: pool_clone });
+    let actor = background_tasks::stock_actor::StockActor { pool: pool.clone(), stock_list: stock_list.clone() };
+    background_tasks::stock_actor::StockActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
+
+    let actor = background_tasks::options_actor::OptionsActor { pool: pool.clone(), stock_list: stock_list.clone() };
+    background_tasks::options_actor::OptionsActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
+
+    let actor = background_tasks::push_notifications_actor::PushNotificationsActor { pool: pool.clone(), stock_list: stock_list.clone() };
+    background_tasks::push_notifications_actor::PushNotificationsActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
 
     HttpServer::new(move || {
         let cors_rules = if cfg!(debug_assertions) {

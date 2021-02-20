@@ -7,6 +7,7 @@ use crate::models::IntradayPrice;
 
 pub(crate) struct StockActor {
     pub(crate) pool: crate::db::DbPool,
+    pub(crate) stock_list: crate::StockPool,
 }
 
 impl Actor for StockActor {
@@ -40,7 +41,10 @@ impl Actor for StockActor {
                 // ORDER by timestamp DESC
                 // LIMIT 5 (whatever is actually necessary for calc)
                 // let tickers = crate::config::STOCK_LIST.read().unwrap();
-                let tickers = crate::config::STOCK_LIST; //TODO: swap me to use main.rs mutex set
+                let tickers = match crate::models::Stock::get_unique_tickers(&conn).await{
+                    Ok(v) =>v,
+                    Err(_) => vec![]
+                };
 
                 if super::is_open_market_hours(chrono::Utc::now()) {
                     match fetch_and_insert(&conn, &tickers).await {
@@ -114,7 +118,7 @@ pub struct StockQuote {
 
 pub async fn fetch_and_insert(
     conn: &crate::db::DbPool,
-    tickers: &[&str],
+    tickers: &[String],
 ) -> anyhow::Result<()> {
     info!("Getting updates from TD for {:#?}", tickers);
     trace!(
@@ -141,7 +145,7 @@ pub async fn fetch_and_insert(
     Ok(())
 }
 
-pub async fn fetch_quotes(tickers: &[&str]) -> anyhow::Result<Vec<StockQuote>> {
+pub async fn fetch_quotes(tickers: &[String]) -> anyhow::Result<Vec<StockQuote>> {
     info!("Fetching tickers: {:?}", tickers);
     let tickers_str = tickers.join(",");
     let url = format!("https://api.tdameritrade.com/v1/marketdata/quotes?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", tickers_str);
