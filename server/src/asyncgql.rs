@@ -6,7 +6,11 @@ use itertools::Itertools;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock};
 use std::collections::HashSet;
+<<<<<<< HEAD
 use std::sync::RwLock;
+=======
+use crate::StockPool;
+>>>>>>> b433819a2a42958e4439b84d4d6a1e1a4383b6fc
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
@@ -95,19 +99,16 @@ impl QueryRoot {
         ticker: String,
     ) -> async_graphql::Result<String> {
         let ticker = get_canonical_ticker(ticker);
-        let stock_list = ctx.data_unchecked::<RwLock<HashSet<String>>>();
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
-        println!("STOCKLIST:{:?}", stock_list);
         match IntradayPrice::get_latest_by_ticker(&pool, &ticker).await {
             Ok(id) => Ok(format!("${}", id.price)),
             Err(e) => {
-                let price = crate::background_tasks::stock_actor::fetch_quotes(&[&ticker])
+                crate::models::Stock::insert_ticker(&pool, &ticker).await;
+                let price = crate::background_tasks::stock_actor::fetch_quotes(&[ticker])
                     .await
                     .map(|quote| quote.first().unwrap().to_owned())
                     .map(|quote| String::from(format!("${}", quote.last_price)))
                     .map_err(|e| async_graphql::Error::new("Failed to fetch ticker"));
-                crate::models::Stock::insert_ticker(&pool, &ticker).await;
-                stock_list.write().unwrap().insert(ticker);
                 return price;
             }
         }

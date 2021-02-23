@@ -7,7 +7,6 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { getOptionChain_optionQuote as OptionQuote } from '../graphql/__generated__/getOptionChain'
-import { OptionType } from '../graphql/__generated__/globalTypes'
 
 const displayableOptionFrom = (option: OptionQuote): DisplayableOptionQuote => {
     return { name: option.optionType, price: String(option.ask) || "", pop: option.expiration };
@@ -19,36 +18,31 @@ interface DisplayableOptionQuote {
     pop: string
 }
 
-// mocking..
-const rows: OptionQuote[] = [{
-    __typename: 'OptionQuote',
-    optionType: OptionType.CALL,
-    expiration: "3/15",
-    ask: 113.2,
-    delta: 1,
-    gamma: 1,
-    theta: 1,
-    vega: 1,
-    rho: 1,
-    volatility: 1,
-    timeValue: 1,
-    strike: 1, bid: 1, last: 1
-}]
-
-const OptionRow = ({ option, onClick }: { option: DisplayableOptionQuote, onClick: any }) => {
+const OptionRow = ({ option, selected, onClick }:
+    {
+        option: OptionQuote,
+        selected: Boolean,
+        onClick: any
+    }) => {
+    const displayableOption = displayableOptionFrom(option)
     return (
-        <TableRow style={{ backgroundColor: 'gray' }} onClick={() => { onClick(option) }}>
+        <TableRow style={{ backgroundColor: selected ? 'khaki' : 'linen' }} onClick={() => { onClick(option) }}>
             <TableCell component="th" scope="row">
-                {option.name}
+                {displayableOption.name}
             </TableCell>
-            <TableCell align="right">{option.price}</TableCell>
-            <TableCell align="right">{option.pop}</TableCell>
+            <TableCell align="right">{displayableOption.price}</TableCell>
+            <TableCell align="right">{displayableOption.pop}</TableCell>
         </TableRow>
     )
 }
 
-const OptionTable = ({ optionQuotes, onSelectOption }: { optionQuotes: OptionQuote[], onSelectOption: (option: OptionQuote) => void }) => {
-    const options = rows;  // optionQuotes when data live
+const OptionTable = ({ optionQuotes, selectedOption, onSelectOption }:
+    {
+        optionQuotes: OptionQuote[],
+        selectedOption?: OptionQuote,
+        onSelectOption: (option: OptionQuote) => void
+    }) => {
+    const options = optionQuotes;  // optionQuotes when data live
     return (<TableContainer component={Paper}>
         <Table aria-label="simple table" style={{ backgroundColor: 'gainsboro' }}>
             <TableHead>
@@ -62,7 +56,8 @@ const OptionTable = ({ optionQuotes, onSelectOption }: { optionQuotes: OptionQuo
                 {optionQuotes && options.map((option: OptionQuote, i) =>
                     <OptionRow
                         key={i}
-                        option={displayableOptionFrom(option)}
+                        option={option}
+                        selected={option === selectedOption}
                         onClick={onSelectOption} />)}
             </TableBody>
         </Table>

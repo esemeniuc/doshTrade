@@ -2,6 +2,7 @@ use actix::prelude::*;
 
 pub(crate) struct PushNotificationsActor {
     pub(crate) pool: crate::db::DbPool,
+    pub(crate) stock_list: crate::StockPool,
 }
 
 impl Actor for PushNotificationsActor {

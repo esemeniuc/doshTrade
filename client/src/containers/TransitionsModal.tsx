@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import { makeStyles, Theme, createStyles } from "@material-ui/core/styles";
 import Modal from "@material-ui/core/Modal";
 import Backdrop from "@material-ui/core/Backdrop";
@@ -22,12 +22,12 @@ const useStyles = makeStyles((theme: Theme) =>
 // https://material-ui.com/components/modal/
 export default function TransitionsModal({
   open,
-  title,
-  description,
+  onClose,
+  children
 }: {
   open: boolean;
-  title: string;
-  description: string;
+  onClose?: (open: boolean) => void;
+  children?: ReactNode
 }) {
   const classes = useStyles();
   return (
@@ -36,6 +36,7 @@ export default function TransitionsModal({
       aria-describedby="transition-modal-description"
       className={classes.modal}
       open={open}
+      onClose={onClose}
       closeAfterTransition
       BackdropComponent={Backdrop}
       BackdropProps={{
@@ -44,8 +45,7 @@ export default function TransitionsModal({
     >
       <Fade in={open}>
         <div className={classes.paper}>
-          <h2 id="transition-modal-title">{title}</h2>
-          <p id="transition-modal-description">{description}</p>
+          {children}
         </div>
       </Fade>
     </Modal>

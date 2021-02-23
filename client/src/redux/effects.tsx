@@ -31,7 +31,7 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
         }
       });
     }
-  }, [state.isAsking]);
+  }, [dispatch, state.isAsking]);
 
   useEffect(() => {
     if (state.subscription) {
@@ -72,7 +72,7 @@ const usePushEffects = (state: IPushState, dispatch: Dispatch<PushAction>) => {
           })
       }
     })
-  }, [state.userConsent]);
+  }, [dispatch, addPushSubscription, state.userConsent]);
 };
 
 const useStockSubscriptionEffects = (
@@ -90,7 +90,7 @@ const useStockSubscriptionEffects = (
       return;
     }
     addPushSubscription({ variables: { tickerSymbols: state.tickers, pushSubscription } });
-  }, [state.tickers]);
+  }, [addPushSubscription, state.tickers]);
 };
 
 // TODO: kz takes care of prefix 'use'.

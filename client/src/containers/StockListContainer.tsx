@@ -50,9 +50,11 @@ function StockListContainer() {
       {/*</Typography>*/}
       <TransitionsModal
         open={pushState.isAsking}
-        title="Push Access"
-        description="You will be notified when your favorite stocks dip"
-      />
+      >
+        <h2 id="transition-modal-title">Push Access</h2>
+        <p id="transition-modal-description">You will be notified when your favorite stocks dip</p>
+
+      </TransitionsModal>
       {data && <StockTableView stockData={data.stock} />}
       {/*<DebugButton />*/}
     </Container>
