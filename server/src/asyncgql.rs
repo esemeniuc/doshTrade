@@ -8,6 +8,9 @@ use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stoc
 use std::sync::RwLock;
 use std::collections::HashSet;
 use crate::StockPool;
+use crate::background_tasks::stock_actor::StockQuote;
+use anyhow::Error;
+use crate::background_tasks::stock_actor;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
@@ -95,14 +98,16 @@ impl QueryRoot {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
         match IntradayPrice::get_latest_by_ticker(&pool, &ticker).await {
             Ok(id) => Ok(format!("${}", id.price)),
-            Err(e) => {
-                crate::models::Stock::insert_ticker(&pool, &ticker).await;
-                let price = crate::background_tasks::stock_actor::fetch_quotes(&[ticker])
-                    .await
-                    .map(|quote| quote.first().unwrap().to_owned())
-                    .map(|quote| String::from(format!("${}", quote.last_price)))
-                    .map_err(|e| async_graphql::Error::new("Failed to fetch ticker"));
-                return price;
+            Err(_) => { //not in db
+                let response = stock_actor::fetch_quotes(&[ticker]).await;
+
+                if let Ok(stock_quotes) = response {
+                    if let Some(stock_quote) = stock_quotes.first() {
+                        crate::models::Stock::insert_ticker(&pool, &stock_quote.symbol).await;
+                        return Ok(String::from(format!("${}", stock_quote.last_price)));
+                    }
+                }
+                return Err(async_graphql::Error::new("Ticker not found"));
             }
         }
     }
