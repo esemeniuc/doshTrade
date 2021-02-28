@@ -82,6 +82,7 @@ pub struct OptionQuote {
     pub option_type: OptionType,
     pub strike: Option<f64>,
     pub expiration: String,
+    pub days_to_expiration: String,
     pub bid: Option<f64>,
     pub ask: Option<f64>,
     pub last: Option<f64>,
@@ -105,6 +106,7 @@ impl OptionQuote {
                  option_type,
                  strike,
                  CAST(expiration AS VARCHAR),
+                 EXTRACT(DAY FROM expiration - now())
                  bid,
                  ask,
                  last,
