@@ -126,6 +126,18 @@ impl OptionQuote {
             .fetch_all(conn).await
     }
 
+    pub async fn get_available_expirations(
+        conn: &crate::db::DbPool,
+        ticker: String,
+    ) -> sqlx::Result<Vec<String>> {
+        sqlx::query_scalar(
+            "select distinct CAST(expiration AS VARCHAR) from option_quotes
+         join stocks on stocks.ticker = $1
+         order by expiration asc"
+        ).bind(ticker)
+            .fetch_all(conn).await
+    }
+
     pub async fn get_option_chain(
         conn: &crate::db::DbPool,
         ticker: String,
