@@ -73,4 +73,6 @@ CREATE TABLE IF NOT EXISTS option_quotes
     created_at  TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );
+
+CREATE INDEX index_option_quotes_on_stock_id ON option_quotes (stock_id);
 CREATE INDEX index_option_quotes_on_expiration ON option_quotes (expiration);

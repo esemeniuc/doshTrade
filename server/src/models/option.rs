@@ -132,11 +132,12 @@ impl OptionQuote {
     ) -> sqlx::Result<Vec<String>> {
         sqlx::query_scalar(
             "select distinct CAST(expiration AS VARCHAR) from option_quotes
-         join stocks on stocks.ticker = $1
-         order by expiration asc"
+            WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
+            order by expiration asc"
         ).bind(ticker)
             .fetch_all(conn).await
     }
+
 
     pub async fn get_option_chain(
         conn: &crate::db::DbPool,
