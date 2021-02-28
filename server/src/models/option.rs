@@ -125,4 +125,14 @@ impl OptionQuote {
             .bind(ticker)
             .fetch_all(conn).await
     }
+
+    pub async fn get_option_chain(
+        conn: &crate::db::DbPool,
+        ticker: String,
+        expiration: String,
+        // strategy: OptionStrategy
+    ) -> sqlx::Result<Vec<OptionQuote>> {
+        //TODO: fill with implementation
+        Err(sqlx::Error::ColumnNotFound("not implemented".to_string()))
+    }
 }

@@ -4,7 +4,7 @@ use async_graphql::{Context, Schema, ID};
 use futures::{Stream, StreamExt};
 use itertools::Itertools;
 
-use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock};
+use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock, OptionType};
 use std::sync::RwLock;
 use std::collections::HashSet;
 use crate::StockPool;
@@ -68,11 +68,30 @@ impl QueryRoot {
     ) -> Vec<OptionQuote> {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
 
-        match OptionQuote::get_latest_by_ticker(pool, ticker).await {
+        //TOOD: add strategy
+        match OptionQuote::get_option_chain(pool, ticker,expiration).await {
             Ok(quotes) => quotes,
             Err(e) => {
                 log::warn!("get_option_chain() failed with error: {}", e);
-                return vec![];
+
+                let a = OptionQuote{
+                    string_id: "GLD_040921C180".to_string(),
+                    option_type: OptionType::Call,
+                    strike: Some(180.0),
+                    expiration: "2021-04-09 20:00:00".to_string(),
+                    days_to_expiration: "9001".to_string(),
+                    bid: Some(0.29),
+                    ask: Some(0.38),
+                    last: Some(0.33),
+                    delta: 0.07,
+                    gamma: 0.012,
+                    theta: -0.018,
+                    vega: 0.013,
+                    rho: 0.075,
+                    volatility: 20.142,
+                    time_value: 0.33
+                };
+                return vec![a.clone(),a.clone(),a.clone()];
             }
         }
     }
