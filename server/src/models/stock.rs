@@ -20,7 +20,7 @@ impl Stock {
             .await
     }
 
-    pub async fn insert_ticker(conn: &crate::db::DbPool, ticker: &str) -> sqlx::Result<sqlx::postgres::PgDone> {
+    pub async fn insert_ticker(conn: &crate::db::DbPool, ticker: &String) -> sqlx::Result<sqlx::postgres::PgDone> {
         sqlx::query("INSERT INTO stocks VALUES (DEFAULT, $1, $2)")
             .bind(ticker)
             .bind("FIXME DESCRIPTION")

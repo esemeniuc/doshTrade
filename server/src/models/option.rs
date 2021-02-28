@@ -78,6 +78,7 @@ pub enum OptionType { Call, Put }
 #[derive(async_graphql::SimpleObject, sqlx::FromRow, Clone)]
 pub struct OptionQuote {
     // TODO make optionID and also add identifier on Postgres and POP
+    pub string_id: String,
     pub option_type: OptionType,
     pub strike: Option<f64>,
     pub expiration: String,
@@ -100,19 +101,20 @@ impl OptionQuote {
     ) -> sqlx::Result<Vec<OptionQuote>> {
         sqlx::query_as::<_, OptionQuote>(
             "SELECT
-     option_type,
-     strike,
-     CAST(expiration AS VARCHAR),
-     bid,
-     ask,
-     last,
-     delta,
-     gamma,
-     theta,
-     vega,
-     rho,
-     volatility,
-     time_value
+                 string_id,
+                 option_type,
+                 strike,
+                 CAST(expiration AS VARCHAR),
+                 bid,
+                 ask,
+                 last,
+                 delta,
+                 gamma,
+                 theta,
+                 vega,
+                 rho,
+                 volatility,
+                 time_value
 
          FROM option_quotes
          JOIN stocks ON stocks.id = option_quotes.stock_id AND stocks.ticker = $1

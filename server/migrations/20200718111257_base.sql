@@ -55,6 +55,7 @@ CREATE TYPE OPTION_TYPE AS ENUM ('call','put');
 CREATE TABLE IF NOT EXISTS option_quotes
 (
     id          SERIAL PRIMARY KEY,
+    string_id   VARCHAR          NOT NULL, --id from think or swim that has ticker, expiration, type, strike
     stock_id    INTEGER          NOT NULL,
     option_type OPTION_TYPE      NOT NULL,
     strike      DOUBLE PRECISION NOT NULL,
