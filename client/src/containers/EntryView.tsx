@@ -130,6 +130,19 @@ const GeneratedResultsFrame = styled.div`
 const EXPIRATION_PLACEHOLDER = "Expiration Date"
 const STRATEGY_PLACEHOLDER = "Strategy"
 
+function displayStringFor(strategy: OptionStrategy) {
+    switch (strategy) {
+        case OptionStrategy.BUY_CALL:
+            return "Buy Call"
+        case OptionStrategy.SELL_CALL:
+            return "Sell Call"
+        case OptionStrategy.BUY_PUT:
+            return "Buy Put"
+        case OptionStrategy.SELL_PUT:
+            return "Sell Put"
+    }
+}
+
 function EntryView() {
     const [debouncedTicker, setDebouncedTicker] = useState('')
     const [currentState, sendEvent] = useStateMachine(EntryViewStateSpec)
@@ -202,10 +215,10 @@ function EntryView() {
                         }
                     }}>
                     <option disabled > Strategy </option>
-                    <option>{OptionStrategy.BUY_CALL}</option>
-                    <option>{OptionStrategy.SELL_CALL}</option>
-                    <option>{OptionStrategy.BUY_PUT}</option>
-                    <option>{OptionStrategy.SELL_PUT}</option>
+                    <option>{displayStringFor(OptionStrategy.BUY_CALL)}</option>
+                    <option>{displayStringFor(OptionStrategy.SELL_CALL)}</option>
+                    <option>{displayStringFor(OptionStrategy.BUY_PUT)}</option>
+                    <option>{displayStringFor(OptionStrategy.SELL_PUT)}</option>
                 </DoshSelect>
                 <GeneratedResultsFrame>
                     {currentState === 'presentingGeneratedTrade' ?
@@ -221,7 +234,10 @@ function EntryView() {
                     }
                 </GeneratedResultsFrame>
                 {currentState === 'presentingGeneratedTrade' &&
-                    <ResetButton onClick={() => reset({ mode: "onChange" })} value="Reset">Reset</ResetButton>
+                    <ResetButton
+                        onClick={() => reset({ mode: "onChange" })}
+                        value="Reset">
+                        Reset</ResetButton>
                 }
             </GeneratorForm>
         </Container >

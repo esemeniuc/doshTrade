@@ -1,13 +1,13 @@
 use actix::prelude::*;
 use actix_cors::Cors;
-use actix_web::{App, guard, HttpServer, web};
+use actix_web::{guard, web, App, HttpServer};
 use async_graphql::Schema;
 use clap::Arg;
 
-use asyncgql::{MutationRoot, QueryRoot, Subscription};
-use std::sync::{RwLock, Arc};
-use std::collections::HashSet;
 use anyhow::Context;
+use asyncgql::{MutationRoot, QueryRoot, Subscription};
+use std::collections::HashSet;
+use std::sync::{Arc, RwLock};
 
 mod asyncgql;
 mod auth;
@@ -85,14 +85,26 @@ async fn main() -> anyhow::Result<()> {
         .data(stock_list.clone())
         .finish();
 
-    let actor = background_tasks::stock_actor::StockActor { pool: pool.clone(), stock_list: stock_list.clone() };
+    let actor = background_tasks::stock_actor::StockActor {
+        pool: pool.clone(),
+        stock_list: stock_list.clone(),
+    };
     background_tasks::stock_actor::StockActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
 
-    let actor = background_tasks::options_actor::OptionsActor { pool: pool.clone(), stock_list: stock_list.clone() };
-    background_tasks::options_actor::OptionsActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
+    let actor = background_tasks::options_actor::OptionsActor {
+        pool: pool.clone(),
+        stock_list: stock_list.clone(),
+    };
+    background_tasks::options_actor::OptionsActor::start_in_arbiter(&Arbiter::new(), move |ctx| {
+        actor
+    });
 
-    let actor = background_tasks::push_notifications_actor::PushNotificationsActor { pool: pool.clone(), stock_list: stock_list.clone() };
-    background_tasks::push_notifications_actor::PushNotificationsActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
+    let actor =
+        background_tasks::push_notifications_actor::PushNotificationsActor { pool: pool.clone() };
+    background_tasks::push_notifications_actor::PushNotificationsActor::start_in_arbiter(
+        &Arbiter::new(),
+        move |ctx| actor,
+    );
 
     HttpServer::new(move || {
         let cors_rules = if cfg!(debug_assertions) {
@@ -128,8 +140,8 @@ async fn main() -> anyhow::Result<()> {
             .route("/", web::get().to(handler::index))
             .route("/{_:.*}", web::get().to(handler::dist))
     })
-        .bind(ip_port)?
-        .run()
-        .await
-        .with_context(|| format!("actix-web failed"))
+    .bind(ip_port)?
+    .run()
+    .await
+    .with_context(|| format!("actix-web failed"))
 }

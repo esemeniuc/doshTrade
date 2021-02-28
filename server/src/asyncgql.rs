@@ -6,11 +6,7 @@ use itertools::Itertools;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock};
 use std::collections::HashSet;
-<<<<<<< HEAD
 use std::sync::RwLock;
-=======
-use crate::StockPool;
->>>>>>> b433819a2a42958e4439b84d4d6a1e1a4383b6fc
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
