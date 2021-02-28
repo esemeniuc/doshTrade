@@ -40,7 +40,6 @@ impl Actor for StockActor {
                 // WHERE stocks.ticker = $$$TICKER
                 // ORDER by timestamp DESC
                 // LIMIT 5 (whatever is actually necessary for calc)
-                // let tickers = crate::config::STOCK_LIST.read().unwrap();
                 let tickers = match crate::models::Stock::get_unique_tickers(&conn).await{
                     Ok(v) =>v,
                     Err(_) => vec![]
