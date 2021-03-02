@@ -82,6 +82,7 @@ pub struct OptionQuote {
     pub option_type: OptionType,
     pub strike: Option<f64>,
     pub expiration: String,
+    pub days_to_expiration: String,
     pub bid: Option<f64>,
     pub ask: Option<f64>,
     pub last: Option<f64>,
@@ -105,6 +106,7 @@ impl OptionQuote {
                  option_type,
                  strike,
                  CAST(expiration AS VARCHAR),
+                 EXTRACT(DAY FROM expiration - now())
                  bid,
                  ask,
                  last,
@@ -122,5 +124,28 @@ impl OptionQuote {
         )
             .bind(ticker)
             .fetch_all(conn).await
+    }
+
+    pub async fn get_available_expirations(
+        conn: &crate::db::DbPool,
+        ticker: String,
+    ) -> sqlx::Result<Vec<String>> {
+        sqlx::query_scalar(
+            "select distinct CAST(expiration AS VARCHAR) from option_quotes
+            WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
+            order by expiration asc"
+        ).bind(ticker)
+            .fetch_all(conn).await
+    }
+
+
+    pub async fn get_option_chain(
+        conn: &crate::db::DbPool,
+        ticker: String,
+        expiration: String,
+        // strategy: OptionStrategy
+    ) -> sqlx::Result<Vec<OptionQuote>> {
+        //TODO: fill with implementation
+        Err(sqlx::Error::ColumnNotFound("not implemented".to_string()))
     }
 }
