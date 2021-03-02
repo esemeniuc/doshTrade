@@ -107,9 +107,9 @@ impl QueryRoot {
         strategy: OptionStrategy,
     ) -> OptionRiskSummary {
         OptionRiskSummary {
-            max_risk: "".to_string(),
-            max_profit: "".to_string(),
-            breakeven_at_expiration: "".to_string(),
+            max_risk: "$7.00".to_string(),
+            max_profit: "$3.00".to_string(),
+            breakeven_at_expiration: "$103.00".to_string(),
         }
     }
 
