@@ -12,6 +12,7 @@ import { OptionStrategy, OptionType } from "./globalTypes";
 export interface getOptionChain_optionQuote {
   __typename: "OptionQuote";
   optionType: OptionType;
+  stringId: string;
   strike: number | null;
   expiration: string;
   bid: number | null;

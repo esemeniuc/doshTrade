@@ -1,0 +1,3 @@
+query getAvailableExpirations($ticker:String!) {
+  expiration: getAvailableExpirations(ticker: $ticker)
+}

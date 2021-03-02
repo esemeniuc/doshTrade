@@ -1,4 +1,4 @@
-query getRiskSummary($optionId:ID!, $strategy:OptionStrategy!) {
+query getRiskSummary($optionId:String!, $strategy:OptionStrategy!) {
   riskSummary: getRiskSummary(optionId:$optionId, strategy:$strategy){
       maxRisk, maxProfit, breakevenAtExpiration
   }

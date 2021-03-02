@@ -49,6 +49,7 @@ const SelectorModalHeader = styled.h3`
 // mocking..
 const mockOptions: OptionQuote[] = [{
     __typename: 'OptionQuote',
+    stringId: "option1",
     optionType: OptionType.CALL,
     expiration: "3/15",
     ask: 13.2,
@@ -63,6 +64,7 @@ const mockOptions: OptionQuote[] = [{
 },
 {
     __typename: 'OptionQuote',
+    stringId: "option2",
     optionType: OptionType.CALL,
     expiration: "3/15",
     ask: 113.2,
@@ -77,6 +79,7 @@ const mockOptions: OptionQuote[] = [{
 },
 {
     __typename: 'OptionQuote',
+    stringId: "option3",
     optionType: OptionType.CALL,
     expiration: "3/15",
     ask: 213.2,

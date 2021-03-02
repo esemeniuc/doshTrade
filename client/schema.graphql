@@ -17,9 +17,11 @@ type MutationRoot {
 }
 
 type OptionQuote {
+  stringId: String!
   optionType: OptionType!
   strike: Float
   expiration: String!
+  daysToExpiration: String!
   bid: Float
   ask: Float
   last: Float
@@ -75,7 +77,7 @@ type QueryRoot {
   # sends computed risk values for a give option
   getRiskSummary(optionId: ID!, strategy: OptionStrategy!): OptionRiskSummary!
   getCurrentPrice(ticker: String!): String!
-  getExpiration(ticker: String!): String!
+  getAvailableExpirations(ticker: String!): [String!]!
 }
 
 # Represents a stock's status

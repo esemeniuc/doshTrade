@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import GeneratedResults from '../components/GeneratedResults';
 import { loader } from "graphql.macro";
 import { getCurrentPrice } from "../graphql/__generated__/getCurrentPrice";
-import { getExpiration } from "../graphql/__generated__/getExpiration";
+import { getAvailableExpirations } from "../graphql/__generated__/getAvailableExpirations";
 import { useDebounce } from "react-use";
 import EntryViewStateSpec from "../redux/EntryViewStateSpec"
 import { useStateMachine } from '../components/useStateMachine';
@@ -15,8 +15,8 @@ import { OptionStrategy, OptionType } from '../graphql/__generated__/globalTypes
 const GET_CURRENT_PRICE_QUERY = loader(
     "../graphql/getCurrentPrice.gql"
 );
-const GET_EXPIRATION_QUERY = loader(
-    "../graphql/getExpiration.gql"
+const GET_AVAILABLE_EXPIRATIONS_QUERY = loader(
+    "../graphql/getAvailableExpirations.gql"
 );
 
 const Title = styled.h2`
@@ -153,7 +153,7 @@ function EntryView() {
     const expiration = watch(["expiration"]).expiration
     const strategy = watch(["strategy"]).strategy
     const { data: priceData, error: priceError } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
-    const { data: expirationData, error: expirationError } = useQuery<getExpiration>(GET_EXPIRATION_QUERY, { variables: { ticker: debouncedTicker } });
+    const { data: expirationData, error: expirationError } = useQuery<getAvailableExpirations>(GET_AVAILABLE_EXPIRATIONS_QUERY, { variables: { ticker: debouncedTicker } });
 
     const onGenerate = (formData: any) => {
         sendEvent("PRESENT_GENERATED_TRADE")

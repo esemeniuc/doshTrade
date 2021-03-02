@@ -1,3 +1,0 @@
-query getExpiration($ticker:String!) {
-  expiration: getExpiration(ticker: $ticker)
-}

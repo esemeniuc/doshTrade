@@ -1,6 +1,6 @@
 query getOptionChain($ticker:String!, $expiration:String!, $strategy:OptionStrategy!) {
   optionQuote: getOptionChain(ticker:$ticker, expiration:$expiration, strategy:$strategy){
-    optionType,
+    optionType, stringId,
     strike, expiration, bid, ask, last, delta, 
     gamma, theta, vega, rho, volatility, timeValue
   }
