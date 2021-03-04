@@ -65,33 +65,20 @@ impl QueryRoot {
         ticker: String,
         expiration: String,
         strategy: OptionStrategy,
-    ) -> Vec<OptionQuote> {
+    ) -> async_graphql::Result<Vec<OptionQuote>> {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
+
+        let expiration = match chrono::NaiveDateTime::parse_from_str(&expiration,"%Y-%m-%d %H:%M:%S") {
+            Ok(exp) => Ok(exp),
+            Err(_) => Err(async_graphql::Error::new("Failed to parse date"))
+        }?;
 
         //TOOD: add strategy
         match OptionQuote::get_option_chain(pool, ticker, expiration).await {
-            Ok(quotes) => quotes,
+            Ok(quotes) => Ok(quotes),
             Err(e) => {
                 log::warn!("get_option_chain() failed with error: {}", e);
-
-                let a = OptionQuote {
-                    string_id: "GLD_040921C180".to_string(),
-                    option_type: OptionType::Call,
-                    strike: Some(180.0),
-                    expiration: "2021-04-09 20:00:00".to_string(),
-                    days_to_expiration: "9001".to_string(),
-                    bid: Some(0.29),
-                    ask: Some(0.38),
-                    last: Some(0.33),
-                    delta: 0.07,
-                    gamma: 0.012,
-                    theta: -0.018,
-                    vega: 0.013,
-                    rho: 0.075,
-                    volatility: 20.142,
-                    time_value: 0.33,
-                };
-                return vec![a.clone(), a.clone(), a.clone()];
+                return Err(async_graphql::Error::new("get_current_price() must be called first"));
             }
         }
     }
@@ -139,8 +126,8 @@ impl QueryRoot {
         match OptionQuote::get_available_expirations(&pool, ticker).await {
             Ok(expirations) => Ok(expirations),
             Err(e) => { //not in db
-                log::warn!("get_expirations() failed with error: {}", e);
-                return Err(async_graphql::Error::new("get_current_price must be called first"));
+                log::warn!("get_available_expirations() failed with error: {}", e);
+                return Err(async_graphql::Error::new("get_current_price() must be called first"));
             }
         }
     }

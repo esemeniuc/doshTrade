@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use chrono::{FixedOffset, ParseError, DateTime};
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -82,7 +83,7 @@ pub struct OptionQuote {
     pub option_type: OptionType,
     pub strike: Option<f64>,
     pub expiration: String,
-    pub days_to_expiration: String,
+    pub days_to_expiration: i32,
     pub bid: Option<f64>,
     pub ask: Option<f64>,
     pub last: Option<f64>,
@@ -142,10 +143,34 @@ impl OptionQuote {
     pub async fn get_option_chain(
         conn: &crate::db::DbPool,
         ticker: String,
-        expiration: String,
+        expiration: chrono::NaiveDateTime,
         // strategy: OptionStrategy
     ) -> sqlx::Result<Vec<OptionQuote>> {
-        //TODO: fill with implementation
-        Err(sqlx::Error::ColumnNotFound("not implemented".to_string()))
+        sqlx::query_as::<_, OptionQuote>(
+"SELECT
+        string_id,
+        option_type,
+        strike,
+        expiration::VARCHAR,
+        EXTRACT(DAY FROM expiration - now())::INTEGER AS days_to_expiration,
+        bid,
+        ask,
+        last,
+        delta,
+        gamma,
+        theta,
+        vega,
+        rho,
+        volatility,
+        time_value
+
+         FROM option_quotes
+         JOIN stocks ON stocks.id = option_quotes.stock_id AND stocks.ticker = $1
+         WHERE expiration = $2
+         ORDER BY strike ASC",
+        )
+            .bind(ticker)
+            .bind(expiration)
+            .fetch_all(conn).await
     }
 }
