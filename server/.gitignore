@@ -13,3 +13,4 @@ Cargo.lock
 db.sqlite
 
 postgres/*
+src/background_tasks/*

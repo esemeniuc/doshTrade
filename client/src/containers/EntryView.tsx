@@ -143,15 +143,28 @@ function displayStringFor(strategy: OptionStrategy) {
     }
 }
 
+function optionStrategyFor(strategyInput: String) {
+    switch (strategyInput) {
+        case "Buy Call":
+            return OptionStrategy.BUY_CALL
+        case "Sell Call":
+            return OptionStrategy.SELL_CALL
+        case "Buy Put":
+            return OptionStrategy.BUY_PUT
+        case "Sell Put":
+            return OptionStrategy.SELL_PUT
+    }
+}
+
 function EntryView() {
     const [debouncedTicker, setDebouncedTicker] = useState('')
     const [currentState, sendEvent] = useStateMachine(EntryViewStateSpec)
     const { register, handleSubmit, watch, reset, errors, trigger } = useForm({
         mode: "onChange"
     });
-    const ticker = watch(["ticker"]).ticker
-    const expiration = watch(["expiration"]).expiration
-    const strategy = watch(["strategy"]).strategy
+    const tickerInput = watch(["ticker"]).ticker
+    const expirationInput = watch(["expiration"]).expiration
+    const strategyInput = watch(["strategy"]).strategy
     const { data: priceData, error: priceError } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
     const { data: expirationData, error: expirationError } = useQuery<getAvailableExpirations>(GET_AVAILABLE_EXPIRATIONS_QUERY, { variables: { ticker: debouncedTicker } });
 
@@ -160,20 +173,20 @@ function EntryView() {
         console.log("onGenerate")
         console.log(formData)
     }
-    const priceString = (ticker && priceData) ? priceData.price : "$"
-    const expirationString = (ticker && expirationData) ? expirationData.expiration : ""
-    if (currentState === 'blank' && ticker) {
+    const priceString = (tickerInput && priceData) ? priceData.price : "$"
+    const expirationStrings = (tickerInput && expirationData) ? expirationData.expiration : []
+    if (currentState === 'blank' && tickerInput) {
         sendEvent("ENTER_TICKER")
-    } else if (currentState === 'enteringTicker' && priceData && !priceError && expirationString && !expirationError) {
+    } else if (currentState === 'enteringTicker' && priceData && !priceError && expirationStrings && !expirationError) {
         sendEvent("TICKER_FETCH_SUCCESS")
-    } else if (currentState === 'selectingExpirationAndStrategy' && !ticker) {
+    } else if (currentState === 'selectingExpirationAndStrategy' && !tickerInput) {
         sendEvent("ERASE_TICKER")
     }
-    useDebounce(() => { ticker && setDebouncedTicker(ticker) }, 350, [ticker])
+    useDebounce(() => { tickerInput && setDebouncedTicker(tickerInput) }, 350, [tickerInput])
     const isExpirationAndStrategySelectable =
         currentState === "selectingExpirationAndStrategy" || currentState === "presentingGeneratedTrade"
     const isSubmitButtonEnabled =
-        currentState === "selectingExpirationAndStrategy" && expiration !== EXPIRATION_PLACEHOLDER && strategy !== STRATEGY_PLACEHOLDER
+        currentState === "selectingExpirationAndStrategy" && expirationInput !== EXPIRATION_PLACEHOLDER && strategyInput !== STRATEGY_PLACEHOLDER
     return (
         <Container component="main" maxWidth="sm" style={{
             backgroundColor: 'white',
@@ -202,7 +215,7 @@ function EntryView() {
                         }
                     }} >
                     <option disabled> Expiration Date </option>
-                    <option>{expirationString}</option>
+                    {expirationStrings.map((exp, i) => <option key={i}>{exp}</option>)}
                 </DoshSelect>
                 <DoshSelect
                     disabled={!isExpirationAndStrategySelectable}
@@ -224,8 +237,8 @@ function EntryView() {
                     {currentState === 'presentingGeneratedTrade' ?
                         <GeneratedResults
                             ticker={debouncedTicker}
-                            expiration={expiration}
-                            strategy={strategy}
+                            expiration={expirationInput}
+                            strategy={optionStrategyFor(strategyInput)}
                         /> :
                         <GenerateButton
                             disabled={!isSubmitButtonEnabled}

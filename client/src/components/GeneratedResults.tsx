@@ -133,6 +133,8 @@ export default function GeneratedResults({ ticker, expiration, strategy }: any) 
     //     const optionQuotes = data ? data.optionQuote : []
     //     setSelectedOption(data.optionQuote[0])
     // }
+    console.log("data: ", data)
+    
     if (!selectedOption) {
         console.log("mockOptions[0]: ", mockOptions[0])
         setSelectedOption(mockOptions[0])
