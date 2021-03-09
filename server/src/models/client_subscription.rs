@@ -1,10 +1,11 @@
+use chrono::Utc;
 
 #[derive(Debug)]
 pub struct ClientSubscription {
     pub id: i32,
     pub client_id: i32,
     pub stock_id: i32,
-    pub created_at: chrono::NaiveDateTime,
+    pub created_at: chrono::DateTime::<Utc>,
 }
 
 impl ClientSubscription {

@@ -86,13 +86,13 @@ async fn main() -> anyhow::Result<()> {
         .finish();
 
     let actor = background_tasks::stock_actor::StockActor { pool: pool.clone(), stock_list: stock_list.clone() };
-    background_tasks::stock_actor::StockActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
+    background_tasks::stock_actor::StockActor::start_in_arbiter(&Arbiter::new(), move |_| actor);
 
     let actor = background_tasks::options_actor::OptionsActor { pool: pool.clone(), stock_list: stock_list.clone() };
-    background_tasks::options_actor::OptionsActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
+    background_tasks::options_actor::OptionsActor::start_in_arbiter(&Arbiter::new(), move |_| actor);
 
     let actor = background_tasks::push_notifications_actor::PushNotificationsActor { pool: pool.clone(), stock_list: stock_list.clone() };
-    background_tasks::push_notifications_actor::PushNotificationsActor::start_in_arbiter(&Arbiter::new(), move |ctx| actor);
+    background_tasks::push_notifications_actor::PushNotificationsActor::start_in_arbiter(&Arbiter::new(), move |_| actor);
 
     HttpServer::new(move || {
         let cors_rules = if cfg!(debug_assertions) {

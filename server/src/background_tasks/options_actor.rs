@@ -1,5 +1,6 @@
 use actix::prelude::*;
 use log::{info, warn};
+use chrono::{Utc, TimeZone};
 
 pub(crate) struct OptionsActor {
     pub(crate) pool: crate::db::DbPool,
@@ -48,15 +49,13 @@ pub async fn fetch_options(conn: &crate::db::DbPool,
             for (_expiry_date, strike_map) in option_iter.0 {
                 for (_strike, option_quotes) in strike_map {
                     for option_quote in option_quotes {
-                        let secs = option_quote.expiration_date / 1000; //time comes in as milliseconds, convert to sec
-                        let remaining_nanos = (option_quote.expiration_date % 1000) * 1_000_000;
                         let res = sqlx::query("INSERT INTO option_quotes VALUES
         (DEFAULT, $1, (SELECT id FROM stocks WHERE ticker = $2 LIMIT 1), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)")
                             .bind(&option_quote.symbol)
                             .bind(&option_chain.symbol)
                             .bind(&option_iter.1)
                             .bind(option_quote.strike_price)
-                            .bind(chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32))
+                            .bind(Utc.timestamp_millis(option_quote.expiration_date))
                             .bind(option_quote.bid)
                             .bind(option_quote.ask)
                             .bind(option_quote.last)

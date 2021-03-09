@@ -1,15 +1,10 @@
 use std::time::Duration;
 
-use async_graphql::{Context, Schema, ID};
+use async_graphql::{Context, Schema};
 use futures::{Stream, StreamExt};
 use itertools::Itertools;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock, OptionType};
-use std::sync::RwLock;
-use std::collections::HashSet;
-use crate::StockPool;
-use crate::background_tasks::stock_actor::StockQuote;
-use anyhow::Error;
 use crate::background_tasks::stock_actor;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
@@ -59,6 +54,7 @@ impl QueryRoot {
     }
 
     ///sends option chain for selected ticker
+    ///assumes expiration is UTC time
     async fn get_option_chain(
         &self,
         ctx: &Context<'_>,
@@ -68,8 +64,8 @@ impl QueryRoot {
     ) -> async_graphql::Result<Vec<OptionQuote>> {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
 
-        let expiration = match chrono::NaiveDateTime::parse_from_str(&expiration,"%Y-%m-%d %H:%M:%S") {
-            Ok(exp) => Ok(exp),
+        let expiration = match chrono::DateTime::parse_from_str(&expiration,"%Y-%m-%d %H:%M:%S") {
+            Ok(exp) => Ok(exp.with_timezone(&chrono::offset::Utc)),
             Err(_) => Err(async_graphql::Error::new("Failed to parse date"))
         }?;
 

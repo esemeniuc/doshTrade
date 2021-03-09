@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use chrono::{FixedOffset, ParseError, DateTime};
+use chrono::{Utc};
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -143,7 +143,7 @@ impl OptionQuote {
     pub async fn get_option_chain(
         conn: &crate::db::DbPool,
         ticker: String,
-        expiration: chrono::NaiveDateTime,
+        expiration: chrono::DateTime::<Utc>,
         // strategy: OptionStrategy
     ) -> sqlx::Result<Vec<OptionQuote>> {
         sqlx::query_as::<_, OptionQuote>(
