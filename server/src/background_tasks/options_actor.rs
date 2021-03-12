@@ -1,6 +1,7 @@
 use actix::prelude::*;
 use log::{info, warn};
 use chrono::{Utc, TimeZone};
+use sqlx::{Transaction, Error, Postgres};
 
 pub(crate) struct OptionsActor {
     pub(crate) pool: crate::db::DbPool,
@@ -38,6 +39,17 @@ pub async fn fetch_options(conn: &crate::db::DbPool,
     use crate::models::{TDOptionChain, OptionType};
     let client = actix_web::client::Client::default();
     for ticker in tickers {
+        let mut txn = match conn.begin().await  {
+            Ok(x) => x,
+            Err(_) => continue
+        };
+
+        sqlx::query("DELETE FROM option_quotes
+            WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)"
+        ).bind(ticker)
+            .execute(&mut txn)
+            .await;
+
         let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", ticker);
         let mut response = client.get(url).send().await?;
         let body = response.body().limit(50 * (1 << 20)).await?; //50MB limit
@@ -66,7 +78,7 @@ pub async fn fetch_options(conn: &crate::db::DbPool,
                             .bind(option_quote.rho.as_f64())
                             .bind(option_quote.volatility.as_f64())
                             .bind(option_quote.time_value)
-                            .execute(conn)
+                            .execute(&mut txn)
                             .await;
                         match res {
                             Err(e) => log::error!("failed to insert option data: {}", e),
@@ -75,6 +87,10 @@ pub async fn fetch_options(conn: &crate::db::DbPool,
                     }
                 }
             }
+        }
+        match txn.commit().await {
+            Err(e) => log::error!("failed to commit for ticker {}: {}", ticker, e),
+            _ => ()
         }
     }
     Ok(())

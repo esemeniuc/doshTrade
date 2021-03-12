@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS stocks
     id           SERIAL PRIMARY KEY,
     ticker       VARCHAR     NOT NULL UNIQUE,
     name         VARCHAR     NOT NULL
---     last_fetched TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS intraday_prices
@@ -32,9 +31,9 @@ CREATE INDEX index_intraday_prices_on_timestamp ON intraday_prices (timestamp);
 CREATE TABLE IF NOT EXISTS clients
 (
     id         SERIAL PRIMARY KEY,
-    endpoint   VARCHAR   NOT NULL,
-    p256dh     VARCHAR   NOT NULL,
-    auth       VARCHAR   NOT NULL,
+    endpoint   VARCHAR     NOT NULL,
+    p256dh     VARCHAR     NOT NULL,
+    auth       VARCHAR     NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (endpoint, p256dh, auth)
 );
@@ -42,8 +41,8 @@ CREATE TABLE IF NOT EXISTS clients
 CREATE TABLE IF NOT EXISTS client_subscriptions
 (
     id         SERIAL PRIMARY KEY,
-    client_id  INTEGER   NOT NULL,
-    stock_id   INTEGER   NOT NULL,
+    client_id  INTEGER     NOT NULL,
+    stock_id   INTEGER     NOT NULL,
     last_sent  TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES clients (id),
@@ -60,7 +59,7 @@ CREATE TABLE IF NOT EXISTS option_quotes
     stock_id    INTEGER          NOT NULL,
     option_type OPTION_TYPE      NOT NULL,
     strike      DOUBLE PRECISION NOT NULL,
-    expiration  TIMESTAMPTZ        NOT NULL,
+    expiration  TIMESTAMPTZ      NOT NULL,
     bid         DOUBLE PRECISION NOT NULL,
     ask         DOUBLE PRECISION NOT NULL,
     last        DOUBLE PRECISION NOT NULL,
@@ -71,7 +70,7 @@ CREATE TABLE IF NOT EXISTS option_quotes
     rho         DOUBLE PRECISION,
     volatility  DOUBLE PRECISION,
     time_value  DOUBLE PRECISION,
-    created_at  TIMESTAMPTZ        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at  TIMESTAMPTZ      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );
 

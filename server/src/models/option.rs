@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use chrono::{Utc};
+use sqlx::postgres::PgDone;
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -139,7 +140,6 @@ impl OptionQuote {
             .fetch_all(conn).await
     }
 
-
     pub async fn get_option_chain(
         conn: &crate::db::DbPool,
         ticker: String,
@@ -147,7 +147,7 @@ impl OptionQuote {
         // strategy: OptionStrategy
     ) -> sqlx::Result<Vec<OptionQuote>> {
         sqlx::query_as::<_, OptionQuote>(
-"SELECT
+            "SELECT
         string_id,
         option_type,
         strike,

@@ -5,7 +5,9 @@ pub (crate) mod options_actor;
 pub (crate) mod push_notifications_actor;
 
 pub fn is_open_market_hours(dt: chrono::DateTime<chrono::Utc>) -> bool {
-    // return true;
+    #[cfg(debug_assertions)]
+    return true;
+
     let is_weekday = match dt.weekday() {
         Weekday::Sat | Weekday::Sun => false,
         _ => true
