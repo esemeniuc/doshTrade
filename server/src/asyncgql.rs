@@ -6,6 +6,7 @@ use itertools::Itertools;
 
 use crate::models::{Client, ClientSubscription, IntradayPrice, OptionQuote, Stock as DbStock, OptionType};
 use crate::background_tasks::stock_actor;
+use chrono::Utc;
 
 pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 
@@ -64,8 +65,8 @@ impl QueryRoot {
     ) -> async_graphql::Result<Vec<OptionQuote>> {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
 
-        let expiration = match chrono::DateTime::parse_from_str(&expiration,"%Y-%m-%d %H:%M:%S") {
-            Ok(exp) => Ok(exp.with_timezone(&chrono::offset::Utc)),
+        let expiration = match chrono::NaiveDateTime::parse_from_str(&expiration,"%Y-%m-%d %H:%M:%S") {
+            Ok(exp) => Ok(chrono::DateTime::<Utc>::from_utc(exp, Utc)),
             Err(_) => Err(async_graphql::Error::new("Failed to parse date"))
         }?;
 

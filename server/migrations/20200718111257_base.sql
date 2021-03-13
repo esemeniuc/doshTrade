@@ -66,10 +66,10 @@ CREATE TABLE IF NOT EXISTS option_quotes
     delta       DOUBLE PRECISION,
     gamma       DOUBLE PRECISION,
     theta       DOUBLE PRECISION,
-    vega        DOUBLE PRECISION,
+    vega        DOUBLE PRECISION NOT NULL,
     rho         DOUBLE PRECISION,
     volatility  DOUBLE PRECISION,
-    time_value  DOUBLE PRECISION,
+    time_value  DOUBLE PRECISION NOT NULL,
     created_at  TIMESTAMPTZ      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stocks (id)
 );

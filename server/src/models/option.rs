@@ -49,7 +49,7 @@ pub struct TDOptionQuote {
     pub delta: ::serde_json::Value,
     pub gamma: ::serde_json::Value,
     pub theta: ::serde_json::Value,
-    pub vega: ::serde_json::Value,
+    pub vega: f64,
     pub rho: ::serde_json::Value,
     pub open_interest: i64,
     pub time_value: f64,
@@ -88,12 +88,12 @@ pub struct OptionQuote {
     pub bid: Option<f64>,
     pub ask: Option<f64>,
     pub last: Option<f64>,
-    pub delta: f64,
-    pub gamma: f64,
-    pub theta: f64,
-    pub vega: f64,
-    pub rho: f64,
-    pub volatility: f64,
+    pub delta: Option<f64>,
+    pub gamma: Option<f64>,
+    pub theta: Option<f64>,
+    pub vega:f64,
+    pub rho: Option<f64>,
+    pub volatility: Option<f64>,
     pub time_value: f64,
 }
 
@@ -133,7 +133,7 @@ impl OptionQuote {
         ticker: String,
     ) -> sqlx::Result<Vec<String>> {
         sqlx::query_scalar(
-            "select distinct CAST(expiration AS VARCHAR) from option_quotes
+            "select distinct CAST(expiration::timestamp AS VARCHAR) from option_quotes
             WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
             order by expiration asc"
         ).bind(ticker)

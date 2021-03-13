@@ -74,7 +74,7 @@ pub async fn fetch_options(conn: &crate::db::DbPool,
                             .bind(option_quote.delta.as_f64())
                             .bind(option_quote.gamma.as_f64())
                             .bind(option_quote.theta.as_f64())
-                            .bind(option_quote.vega.as_f64())
+                            .bind(option_quote.vega)
                             .bind(option_quote.rho.as_f64())
                             .bind(option_quote.volatility.as_f64())
                             .bind(option_quote.time_value)
