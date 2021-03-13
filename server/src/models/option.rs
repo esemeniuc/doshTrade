@@ -144,7 +144,7 @@ impl OptionQuote {
         conn: &crate::db::DbPool,
         ticker: String,
         expiration: chrono::DateTime::<Utc>,
-        // strategy: OptionStrategy
+        strategy: OptionType
     ) -> sqlx::Result<Vec<OptionQuote>> {
         sqlx::query_as::<_, OptionQuote>(
             "SELECT
@@ -165,12 +165,14 @@ impl OptionQuote {
         time_value
 
          FROM option_quotes
-         JOIN stocks ON stocks.id = option_quotes.stock_id AND stocks.ticker = $1
-         WHERE expiration = $2
+         WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
+         AND expiration = $2
+         AND option_type = $3
          ORDER BY strike ASC",
         )
             .bind(ticker)
             .bind(expiration)
+            .bind(strategy)
             .fetch_all(conn).await
     }
 }

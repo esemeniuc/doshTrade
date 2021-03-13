@@ -65,13 +65,17 @@ impl QueryRoot {
     ) -> async_graphql::Result<Vec<OptionQuote>> {
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
 
-        let expiration = match chrono::NaiveDateTime::parse_from_str(&expiration,"%Y-%m-%d %H:%M:%S") {
+        let expiration = match chrono::NaiveDateTime::parse_from_str(&expiration, "%Y-%m-%d %H:%M:%S") {
             Ok(exp) => Ok(chrono::DateTime::<Utc>::from_utc(exp, Utc)),
             Err(_) => Err(async_graphql::Error::new("Failed to parse date"))
         }?;
 
-        //TOOD: add strategy
-        match OptionQuote::get_option_chain(pool, ticker, expiration).await {
+        let strategy = match strategy {
+            OptionStrategy::BuyCall | OptionStrategy::SellCall => OptionType::Call,
+            OptionStrategy::BuyPut | OptionStrategy::SellPut => OptionType::Put
+        };
+
+        match OptionQuote::get_option_chain(pool, ticker, expiration, strategy).await {
             Ok(quotes) => Ok(quotes),
             Err(e) => {
                 log::warn!("get_option_chain() failed with error: {}", e);
