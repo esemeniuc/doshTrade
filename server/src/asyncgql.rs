@@ -13,14 +13,14 @@ pub type BooksSchema = Schema<QueryRoot, MutationRoot, Subscription>;
 pub struct QueryRoot;
 
 #[derive(async_graphql::SimpleObject, Clone)]
-struct OptionRiskSummary {
-    max_risk: String,
-    max_profit: String,
-    breakeven_at_expiration: String,
+pub struct OptionRiskSummary {
+    pub max_risk: String,
+    pub max_profit: String,
+    pub breakeven_at_expiration: String,
 }
 
 #[derive(async_graphql::Enum, Copy, Clone, Eq, PartialEq)]
-enum OptionStrategy {
+pub enum OptionStrategy {
     BuyCall,
     BuyPut,
     SellCall,
@@ -51,50 +51,6 @@ impl QueryRoot {
                 log::error!("failed to send push message: {}", e);
                 return false;
             }
-        }
-    }
-
-    ///sends option chain for selected ticker
-    ///assumes expiration is UTC time
-    async fn get_option_chain(
-        &self,
-        ctx: &Context<'_>,
-        ticker: String,
-        expiration: String,
-        strategy: OptionStrategy,
-    ) -> async_graphql::Result<Vec<OptionQuote>> {
-        let pool = ctx.data_unchecked::<crate::db::DbPool>();
-
-        let expiration = match chrono::NaiveDateTime::parse_from_str(&expiration, "%Y-%m-%d %H:%M:%S") {
-            Ok(exp) => Ok(chrono::DateTime::<Utc>::from_utc(exp, Utc)),
-            Err(_) => Err(async_graphql::Error::new("Failed to parse date"))
-        }?;
-
-        let strategy = match strategy {
-            OptionStrategy::BuyCall | OptionStrategy::SellCall => OptionType::Call,
-            OptionStrategy::BuyPut | OptionStrategy::SellPut => OptionType::Put
-        };
-
-        match OptionQuote::get_option_chain(pool, ticker, expiration, strategy).await {
-            Ok(quotes) => Ok(quotes),
-            Err(e) => {
-                log::warn!("get_option_chain() failed with error: {}", e);
-                return Err(async_graphql::Error::new("get_current_price() must be called first"));
-            }
-        }
-    }
-
-    ///sends computed risk values for a give option
-    async fn get_risk_summary(
-        &self,
-        ctx: &Context<'_>,
-        option_id: async_graphql::ID,
-        strategy: OptionStrategy,
-    ) -> OptionRiskSummary {
-        OptionRiskSummary {
-            max_risk: "$7.00".to_string(),
-            max_profit: "$3.00".to_string(),
-            breakeven_at_expiration: "$103.00".to_string(),
         }
     }
 
@@ -131,6 +87,55 @@ impl QueryRoot {
                 return Err(async_graphql::Error::new("get_current_price() must be called first"));
             }
         }
+    }
+
+    ///sends option chain for selected ticker
+    ///assumes expiration is UTC time
+    async fn get_option_chain(
+        &self,
+        ctx: &Context<'_>,
+        ticker: String,
+        expiration: String,
+        strategy: OptionStrategy,
+    ) -> async_graphql::Result<Vec<OptionQuote>> {
+        let pool = ctx.data_unchecked::<crate::db::DbPool>();
+
+        let ticker = get_canonical_ticker(ticker);
+        let expiration = match chrono::NaiveDateTime::parse_from_str(&expiration, "%Y-%m-%d %H:%M:%S") {
+            Ok(exp) => Ok(chrono::DateTime::<Utc>::from_utc(exp, Utc)),
+            Err(_) => Err(async_graphql::Error::new("Failed to parse date"))
+        }?;
+
+        let strategy = match strategy {
+            OptionStrategy::BuyCall | OptionStrategy::SellCall => OptionType::Call,
+            OptionStrategy::BuyPut | OptionStrategy::SellPut => OptionType::Put
+        };
+
+        match OptionQuote::get_option_chain(pool, ticker, expiration, strategy).await {
+            Ok(quotes) => Ok(quotes),
+            Err(e) => {
+                log::warn!("get_option_chain() failed with error: {}", e);
+                return Err(async_graphql::Error::new("get_current_price() must be called first"));
+            }
+        }
+    }
+
+    ///sends computed risk values for a give option
+    async fn get_risk_summary(
+        &self,
+        ctx: &Context<'_>,
+        option_id: async_graphql::ID,
+        strategy: OptionStrategy,
+    ) -> async_graphql::Result<OptionRiskSummary> {
+        let pool = ctx.data_unchecked::<crate::db::DbPool>();
+
+        return match OptionQuote::get_risk_summary(pool, option_id.0, strategy).await {
+            Ok(quotes) => Ok(quotes),
+            Err(e) => {
+                log::warn!("get_risk_summary() failed with error: {}", e);
+                return Err(async_graphql::Error::new("get_current_price() must be called first"));
+            }
+        };
     }
 }
 

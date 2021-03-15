@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use chrono::{Utc};
 use sqlx::postgres::PgDone;
+use crate::asyncgql::{OptionStrategy, OptionRiskSummary};
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -91,7 +92,7 @@ pub struct OptionQuote {
     pub delta: Option<f64>,
     pub gamma: Option<f64>,
     pub theta: Option<f64>,
-    pub vega:f64,
+    pub vega: f64,
     pub rho: Option<f64>,
     pub volatility: Option<f64>,
     pub time_value: f64,
@@ -144,7 +145,7 @@ impl OptionQuote {
         conn: &crate::db::DbPool,
         ticker: String,
         expiration: chrono::DateTime::<Utc>,
-        strategy: OptionType
+        strategy: OptionType,
     ) -> sqlx::Result<Vec<OptionQuote>> {
         sqlx::query_as::<_, OptionQuote>(
             "SELECT
@@ -174,5 +175,32 @@ impl OptionQuote {
             .bind(expiration)
             .bind(strategy)
             .fetch_all(conn).await
+    }
+
+    pub async fn get_risk_summary(
+        conn: &crate::db::DbPool,
+        option_id: String,
+        strategy: OptionStrategy,
+    ) -> sqlx::Result<OptionRiskSummary> {
+        // sqlx::query_as::<_, OptionRiskSummary>(
+        //     "SELECT
+        //         time_value
+        //
+        //  FROM option_quotes
+        //  WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
+        //  AND expiration = $2
+        //  AND option_type = $3
+        //  ORDER BY strike ASC",
+        // )
+        //     .bind(option_id)
+        //     // .bind(strategy)
+        //     .fetch_all(conn).await;
+
+
+        Ok(OptionRiskSummary {
+            max_risk: "$7.00".to_string(),
+            max_profit: "$3.00".to_string(),
+            breakeven_at_expiration: "$103.00".to_string(),
+        })
     }
 }
