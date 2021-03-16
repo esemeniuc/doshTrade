@@ -182,25 +182,39 @@ impl OptionQuote {
         option_id: String,
         strategy: OptionStrategy,
     ) -> sqlx::Result<OptionRiskSummary> {
-        // sqlx::query_as::<_, OptionRiskSummary>(
-        //     "SELECT
-        //         time_value
-        //
-        //  FROM option_quotes
-        //  WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
-        //  AND expiration = $2
-        //  AND option_type = $3
-        //  ORDER BY strike ASC",
-        // )
-        //     .bind(option_id)
-        //     // .bind(strategy)
-        //     .fetch_all(conn).await;
+        let (last_price, strike_price) = sqlx::query_as::<_, (f64, f64)>(
+            "SELECT last, strike
+         FROM option_quotes
+         WHERE string_id = $1",
+        )
+            .bind(option_id)
+            .fetch_one(conn).await?;
 
-
-        Ok(OptionRiskSummary {
-            max_risk: "$7.00".to_string(),
-            max_profit: "$3.00".to_string(),
-            breakeven_at_expiration: "$103.00".to_string(),
+        Ok(match strategy {
+            OptionStrategy::BuyCall =>
+                OptionRiskSummary {
+                    max_risk: format!("${}", last_price),
+                    max_profit: "Inf".to_string(),
+                    breakeven_at_expiration: format!("${}", strike_price + last_price),
+                },
+            OptionStrategy::BuyPut =>
+                OptionRiskSummary {
+                    max_risk: format!("${}", last_price),
+                    max_profit: format!("${}", strike_price - last_price),
+                    breakeven_at_expiration: format!("${}", strike_price - last_price),
+                },
+            OptionStrategy::SellCall =>
+                OptionRiskSummary {
+                    max_risk: "Inf".to_string(),
+                    max_profit: format!("${}", last_price),
+                    breakeven_at_expiration: format!("${}", strike_price + last_price),
+                },
+            OptionStrategy::SellPut =>
+                OptionRiskSummary {
+                    max_risk: format!("${}", strike_price - last_price),
+                    max_profit: format!("${}", last_price),
+                    breakeven_at_expiration: format!("${}", strike_price - last_price),
+                }
         })
     }
 }
