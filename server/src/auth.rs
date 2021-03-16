@@ -2,6 +2,7 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
+use chrono::Utc;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -13,10 +14,10 @@ struct Claims {
 
 #[allow(dead_code)]
 pub fn generate_bearer_token_now(user_id: i32) -> String {
-    generate_bearer_token(user_id, chrono::Local::now().naive_utc())
+    generate_bearer_token(user_id, chrono::Utc::now())
 }
 
-pub fn generate_bearer_token(user_id: i32, created_at: chrono::NaiveDateTime) -> String {
+pub fn generate_bearer_token(user_id: i32, created_at: chrono::DateTime::<Utc>) -> String {
     let rand_string: String = thread_rng()
         .sample_iter(&Alphanumeric)
         .map(char::from)

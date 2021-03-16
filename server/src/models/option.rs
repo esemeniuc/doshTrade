@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use chrono::{Utc};
+use sqlx::postgres::PgDone;
+use crate::asyncgql::{OptionStrategy, OptionRiskSummary};
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,7 +50,7 @@ pub struct TDOptionQuote {
     pub delta: ::serde_json::Value,
     pub gamma: ::serde_json::Value,
     pub theta: ::serde_json::Value,
-    pub vega: ::serde_json::Value,
+    pub vega: f64,
     pub rho: ::serde_json::Value,
     pub open_interest: i64,
     pub time_value: f64,
@@ -82,16 +85,16 @@ pub struct OptionQuote {
     pub option_type: OptionType,
     pub strike: Option<f64>,
     pub expiration: String,
-    pub days_to_expiration: String,
+    pub days_to_expiration: i32,
     pub bid: Option<f64>,
     pub ask: Option<f64>,
     pub last: Option<f64>,
-    pub delta: f64,
-    pub gamma: f64,
-    pub theta: f64,
+    pub delta: Option<f64>,
+    pub gamma: Option<f64>,
+    pub theta: Option<f64>,
     pub vega: f64,
-    pub rho: f64,
-    pub volatility: f64,
+    pub rho: Option<f64>,
+    pub volatility: Option<f64>,
     pub time_value: f64,
 }
 
@@ -131,21 +134,87 @@ impl OptionQuote {
         ticker: String,
     ) -> sqlx::Result<Vec<String>> {
         sqlx::query_scalar(
-            "select distinct CAST(expiration AS VARCHAR) from option_quotes
+            "select distinct CAST(expiration::timestamp AS VARCHAR) from option_quotes
             WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
             order by expiration asc"
         ).bind(ticker)
             .fetch_all(conn).await
     }
 
-
     pub async fn get_option_chain(
         conn: &crate::db::DbPool,
         ticker: String,
-        expiration: String,
-        // strategy: OptionStrategy
+        expiration: chrono::DateTime::<Utc>,
+        strategy: OptionType,
     ) -> sqlx::Result<Vec<OptionQuote>> {
-        //TODO: fill with implementation
-        Err(sqlx::Error::ColumnNotFound("not implemented".to_string()))
+        sqlx::query_as::<_, OptionQuote>(
+            "SELECT
+        string_id,
+        option_type,
+        strike,
+        expiration::VARCHAR,
+        EXTRACT(DAY FROM expiration - now())::INTEGER AS days_to_expiration,
+        bid,
+        ask,
+        last,
+        delta,
+        gamma,
+        theta,
+        vega,
+        rho,
+        volatility,
+        time_value
+
+         FROM option_quotes
+         WHERE stock_id = (SELECT id from stocks WHERE ticker = $1)
+         AND expiration = $2
+         AND option_type = $3
+         ORDER BY strike ASC",
+        )
+            .bind(ticker)
+            .bind(expiration)
+            .bind(strategy)
+            .fetch_all(conn).await
+    }
+
+    pub async fn get_risk_summary(
+        conn: &crate::db::DbPool,
+        option_id: String,
+        strategy: OptionStrategy,
+    ) -> sqlx::Result<OptionRiskSummary> {
+        let (last_price, strike_price) = sqlx::query_as::<_, (f64, f64)>(
+            "SELECT last, strike
+         FROM option_quotes
+         WHERE string_id = $1",
+        )
+            .bind(option_id)
+            .fetch_one(conn).await?;
+
+        Ok(match strategy {
+            OptionStrategy::BuyCall =>
+                OptionRiskSummary {
+                    max_risk: format!("${}", last_price),
+                    max_profit: "Inf".to_string(),
+                    breakeven_at_expiration: format!("${}", strike_price + last_price),
+                },
+            OptionStrategy::BuyPut =>
+                OptionRiskSummary {
+                    max_risk: format!("${}", last_price),
+                    max_profit: format!("${}", strike_price - last_price),
+                    breakeven_at_expiration: format!("${}", strike_price - last_price),
+                },
+            OptionStrategy::SellCall =>
+                OptionRiskSummary {
+                    max_risk: "Inf".to_string(),
+                    max_profit: format!("${}", last_price),
+                    breakeven_at_expiration: format!("${}", strike_price + last_price),
+                },
+            OptionStrategy::SellPut =>
+                OptionRiskSummary {
+                    max_risk: format!("${}", strike_price - last_price),
+                    max_profit: format!("${}", last_price),
+                    breakeven_at_expiration: format!("${}", strike_price - last_price),
+                }
+        })
     }
 }

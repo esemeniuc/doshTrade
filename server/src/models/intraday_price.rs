@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use chrono::{Utc, TimeZone};
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct IntradayPrice {
@@ -6,7 +7,7 @@ pub struct IntradayPrice {
     pub stock_id: i32,
     pub price: f64,
     pub volume: i64,
-    pub timestamp: chrono::NaiveDateTime,
+    pub timestamp: chrono::DateTime::<Utc>,
     pub ticker: String,
 }
 
@@ -60,14 +61,12 @@ impl IntradayPrice {
             .iter()
             .map(|quote| {
                 //NOTE: this should have the time of the last executed trade (not the time of quote). This may change in the future
-                let secs = quote.trade_time_in_long / 1000; //time comes in as milliseconds, convert to sec
-                let remaining_nanos = (quote.trade_time_in_long % 1000) * 1_000_000;
                 IntradayPrice::insert(conn,
                                       &quote.symbol,
                                       quote.last_price,
                                       quote.total_volume,
-                                      chrono::NaiveDateTime::from_timestamp(secs, remaining_nanos as u32))
-            });
+                                      Utc.timestamp_millis(quote.trade_time_in_long))
+          });
         let query_results = futures::future::join_all(inserts).await;
         let (oks, errs): (Vec<_>, Vec<_>) = query_results
             .into_iter()
@@ -84,7 +83,7 @@ impl IntradayPrice {
         stock_ticker: &str,
         price: f64,
         volume: i64,
-        timestamp: chrono::NaiveDateTime,
+        timestamp: chrono::DateTime::<Utc>,
     ) -> sqlx::Result<sqlx::postgres::PgDone> {
         sqlx::query("INSERT INTO intraday_prices VALUES
         (DEFAULT, (SELECT id FROM stocks WHERE ticker = $1 LIMIT 1), $2, $3, $4)")
@@ -135,7 +134,7 @@ impl IntradayPrice {
 
     pub async fn get_open_prices_by_stock_ids(
         conn: &crate::db::DbPool,
-        stock_info: &[(i32, chrono::NaiveDateTime)],
+        stock_info: &[(i32, chrono::DateTime::<Utc>)],
     ) -> Vec<f64> {
         let open_price_queries = stock_info
             .iter()
@@ -154,7 +153,7 @@ impl IntradayPrice {
     pub async fn get_open_price_by_stock_id(
         conn: &crate::db::DbPool,
         stock_id: i32,
-        latest_timestamp: chrono::NaiveDateTime) -> sqlx::Result<f64> {
+        latest_timestamp: chrono::DateTime::<Utc>) -> sqlx::Result<f64> {
         sqlx::query_scalar(
             "WITH day_prices AS (SELECT *
                        FROM intraday_prices

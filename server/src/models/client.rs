@@ -1,10 +1,12 @@
+use chrono::Utc;
+
 #[derive(Debug)]
 pub struct Client {
     pub id: i32,
     pub endpoint: String,
     pub p256dh: String,
     pub auth: String,
-    pub created_at: chrono::NaiveDateTime,
+    pub created_at: chrono::DateTime::<Utc>,
 }
 
 impl Client {
