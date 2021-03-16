@@ -11,6 +11,7 @@ import { useDebounce } from "react-use";
 import EntryViewStateSpec from "../redux/EntryViewStateSpec"
 import { useStateMachine } from '../components/useStateMachine';
 import { OptionStrategy, OptionType } from '../graphql/__generated__/globalTypes'
+import { ExploreSharp } from '@material-ui/icons';
 
 const GET_CURRENT_PRICE_QUERY = loader(
     "../graphql/getCurrentPrice.gql"
@@ -18,6 +19,10 @@ const GET_CURRENT_PRICE_QUERY = loader(
 const GET_AVAILABLE_EXPIRATIONS_QUERY = loader(
     "../graphql/getAvailableExpirations.gql"
 );
+
+type StringToStringMap = {
+    [key: string]: string;
+};
 
 const Title = styled.h2`
   font-size: 2.5em;
@@ -128,9 +133,10 @@ const GeneratedResultsFrame = styled.div`
 `
 
 const EXPIRATION_PLACEHOLDER = "Expiration Date"
+const EXPIRATION_LOADING_PLACEHOLDER = "Loading Expiries"
 const STRATEGY_PLACEHOLDER = "Strategy"
 
-function displayStringFor(strategy: OptionStrategy) {
+function displayStringForOptionStrategy(strategy: OptionStrategy) {
     switch (strategy) {
         case OptionStrategy.BUY_CALL:
             return "Buy Call"
@@ -156,6 +162,34 @@ function optionStrategyFor(strategyInput: String) {
     }
 }
 
+function displayStringForExpiryDate(exp: string): string {
+    var options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const date = new Date(exp)
+    const today = new Date()
+    const tte = date.getTime() - today.getTime()
+    console.log(tte)
+    const dte = Math.ceil(tte / (1000 * 3600 * 24))
+    return date.toLocaleDateString("en-US", options) + " " + "(" + dte + " days )"
+}
+
+function makeDisplayStringsForExpiryDates(expiries: string[]): StringToStringMap {
+    if (!expiries) {
+        return {}
+    }
+    let expiryMap: StringToStringMap = {}
+    for (const exp in expiries) {
+        expiryMap[exp] = displayStringForExpiryDate(exp)
+    }
+    return expiryMap
+}
+
+function reverseMap(ogMap: StringToStringMap): StringToStringMap {
+    // https://stackoverflow.com/questions/45728226/javascript-map-value-to-keys-reverse-object-mapping
+    const reverseMapping = (o: StringToStringMap) => Object.keys(o).reduce((r: StringToStringMap, k: string) =>
+        Object.assign(r, { [o[k]]: (r[o[k]] || [] as string[]).concat(k) }), {})
+    return reverseMapping(ogMap)
+}
+
 function EntryView() {
     const [debouncedTicker, setDebouncedTicker] = useState('')
     const [currentState, sendEvent] = useStateMachine(EntryViewStateSpec)
@@ -166,8 +200,7 @@ function EntryView() {
     const expirationInput = watch(["expiration"]).expiration
     const strategyInput = watch(["strategy"]).strategy
     const { data: priceData, error: priceError } = useQuery<getCurrentPrice>(GET_CURRENT_PRICE_QUERY, { variables: { ticker: debouncedTicker } });
-    const { data: expirationData, error: expirationError } = useQuery<getAvailableExpirations>(GET_AVAILABLE_EXPIRATIONS_QUERY, { variables: { ticker: debouncedTicker } });
-
+    const { data: expirationData, error: expirationError, loading: expirationLoading } = useQuery<getAvailableExpirations>(GET_AVAILABLE_EXPIRATIONS_QUERY, { variables: { ticker: debouncedTicker } });
     const onGenerate = (formData: any) => {
         sendEvent("PRESENT_GENERATED_TRADE")
         console.log("onGenerate")
@@ -175,6 +208,8 @@ function EntryView() {
     }
     const priceString = (tickerInput && priceData) ? priceData.price : "$"
     const expirationStrings = (tickerInput && expirationData) ? expirationData.expiration : []
+    let expiryDateMap = makeDisplayStringsForExpiryDates(expirationStrings)
+    let expiryDateReverseMap = reverseMap(expiryDateMap)
     if (currentState === 'blank' && tickerInput) {
         sendEvent("ENTER_TICKER")
     } else if (currentState === 'enteringTicker' && priceData && !priceError && expirationStrings && !expirationError) {
@@ -208,14 +243,18 @@ function EntryView() {
                 <DoshSelect
                     disabled={!isExpirationAndStrategySelectable}
                     name="expiration"
-                    defaultValue={EXPIRATION_PLACEHOLDER} ref={register}
+                    defaultValue={
+                        expirationLoading ? EXPIRATION_LOADING_PLACEHOLDER : EXPIRATION_PLACEHOLDER
+                    } ref={register}
                     onChange={() => {
                         if (currentState === "presentingGeneratedTrade") {
                             sendEvent('SELECT_EXPIRATION_AND_STRATEGY')
                         }
                     }} >
-                    <option disabled> Expiration Date </option>
-                    {expirationStrings.map((exp, i) => <option key={i}>{exp}</option>)}
+                    <option disabled> {
+                        expirationLoading ? EXPIRATION_LOADING_PLACEHOLDER : EXPIRATION_PLACEHOLDER
+                    } </option>
+                    {expirationStrings.map((exp, i) => <option key={i}>{displayStringForExpiryDate(exp)}</option>)}
                 </DoshSelect>
                 <DoshSelect
                     disabled={!isExpirationAndStrategySelectable}
@@ -228,10 +267,10 @@ function EntryView() {
                         }
                     }}>
                     <option disabled > Strategy </option>
-                    <option>{displayStringFor(OptionStrategy.BUY_CALL)}</option>
-                    <option>{displayStringFor(OptionStrategy.SELL_CALL)}</option>
-                    <option>{displayStringFor(OptionStrategy.BUY_PUT)}</option>
-                    <option>{displayStringFor(OptionStrategy.SELL_PUT)}</option>
+                    <option>{displayStringForOptionStrategy(OptionStrategy.BUY_CALL)}</option>
+                    <option>{displayStringForOptionStrategy(OptionStrategy.SELL_CALL)}</option>
+                    <option>{displayStringForOptionStrategy(OptionStrategy.BUY_PUT)}</option>
+                    <option>{displayStringForOptionStrategy(OptionStrategy.SELL_PUT)}</option>
                 </DoshSelect>
                 <GeneratedResultsFrame>
                     {currentState === 'presentingGeneratedTrade' ?

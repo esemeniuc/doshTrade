@@ -128,16 +128,11 @@ export default function GeneratedResults({ ticker, expiration, strategy }: any) 
     const { data } = useQuery<getOptionChain>(GET_OPTION_CHAIN, { variables: { ticker, expiration, strategy } });
     const [selectedOption, setSelectedOption] = useState<OptionQuote | undefined>()
     const [modalOpen, setModalOpen] = useState(false)
-    //TODO: optionQuote should be the default option to display
-    // if (data && data.optionQuote.length > 0) {
-    //     const optionQuotes = data ? data.optionQuote : []
-    //     setSelectedOption(data.optionQuote[0])
-    // }
-    console.log("data: ", data)
-    
-    if (!selectedOption) {
-        console.log("mockOptions[0]: ", mockOptions[0])
-        setSelectedOption(mockOptions[0])
+    let optionQuotes: OptionQuote[] = []
+    if (data && data.optionQuote.length > 0 && !selectedOption) {
+        optionQuotes = data ? data.optionQuote : []
+        console.log('set optionQuote:', optionQuotes)
+        setSelectedOption(data.optionQuote[0])
     }
     const handleSelectOption = (optionQuote: OptionQuote) => {
         console.log("selected option: ", optionQuote)
@@ -165,7 +160,7 @@ export default function GeneratedResults({ ticker, expiration, strategy }: any) 
                 </SelectorModalHeader>
                 {/* <OptionTable optionQuotes={data ? data.optionQuote : []} onSelectOption={handleSelectOption} /> */}
                 <OptionTable
-                    optionQuotes={mockOptions}
+                    optionQuotes={data && data.optionQuote ? data.optionQuote : []}
                     selectedOption={selectedOption}
                     onSelectOption={handleSelectOption} />
             </TransitionsModal>
