@@ -7,7 +7,6 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { getOptionChain_optionQuote as OptionQuote } from '../graphql/__generated__/getOptionChain'
-
 const displayableOptionFrom = (option: OptionQuote): DisplayableOptionQuote => {
     return { name: option.optionType, price: String(option.ask) || "", pop: option.expiration };
 }
@@ -26,7 +25,9 @@ const OptionRow = ({ option, selected, onClick }:
     }) => {
     const displayableOption = displayableOptionFrom(option)
     return (
-        <TableRow style={{ backgroundColor: selected ? 'khaki' : 'linen' }} onClick={() => { onClick(option) }}>
+        <TableRow
+            style={{ backgroundColor: selected ? 'khaki' : 'linen' }}
+            onClick={() => { onClick(option) }}>
             <TableCell component="th" scope="row">
                 {displayableOption.name}
             </TableCell>
@@ -43,8 +44,13 @@ const OptionTable = ({ optionQuotes, selectedOption, onSelectOption }:
         onSelectOption: (option: OptionQuote) => void
     }) => {
     const options = optionQuotes;  // optionQuotes when data live
-    return (<TableContainer component={Paper}>
-        <Table aria-label="simple table" style={{ backgroundColor: 'gainsboro' }}>
+    return (<TableContainer component={Paper} style={{ height: '100%' }} >
+        <Table aria-label="simple table"
+            stickyHeader
+            style={{
+                backgroundColor: 'gainsboro',
+                height: '100%'
+            }}>
             <TableHead>
                 <TableRow>
                     <TableCell align="left">Option</TableCell>
@@ -52,7 +58,7 @@ const OptionTable = ({ optionQuotes, selectedOption, onSelectOption }:
                     <TableCell align="right">Probability of Profit</TableCell>
                 </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody >
                 {optionQuotes && options.map((option: OptionQuote, i) =>
                     <OptionRow
                         key={i}

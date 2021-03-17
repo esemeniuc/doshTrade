@@ -18,12 +18,12 @@ export interface getOptionChain_optionQuote {
   bid: number | null;
   ask: number | null;
   last: number | null;
-  delta: number;
-  gamma: number;
-  theta: number;
+  delta: number | null;
+  gamma: number | null;
+  theta: number | null;
   vega: number;
-  rho: number;
-  volatility: number;
+  rho: number | null;
+  volatility: number | null;
   timeValue: number;
 }
 

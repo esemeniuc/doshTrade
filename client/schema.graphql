@@ -21,16 +21,16 @@ type OptionQuote {
   optionType: OptionType!
   strike: Float
   expiration: String!
-  daysToExpiration: String!
+  daysToExpiration: Int!
   bid: Float
   ask: Float
   last: Float
-  delta: Float!
-  gamma: Float!
-  theta: Float!
+  delta: Float
+  gamma: Float
+  theta: Float
   vega: Float!
-  rho: Float!
-  volatility: Float!
+  rho: Float
+  volatility: Float
   timeValue: Float!
 }
 
@@ -66,8 +66,11 @@ input PushSubscriptionKeys {
 type QueryRoot {
   # sends demo notification to client browser to verify notifications work as intended
   sendDemoNotification(pushSubscription: PushSubscription!): Boolean!
+  getCurrentPrice(ticker: String!): String!
+  getAvailableExpirations(ticker: String!): [String!]!
 
   # sends option chain for selected ticker
+  # assumes expiration is UTC time
   getOptionChain(
     ticker: String!
     expiration: String!
@@ -76,8 +79,6 @@ type QueryRoot {
 
   # sends computed risk values for a give option
   getRiskSummary(optionId: ID!, strategy: OptionStrategy!): OptionRiskSummary!
-  getCurrentPrice(ticker: String!): String!
-  getAvailableExpirations(ticker: String!): [String!]!
 }
 
 # Represents a stock's status

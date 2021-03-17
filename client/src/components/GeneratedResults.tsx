@@ -7,6 +7,7 @@ import { useQuery } from "@apollo/client";
 import { loader } from 'graphql.macro';
 import TransitionsModal from "../containers/TransitionsModal";
 import { OptionStrategy, OptionType } from '../graphql/__generated__/globalTypes'
+import { displayStringForExpiryDate } from '../util/dateFormat'
 
 const GET_OPTION_CHAIN = loader(
     "../graphql/getOptionChain.gql"
@@ -125,6 +126,7 @@ const RiskSummary = ({ selectedOption, strategy }:
 }
 
 export default function GeneratedResults({ ticker, expiration, strategy }: any) {
+    console.log('ticker, expiration, strategy: ', ticker, expiration, strategy)
     const { data } = useQuery<getOptionChain>(GET_OPTION_CHAIN, { variables: { ticker, expiration, strategy } });
     const [selectedOption, setSelectedOption] = useState<OptionQuote | undefined>()
     const [modalOpen, setModalOpen] = useState(false)
@@ -156,7 +158,7 @@ export default function GeneratedResults({ ticker, expiration, strategy }: any) 
                 <SelectorModalHeader>
                     {strategy}
                     <br />
-                    {ticker} {expiration}
+                    {ticker.toUpperCase()} {displayStringForExpiryDate(expiration)}
                 </SelectorModalHeader>
                 {/* <OptionTable optionQuotes={data ? data.optionQuote : []} onSelectOption={handleSelectOption} /> */}
                 <OptionTable

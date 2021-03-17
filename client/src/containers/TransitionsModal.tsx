@@ -15,6 +15,8 @@ const useStyles = makeStyles((theme: Theme) =>
       backgroundColor: theme.palette.background.paper,
       padding: theme.spacing(2, 4, 3),
       outline: 0,
+      minHeight: '55vh',
+      maxHeight: '85vh',
     },
   })
 );
@@ -44,7 +46,7 @@ export default function TransitionsModal({
       }}
     >
       <Fade in={open}>
-        <div className={classes.paper}>
+        <div className={classes.paper} style={{ overflow: 'hidden', height: '100%' }}>
           {children}
         </div>
       </Fade>

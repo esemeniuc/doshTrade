@@ -12,6 +12,7 @@ import EntryViewStateSpec from "../redux/EntryViewStateSpec"
 import { useStateMachine } from '../components/useStateMachine';
 import { OptionStrategy, OptionType } from '../graphql/__generated__/globalTypes'
 import { ExploreSharp } from '@material-ui/icons';
+import { displayStringForExpiryDate } from '../util/dateFormat';
 
 const GET_CURRENT_PRICE_QUERY = loader(
     "../graphql/getCurrentPrice.gql"
@@ -162,31 +163,21 @@ function optionStrategyFor(strategyInput: String) {
     }
 }
 
-function displayStringForExpiryDate(exp: string): string {
-    var options = { year: 'numeric', month: 'short', day: 'numeric' };
-    const date = new Date(exp)
-    const today = new Date()
-    const tte = date.getTime() - today.getTime()
-    console.log(tte)
-    const dte = Math.ceil(tte / (1000 * 3600 * 24))
-    return date.toLocaleDateString("en-US", options) + " " + "(" + dte + " days )"
-}
-
 function makeDisplayStringsForExpiryDates(expiries: string[]): StringToStringMap {
     if (!expiries) {
         return {}
     }
     let expiryMap: StringToStringMap = {}
-    for (const exp in expiries) {
+    expiries.forEach((exp, i) => {
         expiryMap[exp] = displayStringForExpiryDate(exp)
-    }
+    })
     return expiryMap
 }
 
 function reverseMap(ogMap: StringToStringMap): StringToStringMap {
     // https://stackoverflow.com/questions/45728226/javascript-map-value-to-keys-reverse-object-mapping
     const reverseMapping = (o: StringToStringMap) => Object.keys(o).reduce((r: StringToStringMap, k: string) =>
-        Object.assign(r, { [o[k]]: (r[o[k]] || [] as string[]).concat(k) }), {})
+        Object.assign(r, { [o[k]]: k }), {})
     return reverseMapping(ogMap)
 }
 
@@ -203,8 +194,6 @@ function EntryView() {
     const { data: expirationData, error: expirationError, loading: expirationLoading } = useQuery<getAvailableExpirations>(GET_AVAILABLE_EXPIRATIONS_QUERY, { variables: { ticker: debouncedTicker } });
     const onGenerate = (formData: any) => {
         sendEvent("PRESENT_GENERATED_TRADE")
-        console.log("onGenerate")
-        console.log(formData)
     }
     const priceString = (tickerInput && priceData) ? priceData.price : "$"
     const expirationStrings = (tickerInput && expirationData) ? expirationData.expiration : []
@@ -276,7 +265,7 @@ function EntryView() {
                     {currentState === 'presentingGeneratedTrade' ?
                         <GeneratedResults
                             ticker={debouncedTicker}
-                            expiration={expirationInput}
+                            expiration={expiryDateReverseMap[expirationInput]}
                             strategy={optionStrategyFor(strategyInput)}
                         /> :
                         <GenerateButton
