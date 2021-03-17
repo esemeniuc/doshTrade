@@ -193,27 +193,27 @@ impl OptionQuote {
         Ok(match strategy {
             OptionStrategy::BuyCall =>
                 OptionRiskSummary {
-                    max_risk: format!("${}", last_price),
+                    max_risk: format!("${}", last_price * 100.0),
                     max_profit: "Inf".to_string(),
-                    breakeven_at_expiration: format!("${}", strike_price + last_price),
+                    breakeven_at_expiration: format!("${}", (strike_price + last_price) * 100.0),
                 },
             OptionStrategy::BuyPut =>
                 OptionRiskSummary {
-                    max_risk: format!("${}", last_price),
-                    max_profit: format!("${}", strike_price - last_price),
+                    max_risk: format!("${}", last_price * 100.0),
+                    max_profit: format!("${}", (strike_price - last_price) * 100.0),
                     breakeven_at_expiration: format!("${}", strike_price - last_price),
                 },
             OptionStrategy::SellCall =>
                 OptionRiskSummary {
                     max_risk: "Inf".to_string(),
-                    max_profit: format!("${}", last_price),
-                    breakeven_at_expiration: format!("${}", strike_price + last_price),
+                    max_profit: format!("${}", last_price * 100.0),
+                    breakeven_at_expiration: format!("${}", (strike_price + last_price) * 100.0),
                 },
             OptionStrategy::SellPut =>
                 OptionRiskSummary {
-                    max_risk: format!("${}", strike_price - last_price),
-                    max_profit: format!("${}", last_price),
-                    breakeven_at_expiration: format!("${}", strike_price - last_price),
+                    max_risk: format!("${}", (strike_price - last_price) * 100.0),
+                    max_profit: format!("${}", last_price * 100.0),
+                    breakeven_at_expiration: format!("${}", (strike_price - last_price) * 100.0),
                 }
         })
     }
