@@ -99,8 +99,10 @@ const RiskSummary = ({ selectedOption, strategy }:
         selectedOption?: OptionQuote,
         strategy: OptionStrategy
     }) => {
+    console.log('RiskSummary selectedOption: ', selectedOption)
     const { data } = useQuery<getRiskSummary>(GET_RISK_SUMMARY,
-        { variables: { optionId: selectedOption ? selectedOption.bid : 1, strategy } });
+        { variables: { optionId: selectedOption ? selectedOption.stringId : 1, strategy } });
+    console.log('RiskSummary data: ', data)
     if (!data) {
         return (null)
     }
@@ -160,7 +162,6 @@ export default function GeneratedResults({ ticker, expiration, strategy }: any) 
                     <br />
                     {ticker.toUpperCase()} {displayStringForExpiryDate(expiration)}
                 </SelectorModalHeader>
-                {/* <OptionTable optionQuotes={data ? data.optionQuote : []} onSelectOption={handleSelectOption} /> */}
                 <OptionTable
                     optionQuotes={data && data.optionQuote ? data.optionQuote : []}
                     selectedOption={selectedOption}
