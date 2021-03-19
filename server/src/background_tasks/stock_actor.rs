@@ -114,6 +114,14 @@ pub struct StockQuote {
     pub delayed: bool,
 }
 
+pub async fn fetch_quotes(tickers: &[String]) -> anyhow::Result<Vec<StockQuote>> {
+    info!("Fetching tickers: {:?}", tickers);
+    let tickers_str = tickers.join(",");
+    let url = format!("https://api.tdameritrade.com/v1/marketdata/quotes?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", tickers_str);
+    info!("Using url: {}", url);
+    let ticker_to_quotes: std::collections::HashMap<String, StockQuote> = reqwest::get(&url).await?.json().await?;
+    Ok(ticker_to_quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>())
+}
 
 pub async fn fetch_and_insert(
     conn: &crate::db::DbPool,
@@ -142,13 +150,4 @@ pub async fn fetch_and_insert(
             .as_secs()
     );
     Ok(())
-}
-
-pub async fn fetch_quotes(tickers: &[String]) -> anyhow::Result<Vec<StockQuote>> {
-    info!("Fetching tickers: {:?}", tickers);
-    let tickers_str = tickers.join(",");
-    let url = format!("https://api.tdameritrade.com/v1/marketdata/quotes?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", tickers_str);
-    info!("Using url: {}", url);
-    let ticker_to_quotes: std::collections::HashMap<String, StockQuote> = reqwest::get(&url).await?.json().await?;
-    Ok(ticker_to_quotes.into_iter().map(|(_k, v)| v).collect::<Vec<StockQuote>>())
 }

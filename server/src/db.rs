@@ -18,6 +18,7 @@ pub async fn seed(conn: &DbPool) -> sqlx::Result<sqlx::postgres::PgDone> {
         ("TSLA", "Tesla"),
         ("TSM", "Taiwan Semiconductor"),
         ("UVXY", "Ultra Volatility Index"),
+        ("YI", "111 Inc"),
         ("ZM", "Zoom"),
     ];
 

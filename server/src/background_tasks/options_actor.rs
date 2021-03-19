@@ -2,6 +2,7 @@ use actix::prelude::*;
 use log::{info, warn};
 use chrono::{Utc, TimeZone};
 use sqlx::{Transaction, Error, Postgres};
+use crate::models::TDOptionChain;
 
 pub(crate) struct OptionsActor {
     pub(crate) pool: crate::db::DbPool,
@@ -21,7 +22,7 @@ impl Actor for OptionsActor {
                     Err(_) => vec![]
                 };
                 if super::is_open_market_hours(chrono::Utc::now()) {
-                    match fetch_options(&conn, &tickers).await {
+                    match fetch_and_insert(&conn, &tickers).await {
                         Ok(_) => info!("Fetched all options quotes"),
                         Err(e) => warn!("Failed to fetch option quotes from TD, {:?}", e),
                     }
@@ -34,10 +35,10 @@ impl Actor for OptionsActor {
     }
 }
 
-pub async fn fetch_options(conn: &crate::db::DbPool,
-                           tickers: &[String]) -> actix_web::Result<(), actix_web::Error> {
+pub async fn fetch_and_insert(conn: &crate::db::DbPool,
+                              tickers: &[String]) -> anyhow::Result<()> {
     use crate::models::{TDOptionChain, OptionType};
-    let client = actix_web::client::Client::default();
+
     for ticker in tickers {
         let mut txn = match conn.begin().await  {
             Ok(x) => x,
@@ -50,10 +51,7 @@ pub async fn fetch_options(conn: &crate::db::DbPool,
             .execute(&mut txn)
             .await;
 
-        let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", ticker);
-        let mut response = client.get(url).send().await?;
-        let body = response.body().limit(50 * (1 << 20)).await?; //50MB limit
-        let option_chain: TDOptionChain = serde_json::from_slice(&body)?;
+        let option_chain = fetch_options(ticker).await?;
 
         for option_iter in vec![
             (option_chain.call_exp_date_map, OptionType::Call),
@@ -94,4 +92,11 @@ pub async fn fetch_options(conn: &crate::db::DbPool,
         }
     }
     Ok(())
+}
+
+async fn fetch_options(ticker: &String) -> anyhow::Result<TDOptionChain> {
+    info!("Fetching options for ticker: {:?}", ticker);
+    let url = format!("https://api.tdameritrade.com/v1/marketdata/chains?apikey=YPUACAREWAHFTZDFPJJ0FKWN8B7NVVHF&symbol={}", ticker);
+    let option_chain: TDOptionChain = reqwest::get(&url).await?.json().await?;
+    Ok(option_chain)
 }

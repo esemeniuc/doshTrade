@@ -131,7 +131,7 @@ impl OptionQuote {
 
     pub async fn get_available_expirations(
         conn: &crate::db::DbPool,
-        ticker: String,
+        ticker: &String,
     ) -> sqlx::Result<Vec<String>> {
         sqlx::query_scalar(
             "select distinct CAST(expiration::timestamp AS VARCHAR) from option_quotes

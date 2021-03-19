@@ -62,11 +62,14 @@ impl QueryRoot {
         match IntradayPrice::get_latest_by_ticker(&pool, &ticker).await {
             Ok(id) => Ok(format!("${}", id.price)),
             Err(_) => { //not in db
-                let response = stock_actor::fetch_quotes(&[ticker]).await;
+                let response = stock_actor::fetch_quotes(&[ticker.clone()]).await;
+                log::warn!("get_current_price() did not find ticker {}, fetching options now.", ticker);
 
                 if let Ok(stock_quotes) = response {
                     if let Some(stock_quote) = stock_quotes.first() {
                         crate::models::Stock::insert_ticker(&pool, &stock_quote.symbol).await;
+                        crate::background_tasks::options_actor::fetch_and_insert(pool, &[ticker]).await;
+
                         return Ok(String::from(format!("${}", stock_quote.last_price)));
                     }
                 }
@@ -80,11 +83,11 @@ impl QueryRoot {
                                        ticker: String, ) -> async_graphql::Result<Vec<String>> {
         let ticker = get_canonical_ticker(ticker);
         let pool = ctx.data_unchecked::<crate::db::DbPool>();
-        match OptionQuote::get_available_expirations(&pool, ticker).await {
+        match OptionQuote::get_available_expirations(&pool, &ticker).await {
             Ok(expirations) => Ok(expirations),
-            Err(e) => { //not in db
-                log::warn!("get_available_expirations() failed with error: {}", e);
-                return Err(async_graphql::Error::new("get_current_price() must be called first"));
+            Err(e) => {
+                log::warn!("get_available_expirations() did not find options for ticker {}. Error: {}", ticker, e);
+                Ok(vec![])
             }
         }
     }
