@@ -30,13 +30,13 @@ const OptionRow = ({ option, selected, onClick }:
     const displayableOption = displayableOptionFrom(option)
     return (
         <TableRow
-            style={{ backgroundColor: selected ? 'khaki' : 'linen' }}
+            style={{ backgroundColor: selected ? 'oldlace' : 'whitesmoke' }}
             onClick={() => { onClick(option) }}>
-            <TableCell component="th" scope="row">
+            <TableCell size="small" align="right" component="th" scope="row">
                 {displayableOption.strike}
             </TableCell>
-            <TableCell align="right">{displayableOption.price}</TableCell>
-            <TableCell align="right">{displayableOption.pop}</TableCell>
+            <TableCell size="small" align="right">{displayableOption.price}</TableCell>
+            <TableCell size="small" align="right">{displayableOption.pop}</TableCell>
         </TableRow>
     )
 }
@@ -58,9 +58,9 @@ const OptionTable = ({ optionQuotes, selectedOption, onSelectOption }:
                 }}>
                 <TableHead>
                     <TableRow>
-                        <TableCell align="center" style={{ width: 65 }}>Strike</TableCell>
-                        <TableCell align="center" style={{ width: 70 }}>Price</TableCell>
-                        <TableCell align="center" style={{ width: 100 }}>Probability of Profit</TableCell>
+                        <TableCell size="small" align="right" style={{ width: 65 }}>Strike</TableCell>
+                        <TableCell size="small" align="right" style={{ width: 70 }}>Price</TableCell>
+                        <TableCell size="small" align="right" style={{ width: 100 }}>Probability of Profit</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody >

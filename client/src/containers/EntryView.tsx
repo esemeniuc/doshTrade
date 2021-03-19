@@ -104,7 +104,12 @@ const ActionInput = styled.input`
 const GenerateButton = styled(ActionInput)`
     width: 70%;
     background-color: black;
-    &:disabled {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    transform: translate(-50%, -50%);
+        &:disabled {
         opacity: 0.3;
     }
 `;
@@ -123,13 +128,12 @@ const PriceLabel = styled.div`
     padding-bottom: 12px;
 `
 const GeneratedResultsFrame = styled.div`
-    background-color: gainsboro;
+    background-color: whitesmoke;
     min-height: 300px;
     width: 100%;
     margin-top: 20px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
 `
 

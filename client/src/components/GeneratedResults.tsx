@@ -17,7 +17,7 @@ const GET_RISK_SUMMARY = loader("../graphql/getRiskSummary.gql")
 
 const GeneratedOption = styled.div`
     width: 100%;
-    margin-top: 20px;
+    height: 100%;
 `
 const RiskSummaryTable = styled.table`
     width: 100%;
@@ -30,69 +30,22 @@ const RiskRow = styled.tr`
     height: 40px;
 `
 const RiskColumnLeft = styled.td`
-    border-right: 1px solid black;
+    border-right: 1px solid gainsboro;
     text-align: left;
     width: 40%;
-    font-weight: 600;
-    font-size: 12px;
+    font-weight: 500;
+    font-size: 14px;
 `
 const RiskColumnRight = styled.td`
     padding-left: 20px;
     text-align: left;
-    font-size: 12px;
+    font-size: 14px;
 `
 const SelectorModalHeader = styled.h3`
     margin-top: 10px;
     margin-bottom: 10px;
     width: 100%;
 `
-
-// mocking..
-const mockOptions: OptionQuote[] = [{
-    __typename: 'OptionQuote',
-    stringId: "option1",
-    optionType: OptionType.CALL,
-    expiration: "3/15",
-    ask: 13.2,
-    delta: 1,
-    gamma: 1,
-    theta: 1,
-    vega: 1,
-    rho: 1,
-    volatility: 1,
-    timeValue: 1,
-    strike: 1, bid: 1, last: 1
-},
-{
-    __typename: 'OptionQuote',
-    stringId: "option2",
-    optionType: OptionType.CALL,
-    expiration: "3/15",
-    ask: 113.2,
-    delta: 1,
-    gamma: 1,
-    theta: 1,
-    vega: 1,
-    rho: 1,
-    volatility: 1,
-    timeValue: 1,
-    strike: 1, bid: 1, last: 1
-},
-{
-    __typename: 'OptionQuote',
-    stringId: "option3",
-    optionType: OptionType.CALL,
-    expiration: "3/15",
-    ask: 213.2,
-    delta: 1,
-    gamma: 1,
-    theta: 1,
-    vega: 1,
-    rho: 1,
-    volatility: 1,
-    timeValue: 1,
-    strike: 1, bid: 1, last: 1
-}]
 
 const RiskSummary = ({ selectedOption, strategy }:
     {
@@ -135,13 +88,10 @@ export default function GeneratedResults({ ticker, expiration, strategy }: any) 
     let optionQuotes: OptionQuote[] = []
     if (data && data.optionQuote.length > 0 && !selectedOption) {
         optionQuotes = data ? data.optionQuote : []
-        console.log('set optionQuote:', optionQuotes)
         setSelectedOption(data.optionQuote[0])
     }
     const handleSelectOption = (optionQuote: OptionQuote) => {
-        console.log("selected option: ", optionQuote)
         setSelectedOption(optionQuote)
-        // TODO: dispatch modal action with all the options
         setModalOpen(!modalOpen)
     }
     return (
