@@ -1,8 +1,7 @@
 use actix::prelude::*;
 use log::{info, warn};
 use chrono::{Utc, TimeZone};
-use sqlx::{Transaction, Error, Postgres};
-use crate::models::TDOptionChain;
+use crate::models::{OptionType,TDOptionChain};
 
 pub(crate) struct OptionsActor {
     pub(crate) pool: crate::db::DbPool,
@@ -37,7 +36,6 @@ impl Actor for OptionsActor {
 
 pub async fn fetch_and_insert(conn: &crate::db::DbPool,
                               tickers: &[String]) -> anyhow::Result<()> {
-    use crate::models::{TDOptionChain, OptionType};
 
     for ticker in tickers {
         let mut txn = match conn.begin().await  {

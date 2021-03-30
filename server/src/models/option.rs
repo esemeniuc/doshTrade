@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use chrono::{Utc};
-use sqlx::postgres::PgDone;
 use crate::asyncgql::{OptionStrategy, OptionRiskSummary};
 
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize)]
@@ -78,9 +77,8 @@ pub struct TDOptionQuote {
 #[sqlx(rename = "OPTION_TYPE", rename_all = "lowercase")]
 pub enum OptionType { Call, Put }
 
-#[derive(async_graphql::SimpleObject, sqlx::FromRow, Clone)]
+#[derive(sqlx::FromRow, Clone)]
 pub struct OptionQuote {
-    // TODO make optionID and also add identifier on Postgres and POP
     pub string_id: String,
     pub option_type: OptionType,
     pub strike: Option<f64>,
@@ -145,7 +143,7 @@ impl OptionQuote {
         conn: &crate::db::DbPool,
         ticker: String,
         expiration: chrono::DateTime::<Utc>,
-        strategy: OptionType,
+        option_type: OptionType,
     ) -> sqlx::Result<Vec<OptionQuote>> {
         sqlx::query_as::<_, OptionQuote>(
             "SELECT
@@ -173,7 +171,7 @@ impl OptionQuote {
         )
             .bind(ticker)
             .bind(expiration)
-            .bind(strategy)
+            .bind(option_type)
             .fetch_all(conn).await
     }
 
@@ -182,39 +180,79 @@ impl OptionQuote {
         option_id: String,
         strategy: OptionStrategy,
     ) -> sqlx::Result<OptionRiskSummary> {
-        let (last_price, strike_price) = sqlx::query_as::<_, (f64, f64)>(
+        let (last_option_price, strike_price) = sqlx::query_as::<_, (f64, f64)>(
             "SELECT last, strike
          FROM option_quotes
          WHERE string_id = $1",
         )
-            .bind(option_id)
+            .bind(&option_id)
             .fetch_one(conn).await?;
 
-        Ok(match strategy {
-            OptionStrategy::BuyCall =>
-                OptionRiskSummary {
-                    max_risk: format!("${}", last_price * 100.0),
-                    max_profit: "Inf".to_string(),
-                    breakeven_at_expiration: format!("${}", (strike_price + last_price) * 100.0),
-                },
-            OptionStrategy::BuyPut =>
-                OptionRiskSummary {
-                    max_risk: format!("${}", last_price * 100.0),
-                    max_profit: format!("${}", (strike_price - last_price) * 100.0),
-                    breakeven_at_expiration: format!("${}", strike_price - last_price),
-                },
-            OptionStrategy::SellCall =>
-                OptionRiskSummary {
-                    max_risk: "Inf".to_string(),
-                    max_profit: format!("${}", last_price * 100.0),
-                    breakeven_at_expiration: format!("${}", (strike_price + last_price) * 100.0),
-                },
-            OptionStrategy::SellPut =>
-                OptionRiskSummary {
-                    max_risk: format!("${}", (strike_price - last_price) * 100.0),
-                    max_profit: format!("${}", last_price * 100.0),
-                    breakeven_at_expiration: format!("${}", (strike_price - last_price) * 100.0),
-                }
+        let ticker = match option_id.split('_').collect::<Vec<_>>().first() {
+            None => return sqlx::Result::Err(sqlx::Error::RowNotFound),
+            Some(v) => *v,
+        };
+        let stock_price = crate::models::IntradayPrice::get_latest_by_ticker(conn, ticker).await?;
+        let (max_risk, max_profit, breakeven_at_expiration) = OptionQuote::calc_risk_summary(strategy, stock_price.price, last_option_price, strike_price);
+
+        Ok(OptionRiskSummary {
+            max_risk: format!("${}", max_risk * 100.0),
+            max_profit: format!("${}", max_profit * 100.0),
+            breakeven_at_expiration: format!("${}", breakeven_at_expiration * 100.0),
         })
+    }
+
+    //returns max_risk, max_profit, stock_breakeven_at_expiration
+    pub fn calc_risk_summary(strategy: OptionStrategy, last_stock_price: f64, last_option_price: f64, strike_price: f64) -> (f64, f64, f64) {
+        match strategy {
+            OptionStrategy::BuyCall =>
+                (last_option_price,
+                 f64::INFINITY,
+                 strike_price + last_option_price),
+            OptionStrategy::BuyPut =>
+                (last_option_price,
+                 strike_price - last_option_price,
+                 strike_price - last_option_price),
+            OptionStrategy::SellCall =>
+                (f64::INFINITY,
+                 last_option_price,
+                 strike_price + last_option_price),
+            OptionStrategy::SellPut =>
+                (strike_price - last_option_price,
+                 last_option_price,
+                 strike_price - last_option_price)
+        }
+    }
+
+    //volatility is a percentage value from 0 to 2000ish (not normalized in db)
+    //from https://www.optionstrategist.com/calculators/probability
+    pub fn calc_pop(stock_price: f64, target_price: f64, days_to_exp: f64, volatility: f64) -> (f64, f64) {
+        let p = stock_price;
+        let q = target_price;
+        let t = days_to_exp / 365.0;
+        let v = volatility / 100.0;
+
+        let vt = v * t.sqrt();
+        let lnpq = (q / p).ln();
+        let d1 = lnpq / vt;
+
+        let y = (1.0 / (1.0 + 0.2316419 * d1.abs()) * 100000.0).floor() / 100000.0;
+        let z = (0.3989423 * (-((d1 * d1) / 2.0)).exp() * 100000.0).floor() / 100000.0;
+        let y5 = 1.330274 * y.powi(5);
+        let y4 = 1.821256 * y.powi(4);
+        let y3 = 1.781478 * y.powi(3);
+        let y2 = 0.356538 * y.powi(2);
+        let y1 = 0.3193815 * y;
+        let x = 1.0 - z * (y5 - y4 + y3 - y2 + y1);
+        let mut x = (x * 100000.0).floor() / 100000.0;
+
+        if d1 < 0.0 {
+            x = 1.0 - x;
+        };
+
+        let pbelow = (x * 1000.0).floor() / 10.0;
+        let pabove = ((1.0 - x) * 1000.0).floor() / 10.0;
+
+        (pbelow, pabove)
     }
 }
